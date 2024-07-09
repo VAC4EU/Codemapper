@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { Observable, map, merge, of } from 'rxjs';
 import { Concept, ConceptId, VocabularyId, CodeId } from './data';
 import { ApiService } from './api.service';
@@ -174,11 +192,11 @@ export type AllTopics0 = {
 }
 
 export interface ReviewOperation {
-  run(api : ApiService, project : string, mapping : string) : Observable<Object>;
+  run(api : ApiService, mappingUUID : string) : Observable<Object>;
 }
 
 export class Refresh implements ReviewOperation {
-  run(api : ApiService, project : string, mapping : string) : Observable<Object> {
+  run(api : ApiService, mappingUUID : string) : Observable<Object> {
     return of({});
   }
 }
@@ -191,8 +209,8 @@ export class NewTopic implements ReviewOperation {
     private content : string,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, project : string, mapping : string) : Observable<Object> {
-    return api.newTopic(project, mapping, this.cui, this.sab, this.code, this.content)
+  run(api : ApiService, mappingUUID : string) : Observable<Object> {
+    return api.newTopic(mappingUUID, this.cui, this.sab, this.code, this.content)
       .pipe(map(id => this.data.topicShowMessages[id] = true));
   }
 }
@@ -203,16 +221,16 @@ export class NewMessage implements ReviewOperation {
     private content : string,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, project : string, mapping : string) : Observable<Object> {
-    return api.newMessage(project, mapping, this.topicId, this.content)
+  run(api : ApiService, mappingUUID : string) : Observable<Object> {
+    return api.newMessage(mappingUUID, this.topicId, this.content)
       .pipe(map(_ => this.data.newMessageText[this.topicId] = ""))
   }
 }
 
 export class MarkAsRead implements ReviewOperation {
   constructor(private topicId : number) { }
-  run(api : ApiService, project : string, mapping : string) : Observable<Object> {
-    return api.markAsRead(project, mapping, this.topicId)
+  run(api : ApiService, mappingUUID : string) : Observable<Object> {
+    return api.markAsRead(mappingUUID, this.topicId)
   }
 }
 
@@ -221,10 +239,10 @@ export class ResolveTopic implements ReviewOperation {
     private topicId : number,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, project : string, mapping : string) : Observable<Object> {
+  run(api : ApiService, mappingUUID : string) : Observable<Object> {
     return merge(
-      api.markAsRead(project, mapping, this.topicId),
-      api.resolveTopic(project, mapping, this.topicId)
+      api.markAsRead(mappingUUID, this.topicId),
+      api.resolveTopic(mappingUUID, this.topicId)
     ).pipe(map(_ => this.data.topicShowMessages[this.topicId] = false))
   }
 }

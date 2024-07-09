@@ -191,8 +191,9 @@ class Categorization:
 
 class Tables:
 
-    def __init__(self, table):
+    def __init__(self, table, mrcui):
         self.table = table
+        self.mrcui = mrcui
         print("tables:", len(self.table))
         self.by_sab = {
             sab: df
@@ -207,6 +208,9 @@ class Tables:
             for sab, df in self.by_sab.items()
         }
         print("by_sab_code:", sum(len(d) for d in self.by_sab_code.values()))
+
+    def retired(self, cui):
+        return mrcui[self.mrcui.cui1 == cui].cui2.to_list()
 
     def codes_by_name(self, sab, str):
         # TODO? sab_test
@@ -227,12 +231,12 @@ class Tables:
         df = df[df.str == str]
         return df.to_dict('records')
 
-    def direct(self, sab, code, str, cui):
+    def direct(self, sab, code, str, cuis):
         df = self.table
         df = df[df.sab == sab]
         df = df[df.code == code]
-        if cui:
-            df = df[df.cui == cui]
+        if cuis:
+            df = df[df.cui.isin(cuis)]
         if len(code) < 8:
             # Small codes are not rounded and we can search direct codes from
             # sab/code alone.
@@ -249,6 +253,16 @@ class Tables:
 
         cat = Categorization()
 
+        concepts = None
+        concept_retired = False
+        if concept:
+            retired = self.retired(concept)
+            if retired is not None:
+                concept_retired = True
+                concepts = retired
+            else:
+                concepts = [concept]
+
         if not code or code == '-':
             cat.result = "NONE_NO_CODE"
             return cat
@@ -257,13 +271,18 @@ class Tables:
             cat.result = "NONE_CODING_SYSTEM"
             return cat
 
-        cat.direct = self.direct(coding_system, code, code_name, concept)
+        cat.direct = self.direct(coding_system, code, code_name, concepts)
         rows_direct = (r for r in cat.direct)
         try:
             cat.row = next(rows_direct)
             cat.result = 'DIRECT'
+            comments = []
             if next(rows_direct, None):
-                cat.comment = "not unique"
+                comments.append("not unique")
+            if concept_retired:
+                comments.append("original concept was retired")
+            if comments:
+                cat.comment = ', '.join(comments)
             return cat
         except:
             pass
@@ -443,13 +462,15 @@ class Tables:
             df.to_csv(outfile, index=False)
 
 if __name__ == "__main__":
-    [_, indir, table_filename, outdir] = sys.argv
+    [_, indir, table_filename, mrcui_filename, outdir] = sys.argv
     dtype = defaultdict(lambda: str, {'sab': "category"})
     table = (
         pd.read_csv(table_filename, dtype=dtype)
         .assign(ttys=lambda df: df.ttys.str.split(',').apply(set))
     )
-    tables = Tables(table)
+    names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin']
+    mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names)
+    tables = Tables(table, mrcui)
     try:
         num = int(os.environ['DEDUP_NUM'])
     except:

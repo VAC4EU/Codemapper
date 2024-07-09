@@ -91,7 +91,7 @@ CREATE TABLE MRSAB (
 COPY MRSAB from '@META@/MRSAB.RRF' with delimiter as '|' null as '';
 alter table mrsab drop column dummy;
 
-DROP TABLE MRSTY;
+DROP TABLE IF EXISTS MRSTY;
 CREATE TABLE MRSTY (
 	CUI	char(8) NOT NULL,
 	TUI	char(4) NOT NULL,
@@ -104,3 +104,16 @@ CREATE TABLE MRSTY (
 COPY MRSTY from '@META@/MRSTY.RRF' with delimiter as '|' null as '';
 alter table mrsty drop column dummy;
 
+DROP TABLE IF EXISTS MRCUI;
+CREATE TABLE MRCUI (
+	CUI1	char(8) NOT NULL,
+	VER	varchar(10) NOT NULL,
+	REL	varchar(4) NOT NULL,
+	RELA	varchar(100),
+	MAPREASON	text,
+	CUI2	char(8),
+	MAPIN	char(1),
+	dummy char(1)
+);
+copy MRCUI from '@META@/MRCUI.RRF' with delimiter as '|' null as '';
+alter table mrcui drop column dummy;

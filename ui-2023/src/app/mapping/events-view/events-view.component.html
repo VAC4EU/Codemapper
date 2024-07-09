@@ -1,36 +1,114 @@
-<mat-toolbar>
-  <app-navigation [project]="projectName"></app-navigation>
-  <span>Project: {{projectName}}</span>
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-</mat-toolbar>
 
 <div class="center-content">
-<h2>Events</h2>
-<ul>
-  <li *ngFor="let event of events">
-    <a [routerLink]="['/project', projectName, 'event', event]" mat-button>
-      {{event}}
-    </a>
-  </li>
-  <li>
-    <mat-form-field appearance="fill">
-      <input type="text" placeholder="New event name" [(ngModel)]="newEventName" matInput #nameInput>
-    </mat-form-field>
-    <span matTooltip="Create a new event. Requires a name">
-      <button
-        (click)="createNew(projectName, newEventName)"
-        [disabled]="!newEventName"
-        mat-raised-button>
-        New
-      </button>
-      <button
-        (click)="importNew(projectName, newEventName)"
-        [disabled]="!newEventName"
-        mat-raised-button>
-        Import CSV
-      </button>
-    </span>
-  </li>
-</ul>
+  <mat-toolbar>
+    <app-navigation [projectName]="projectName"></app-navigation>
+    <span>CodeMapper: Project {{projectName}} ({{projectPerm?.toLowerCase()}})</span>
+    <span class="menu-spacer"></span>
+    <app-loggedin></app-loggedin>
+  </mat-toolbar>
+  <h2>Mappings</h2>
+  <div class="toolbox">
+    <mat-card>
+      <mat-card-header>
+        New mapping
+      </mat-card-header>
+      <mat-card-actions>
+        <span matTooltip="Create a new mapping (only for project admins)">
+          <button
+            (click)="openDialog(createMapping)"
+            [disabled]="projectPerm != 'Admin'"
+            mat-raised-button>
+            Create
+          </button>
+        </span>
+        <span matTooltip="Import a mapping from a CSV file (only for project admins)">
+          <button
+            (click)="importNew(projectName)"
+            [disabled]="projectPerm != 'Admin'"
+            mat-raised-button>
+            Import CSV
+          </button>
+        </span>
+      </mat-card-actions>
+    </mat-card>
+    <mat-card>
+      <mat-card-header>
+        {{selected.selected.length}} selected mapping{{selected.selected.length == 1 ? '' : 's'}}
+      </mat-card-header>
+      <mat-card-actions>
+        <span matTooltip="Rename one selected mapping (only for project admins)">
+        <button
+          mat-raised-button
+          [disabled]="projectPerm != 'Admin' || selected.selected.length != 1"
+          (click)="openDialog(renameDialog)">Rename</button>
+        </span>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <table mat-table [dataSource]="mappings">
+    <tr mat-header-row *matHeaderRowDef="['select', 'name']"></tr>
+    <tr mat-row *matRowDef="let mapping; columns: ['select', 'name'];"></tr>
+
+    <ng-container matColumnDef="select">
+      <th mat-header-cell *matHeaderCellDef>
+        <mat-checkbox (change)="$event ? toggleSelectAll() : null"
+                      [checked]="selected.hasValue() && isAllSelected()"
+                      [indeterminate]="selected.hasValue() && !isAllSelected()">
+        </mat-checkbox>
+      </th>
+      <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
+        <mat-checkbox
+          (click)="$event.stopPropagation()"
+          (change)="$event ? selected.toggle(code) : null"
+          [checked]="selected.isSelected(code)">
+        </mat-checkbox>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Mapping name</th>
+      <td mat-cell *matCellDef="let mapping">
+        <a [routerLink]="['/mapping', mapping.mappingUUID]" mat-menu-item>
+          {{mapping.mappingName}}
+        </a>
+      </td>
+    </ng-container>
+  </table>
 </div>
+
+<ng-template #createMapping>
+  <h2 matDialogTitle>Create mapping</h2>
+  <mat-dialog-content>
+    <mat-form-field appearance="fill">
+      <input type="text" placeholder="Mapping name" matInput #mappingName>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button matDialogClose>Cancel</button>
+    <button
+      mat-raised-button
+      [disabled]="!mappingName.value"
+      (click)="newMapping(projectName, mappingName.value)"
+      matDialogClose
+      color="primary">Ok</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #renameDialog>
+  <h2 matDialogTitle>Rename mapping</h2>
+  <mat-dialog-content>
+    <mat-form-field style="width:100%;">
+      <mat-label>New name</mat-label>
+      <input type="text" [value]="selected.selected[0].mappingName" #newName matInput>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button matDialogClose>Cancel</button>
+    <button
+      mat-raised-button
+      [disabled]="!newName.value || selected.selected.length != 1"
+      (click)="renameMapping(selected.selected[0], newName.value)"
+      matDialogClose
+      color="primary">Ok</button>
+  </mat-dialog-actions>
+</ng-template>

@@ -1,20 +1,5 @@
-<div>
-</div>
 
-<section class="center-content mat-elevation-z3">
-  <h3>Unsaved steps</h3>
-  <span *ngIf="mapping.undoStack.length == 0">
-    Nothing.
-  </span>
-  <ol>
-    <li *ngFor="let op of mapping.undoStack">
-      {{op[0]}}
-    </li>
-  </ol>
-</section>
-
-<section class="center-content mat-elevation-z3">
-  <h3>Saved versions</h3>
+<section>
   <p *ngIf="revisions.length == 0">
     (An revision from the old CodeMapper might be saved.)
   </p>
@@ -25,6 +10,7 @@
         <th>Author</th>
         <th>Timestamp</th>
         <th>Summary</th>
+        <th class="column-download"></th>
       </tr>
     </thead>
     <tbody>
@@ -33,6 +19,11 @@
         <td><span class="author">{{rev.author}}</span></td>
         <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
         <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
+        <td class="column-download">
+          <a href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
+            <mat-icon>download</mat-icon>
+          </a>
+        </td>
       </tr>
     </tbody>
   </table>

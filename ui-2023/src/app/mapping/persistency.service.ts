@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
@@ -5,11 +23,18 @@ import { JSONObject, Mapping, Revision } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, map, catchError } from 'rxjs';
 
-export type ProjectPermission = 'Editor' | 'Commentator';
+export type ProjectPermission = 'Admin' | 'Editor' | 'Commentator';
 
-export type ProjectPermissions = Set<ProjectPermission>;
+export interface ProjectInfo {
+  name : string;
+  permission : ProjectPermission;
+}
 
-export type ProjectsPermissions = { [key : string] : Set<ProjectPermissions> }
+export interface MappingInfo {
+  projectName : string;
+  mappingName : string;
+  mappingUUID : string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -19,53 +44,76 @@ export class PersistencyService {
 
   constructor(private http : HttpClient) { }
 
-  projectPermissions() {
-    return this.http.get<ProjectsPermissions>(this.url + '/project-permissions');
+  projectInfos() {
+    return this.http.get<ProjectInfo[]>(this.url + '/projects');
   }
 
-  mappings(project : string) {
-    return this.http.get<string[]>(this.url + `/projects/${project}/case-definitions`)
+  projectMappingInfos(project : string) {
+    return this.http.get<MappingInfo[]>(this.url + `/projects/${project}/mappings`)
       .pipe(map(names => {
-        names.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        names.sort((a, b) => a.mappingName.toLowerCase().localeCompare(b.mappingName.toLowerCase()));
         return names;
       }));
   }
 
-  mapping(project : string, mapping : string) {
-    return this.http.get<JSONObject>(this.url + `/projects/${project}/case-definitions/${mapping}`);
+  mappingInfo(mappingUUID : string) {
+    return this.http.get<MappingInfo>(this.url + `/mapping/${mappingUUID}/info`);
   }
 
-  latestRevision(project : string, caseDefinition : string) : Observable<[number, Mapping]> {
-    return this.http.get<Revision>(this.url + `/projects/${project}/case-definitions/${caseDefinition}/latest-revision`)
+  mappingInfoByOldName(projectName : string, mappingName : string) {
+    return this.http.get<MappingInfo>(this.url + `/projects/${projectName}/mapping/${mappingName}/info-old-name`);
+  }
+
+  createMapping(projectName : string, mappingName : string) : Observable<MappingInfo> {
+    let body = new URLSearchParams();
+    body.append("projectName", projectName);
+    body.append("mappingName", mappingName);
+    let url = this.url + `/mapping`;
+    return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
+  }
+
+  mapping(mappingUUID : string) : Observable<[number, Mapping]> {
+    return this.http.get<JSONObject>(this.url + `/mapping/${mappingUUID}/legacy`)
+      .pipe(map((json) => [-1, Mapping.importOG(json)]));
+  }
+
+  latestRevision(mappingUUID : string) : Observable<[number, Mapping]> {
+    return this.http.get<Revision>(this.url + `/mapping/${mappingUUID}/latest-revision`)
       .pipe(map(rev => {
         let mapping = Mapping.importJSON(JSON.parse(rev.mapping));
         return [rev.version, mapping];
       }))
   }
 
-  latestRevisionOrImportMapping(project : string, caseDefinition : string) : Observable<[number, Mapping]> {
-    return this.latestRevision(project, caseDefinition)
+  latestRevisionOrImportMapping(mappingUUID : string) : Observable<[number, Mapping]> {
+    return this.latestRevision(mappingUUID)
       .pipe(catchError(err => {
         if (err.status == 404) {
           console.info("no revision found, importing old JSON");
-          return this.mapping(project, caseDefinition)
-            .pipe(map((json) => [-1, Mapping.importOG(json)] as [number, Mapping]));
+          return this.mapping(mappingUUID);
         } else {
           throw err;
         }
       }));
   }
 
-  getRevisions(project : string, caseDefinition : string) {
-    return this.http.get<Revision[]>(this.url + `/projects/${project}/case-definitions/${caseDefinition}/revisions`);
+  getRevisions(mappingUUID : string) {
+    return this.http.get<Revision[]>(this.url + `/mapping/${mappingUUID}/revisions`);
   }
 
-  saveRevision(project : string, caseDefinition : string, mapping : Mapping, summary : string) {
+  saveRevision(mappingUUID : string, mapping : Mapping, summary : string) {
     let body = new URLSearchParams();
     let mappingJson = JSON.stringify(mapping, Mapping.jsonifyReplacer);
     body.append("mapping", mappingJson);
     body.append("summary", summary);
-    let url = this.url + `/projects/${project}/case-definitions/${caseDefinition}/save-revision`;
+    let url = this.url + `/mapping/${mappingUUID}/save-revision`;
+    return this.http.post<number>(url, body, urlEncodedOptions);
+  }
+
+  mappingSetName(mappingUUID : string, newName : string) {
+    let body = new URLSearchParams();
+    body.append("name", newName);
+    let url = this.url + `/mapping/${mappingUUID}/name`;
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
 }

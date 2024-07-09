@@ -1,3 +1,22 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import { of } from 'rxjs';
 import { Component, OnInit, ChangeDetectorRef, NgZone, ViewChild, TemplateRef } from '@angular/core';
 import { Title } from "@angular/platform-browser";
 import { Router, ActivatedRoute } from '@angular/router';
@@ -10,7 +29,7 @@ import { Start, StartType, Indexing, CsvImport, Vocabularies, Concept, Concepts,
 import { AllTopics, AllTopics0, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService } from '../api.service';
-import { PersistencyService } from '../persistency.service';
+import { PersistencyService, ProjectPermission } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
@@ -33,8 +52,9 @@ enum Tabs {
 })
 export class MappingViewComponent implements HasPendingChanges {
   sub : Subscription | null = null;
-  projectName! : string;
-  mappingName! : string;
+  mappingUUID : string | null = null;
+  mappingName : string = "??";
+  projectName : string = "??";
   viewName! : string;
   mapping : Mapping = Mapping.empty();
   version : number = -1;
@@ -42,7 +62,8 @@ export class MappingViewComponent implements HasPendingChanges {
   allTopics : AllTopics = new AllTopics();
   reviewData : ReviewData = new ReviewData();
   selectedIndex : number = 1;
-  fresh : boolean = false; // never saved, keep reviews local
+  saveRequired : boolean = false;
+  error : string | null = null;
 
   constructor(
     private http : HttpClient,
@@ -52,46 +73,58 @@ export class MappingViewComponent implements HasPendingChanges {
     private ngZone : NgZone,
     private persistency : PersistencyService,
     private apiService : ApiService,
-    private auth : AuthService,
     private title : Title,
     private dialog : MatDialog,
     private snackBar : MatSnackBar,
+    public auth : AuthService,
   ) { }
 
   hasPendingChanges() {
     return this.mapping.undoStack.length > 0;
   }
 
-  ngOnInit() {
-    this.sub = this.route.params.subscribe(params => {
-      this.projectName = params['project'];
-      this.mappingName = params['mapping'];
-      this.title.setTitle(`CodeMapper: ${this.projectName} - ${this.mappingName}`);
-      this.persistency.latestRevisionOrImportMapping(this.projectName, this.mappingName)
-        .subscribe(
-          ([version, mapping]) => {
-            mapping.cleanupRecacheCheck()
-            this.mapping = mapping;
-            this.version = version;
-            this.reloadReviews();
-            this.reloadRevisions();
-          },
-          (err) => {
-            console.warn("Could not load mapping, trying initial", err);
-            let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
-            if (initial && initial.mapping instanceof Mapping) {
-              this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
-            } else {
-              console.error("No predefined mapping");
-              this.router.navigate(["project", this.projectName]);
-            }
+  async ngOnInit() {
+    this.sub = this.route.params.subscribe(async params => {
+      this.mappingUUID = params['mappingUUID'];
+      if (this.mappingUUID == null) {
+        let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
+        if (initial && initial.mapping instanceof Mapping) {
+          this.saveRequired = true;
+          this.mappingName = initial.mappingName;
+          this.projectName = initial.projectName;
+          this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
+          this.setTitle();
+          if (this.auth.projectRole(this.projectName) != 'Admin') {
+            this.error = "you are not a PI, you won't be able to save";
           }
-        );
+        } else {
+          this.error = "no mapping found";
+        }
+      } else {
+        try {
+          let info = (await this.persistency.mappingInfo(this.mappingUUID).toPromise())!;
+          this.mappingName = info.mappingName;
+          this.projectName = info.projectName;
+          this.setTitle();
+          let [version, mapping] = (await this.persistency.latestRevisionOrImportMapping(this.mappingUUID).toPromise())!;
+          mapping.cleanupRecacheCheck()
+          this.version = version;
+          this.mapping = mapping;
+          this.reloadReviews();
+          this.reloadRevisions();
+        } catch (err) {
+          this.error = "not mapping found";
+          console.error(this.error, err);
+        }
+      }
     });
   }
 
+  setTitle() {
+    this.title.setTitle(`CodeMapper: ${this.mappingName} (${this.projectName})`);
+  }
+
   setInitialMapping(mapping : Mapping, allTopics : any) {
-    this.fresh = true;
     this.mapping = mapping;
     if (allTopics) {
       this.allTopics = allTopics;
@@ -102,22 +135,19 @@ export class MappingViewComponent implements HasPendingChanges {
     this.updateMapping(this.mapping);
   }
 
-  reloadReviews() {
-    if (!this.fresh) {
-      this.apiService.allTopics(this.projectName, this.mappingName)
-        .subscribe(allTopics0 => {
-          let me = this.auth.userSubject.value!.username;
-          let cuis = Object.keys(this.mapping.concepts);
-          this.allTopics = AllTopics.fromRaw(allTopics0, me, cuis)
-        });
+  async reloadReviews() {
+    if (this.mappingUUID != null) {
+      let allTopics0 = (await this.apiService.allTopics(this.mappingUUID).toPromise())!;
+      let me = this.auth.userSubject.value!.username;
+      let cuis = Object.keys(this.mapping.concepts);
+      this.allTopics = AllTopics.fromRaw(allTopics0, me, cuis)
     }
   }
 
 
-  reloadRevisions() {
-    if (!this.fresh) {
-      this.persistency.getRevisions(this.projectName, this.mappingName)
-        .subscribe(revisions => this.revisions = revisions);
+  async reloadRevisions() {
+    if (this.mappingUUID != null) {
+      this.revisions = (await this.persistency.getRevisions(this.mappingUUID).toPromise())!;
     }
   }
 
@@ -132,8 +162,8 @@ export class MappingViewComponent implements HasPendingChanges {
     this.mapping.run(op);
     op.afterRunCallback();
     this.updateMapping(this.mapping);
-    if (op.makesFresh) {
-      this.fresh = true;
+    if (op.saveRequired) {
+      this.saveRequired = true;
     }
   }
 
@@ -154,12 +184,14 @@ export class MappingViewComponent implements HasPendingChanges {
     this.mapping = mapping.clone();
   }
 
-  reviewRun(op : ReviewOperation) {
+  async reviewRun(op : ReviewOperation) {
     console.log("review run", op);
-    op.run(this.apiService, this.projectName, this.mappingName)
-      .subscribe(_ => {
-        this.reloadReviews();
-      });
+    if (this.mappingUUID == null) {
+      alert("cannot run review operation, not saved yet");
+    } else {
+      await op.run(this.apiService, this.mappingUUID).toPromise()!;
+      await this.reloadReviews();
+    }
   }
 
   dump() {
@@ -174,42 +206,42 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   save(summary : string) {
-    this.persistency.saveRevision(this.projectName, this.mappingName, this.mapping, summary)
-      .subscribe(async version => {
-        if (this.fresh) {
-          try {
-            await this.apiService.saveAllTopics(this.projectName, this.mappingName, this.allTopics.toRaw())
-              .toPromise();
-            this.fresh = false;
-          } catch (err) {
-            console.error("Could not save all review topics", err);
-            this.snackBar.open("Could not save all review topics: " + err, "Close");
+    (this.mappingUUID == null
+      ? this.persistency.createMapping(this.projectName, this.mappingName)
+        .pipe(map(m => m.mappingUUID))
+      : of(this.mappingUUID)
+    ).subscribe(mappingUUID => {
+      console.log("MAPPING UUID", mappingUUID);
+      this.persistency.saveRevision(mappingUUID, this.mapping, summary)
+        .subscribe(async version => {
+          if (this.saveRequired) {
+            try {
+              await this.apiService.saveAllTopics(mappingUUID, this.allTopics.toRaw())
+                .toPromise()!;
+              this.saveRequired = false;
+            } catch (err) {
+              console.error("Could not save all review topics", err);
+              this.snackBar.open("Could not save all review topics: " + err, "Close");
+            }
           }
-        }
-        this.snackBar.open("Saved revision", "Ok", { duration: 2000 });
-        this.mapping!.undoStack = [];
-        this.mapping!.redoStack = [];
-        this.version = version;
-        this.reloadRevisions();
-      }, err => {
-        console.error("Could not save revision", err);
-        this.snackBar.open("Could not save revision: " + err.message, "Close");
-      });
+          this.snackBar.open("Saved version " + version, "Ok", { duration: 2000 });
+          this.mapping!.undoStack = [];
+          this.mapping!.redoStack = [];
+          this.version = version;
+          this.reloadRevisions();
+          if (this.mappingUUID == null) {
+            this.router.navigate(["/mapping", mappingUUID]);
+          }
+        }, err => {
+          console.error("Could not save mapping", err);
+          this.snackBar.open("Could not save mapping: " + err.message, "Close");
+        });
+    });
   }
 
-  downloadJson(mapping : Mapping, project : string, event : string, descendants : boolean) {
-    let url = new URL(this.apiService.downloadJsonUrl);
-    url.searchParams.set('project', project);
-    url.searchParams.set('caseDefinition', event);
-    url.searchParams.set('includeDescendants', "" + descendants);
-    url.searchParams.set('url', window.location.href);
-    window.open(url, '_blank');
-  }
-
-  download(mapping : Mapping, project : string, event : string, descendants : boolean) {
+  download(mappingUUID : string, descendants : boolean) {
     let url = new URL(this.apiService.downloadUrl);
-    url.searchParams.set('project', project);
-    url.searchParams.set('caseDefinition', event);
+    url.searchParams.set('mappingUUID', mappingUUID);
     url.searchParams.set('includeDescendants', "" + descendants);
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');

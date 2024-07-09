@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -22,7 +40,7 @@ export class ApiService {
   private broaderConceptsUrl : string = `${environment.apiUrl}/code-mapper/broader-concepts`;
   private narrowerConceptsUrl : string = `${environment.apiUrl}/code-mapper/narrower-concepts`;
   private descendantsUrl : string = `${environment.apiUrl}/code-mapper/descendants`;
-  public downloadUrl : string = `${environment.apiUrl}/code-mapper/output-tsv`;
+  public downloadUrl : string = `${environment.apiUrl}/code-mapper/export-csv`;
   public downloadJsonUrl : string = `${environment.apiUrl}/code-mapper/output-json`;
   private reviewUrl : string = `${environment.apiUrl}/review`;
   private peregrineIndexUrl : string = `${environment.peregrineUrl}/index`;
@@ -106,21 +124,20 @@ export class ApiService {
       .pipe(map(concepts => compat.importConcept(concepts[0])))
   }
 
-  allTopics(project : string, mapping : string) : Observable<AllTopics0> {
-    let url = `${this.reviewUrl}/topics/${project}/${mapping}`;
+  allTopics(mappingUUID : string) : Observable<AllTopics0> {
+    let url = `${this.reviewUrl}/topics/${mappingUUID}`;
     return this.http.get<AllTopics0>(url);
   }
 
-
-  saveAllTopics(project : string, caseDefinition : string, allTopics : AllTopics0) : Observable<any> {
+  saveAllTopics(mappingUUID : string, allTopics : AllTopics0) : Observable<any> {
     let body = new URLSearchParams();
     body.append("allTopics", JSON.stringify(allTopics));
-    let url = `${this.reviewUrl}/topics/${project}/${caseDefinition}`;
+    let url = `${this.reviewUrl}/topics/${mappingUUID}`;
     return this.http.post(url, body, urlEncodedOptions);
   }
 
-  newTopic(project : string, mapping : string, cui : ConceptId | null, voc : VocabularyId | null, code : CodeId | null, heading : string) : Observable<number> {
-    let url = new URL(`${this.reviewUrl}/topic/${project}/${mapping}`);
+  newTopic(mappingUUID : string, cui : ConceptId | null, voc : VocabularyId | null, code : CodeId | null, heading : string) : Observable<number> {
+    let url = new URL(`${this.reviewUrl}/topic/${mappingUUID}`);
     if (cui) {
       url.searchParams.set("cui", cui);
     }
@@ -135,20 +152,20 @@ export class ApiService {
     return this.http.post<number>(url.toString(), body, urlEncodedOptions);
   }
 
-  newMessage(project : string, mapping : string, topicId : number, content : string) : Observable<Object> {
-    let url = `${this.reviewUrl}/message/${project}/${mapping}/${topicId}`;
+  newMessage(mappingUUID : string, topicId : number, content : string) : Observable<Object> {
+    let url = `${this.reviewUrl}/message/${mappingUUID}/${topicId}`;
     let body = new URLSearchParams();
     body.append('content', content);
     return this.http.post(url, body, urlEncodedOptions);
   }
 
-  markAsRead(project : string, mapping : string, topicId : number) : Observable<Object> {
-    let url = `${this.reviewUrl}/topic-mark-read/${project}/${mapping}/${topicId}`;
+  markAsRead(mappingUUID : string, topicId : number) : Observable<Object> {
+    let url = `${this.reviewUrl}/topic-mark-read/${mappingUUID}/${topicId}`;
     return this.http.post(url, null, {});
   }
 
-  resolveTopic(project : string, mapping : string, topicId : number) : Observable<Object> {
-    let url = `${this.reviewUrl}/topic-resolve/${project}/${mapping}/${topicId}`;
+  resolveTopic(mappingUUID : string, topicId : number) : Observable<Object> {
+    let url = `${this.reviewUrl}/topic-resolve/${mappingUUID}/${topicId}`;
     return this.http.post(url, null, {});
   }
 
@@ -240,6 +257,7 @@ export interface ImportedMapping {
   allTopics : AllTopics0,
   warnings : string[],
   csvContent : string;
+  mappingName : string;
 }
 
 export type Descendants = { [key : CodeId] : Code[] }

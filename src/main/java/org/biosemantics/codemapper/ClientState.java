@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
@@ -7,11 +25,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.Map;
-import javax.sql.DataSource;
-import org.biosemantics.codemapper.persistency.PersistencyApi;
-import org.biosemantics.codemapper.rest.CodeMapperApplication;
 
 /** The state as stored on the client. */
 public class ClientState {
@@ -169,6 +183,7 @@ public class ClientState {
   /**
    * Test the conversion of client JSON states to ClientState$State on all mappings in the database.
    */
+  /*
   public static void main(String[] args) throws Exception {
     DataSource codeMapperConnectionPool = CodeMapperApplication.getConnectionPool("code-mapper-db");
     PersistencyApi persistencyApi = new PersistencyApi(codeMapperConnectionPool);
@@ -190,4 +205,5 @@ public class ClientState {
       }
     }
   }
+  */
 }

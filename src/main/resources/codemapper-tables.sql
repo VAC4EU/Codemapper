@@ -32,27 +32,52 @@ drop table if exists users_projects;
 create table users_projects (
   user_id int not null references users(id),
   project_id int not null references projects(id),
-  -- E: editor, C: commentator
+  -- A: admin/PI, E: editor, C: commentator
   role char(1) not null,
-  unique (user_id, project_id, role)
+  unique (user_id, project_id)
 );
 
-insert into users_projects (user_id, project_id) values
-(2, 1),
-(2, 2),
-(3, 1),
-(4, 2);
+-- MIGRATION
+drop index idx_20366_user_project_unique;
+alter table users_projects add constraint users_projects_unique unique (user_id, project_id);
+
+insert into users_projects (user_id, project_id, role) values
+(2, 1, 'A'),
+(2, 2, 'E'),
+(3, 1, 'E'),
+(4, 2, 'C');
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 drop table if exists case_definitions;
-
 create table case_definitions (
   id int not null auto_increment,
+  uuid uuid not null default uuid_generate_v1(), -- public identifier
+  name char(255),                                -- variable name
+  old_name char(255)                             -- fixed old name
   project_id int not null references projects(id),
-  name char(255) not null,
-  state mediumtext not null,
-  unique (project_id, name),
+  state mediumtext,
   primary key (id)
+  unique (uuid)
 );
+-- -- MIGRATION
+-- alter table case_definitions add column old_name char(255);
+-- update case_definitions set old_name = name;
+-- alter table case_definitions add column uuid UUID NOT NULL DEFAULT uuid_generate_v1()
+-- drop index idx_20337_project_id;
+
+drop view if exists users_and_projects;
+create view users_and_projects
+as
+select
+u.username user_name,
+up.role,
+p.name project_name,
+u.id user_id,
+p.id project_id
+from users_projects up
+inner join users u on u.id = up.user_id
+inner join projects p on p.id = up.project_id;
 
 drop view if exists projects_case_definitions;
 create view projects_case_definitions
@@ -66,6 +91,21 @@ as
   join case_definitions cd
   on p.id = cd.project_id
   order by project_name, case_definition_name;
+
+drop view if exists projects_mappings_uuid;
+create view projects_mappings_uuid
+as
+  select
+    p.id project_id,
+    p.name project_name,
+    cd.id mapping_id,
+    cd.name mapping_name,
+    cd.uuid mapping_uuid,
+    cd.old_name mapping_old_name
+  from projects p
+  join case_definitions cd
+  on p.id = cd.project_id
+  order by p.name, cd.name;
 
 drop table if exists case_definition_revisions;
 create table case_definition_revisions (

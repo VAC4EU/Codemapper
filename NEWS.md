@@ -1,6 +1,8 @@
 
 [//]: # (pandoc -i NEWS.md -o ui-2023/src/app/mapping/news-view/news-view.component.html)
 
+<section class="center-content mat-elevation-z3">
+
 <mat-toolbar>
   <app-navigation></app-navigation>
   CodeMapper: News
@@ -8,10 +10,8 @@
   <app-loggedin></app-loggedin>
 </mat-toolbar>
 
-<section class="center-content mat-elevation-z3">
-
-Next
-----
+Testing
+-------
 
 - complete overhaul of the user interface
 - import a mapping from a CSV file
@@ -20,6 +20,7 @@ Next
 - view, select and tag codes per coding system, and create custom codes
 - view coding systems, and create custom coding systems
 - integrated non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
+- rename mappings
 
 October 4, 2023
 ----

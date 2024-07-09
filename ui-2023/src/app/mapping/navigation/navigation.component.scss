@@ -3,8 +3,8 @@
     margin-right: 0;
 }
 
-.navigation-button.active > mat-icon.marker {
-    display: inline-block;
+.navigation-button.active {
+    text-decoration: underline;
 }
 
 mat-icon.list {

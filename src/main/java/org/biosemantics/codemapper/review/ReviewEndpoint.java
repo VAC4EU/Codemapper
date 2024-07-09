@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.review;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
@@ -42,39 +60,30 @@ public class ReviewEndpoint {
   //			.build();
 
   // private (non-static) Set<ReviewEndpoint> endpoints??
-  private static Map<String, Map<String, Set<ReviewEndpoint>>> endpoints = new HashMap<>();
+  private static Map<String, Set<ReviewEndpoint>> endpoints = new HashMap<>();
 
   private Session session;
   User user;
-  String project;
-  String caseDefinition;
+  String mappingUUID;
 
   @OnOpen
   public void onOpen(
-      Session session,
-      EndpointConfig config,
-      @PathParam("project") String project,
-      @PathParam("caseDefinition") String caseDefinition)
+      Session session, EndpointConfig config, @PathParam("mappingUUID") String mappingUUID)
       throws IOException {
 
     this.user = (User) config.getUserProperties().get("user");
     if (this.user == null) {
       throw new IOException("user not logged in");
     }
-    System.out.println("ReviewEndpoint user: " + user + " " + project + " " + caseDefinition);
+    System.out.println("ReviewEndpoint user: " + user + " " + mappingUUID);
 
     this.session = session;
-    this.project = project;
-    this.caseDefinition = caseDefinition;
-    endpoints
-        .getOrDefault(project, new HashMap<>())
-        .getOrDefault(caseDefinition, new HashSet<>())
-        .add(this);
+    this.mappingUUID = mappingUUID;
+    endpoints.getOrDefault(mappingUUID, new HashSet<>()).add(this);
 
     try {
       AllTopics allTopics =
-          CodeMapperApplication.getReviewApi()
-              .getAll(project, caseDefinition, this.user.getUsername());
+          CodeMapperApplication.getReviewApi().getAll(mappingUUID, this.user.getUsername());
       ObjectMapper mapper = new ObjectMapper();
       mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
       this.session.getBasicRemote().sendObject(new ServerMessage.CurrentThreads(allTopics));
@@ -85,17 +94,14 @@ public class ReviewEndpoint {
 
   static void broadcast(ServerMessage message) throws IOException {
     endpoints.forEach(
-        (project, forProject) -> {
-          forProject.forEach(
-              (caseDefinition, forCasedef) -> {
-                forCasedef.forEach(
-                    endpoint -> {
-                      try {
-                        endpoint.session.getBasicRemote().sendObject(message);
-                      } catch (IOException | EncodeException e) {
-                        e.printStackTrace();
-                      }
-                    });
+        (mappingUUID, forMapping) -> {
+          forMapping.forEach(
+              endpoint -> {
+                try {
+                  endpoint.session.getBasicRemote().sendObject(message);
+                } catch (IOException | EncodeException e) {
+                  e.printStackTrace();
+                }
               });
         });
   }

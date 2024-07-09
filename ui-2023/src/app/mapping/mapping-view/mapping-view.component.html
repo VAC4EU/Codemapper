@@ -1,7 +1,10 @@
 <mat-toolbar>
-  <app-navigation [project]="projectName"></app-navigation>
-  Mapping:&nbsp;<span (click)="dump()">{{mappingName}}<span *ngIf="fresh" matTooltip="Needs save">*</span> ({{projectName}}
-  </span>)
+  <app-navigation [projectName]="projectName"></app-navigation>
+  <mat-error  *ngIf="error">Error: {{error}}</mat-error>
+  <span *ngIf="!error">
+    Mapping:&nbsp;
+    <span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired" matTooltip="Needs save">*</span> ({{projectName}}, {{this.auth.projectRole(projectName)?.toLowerCase()}})
+  </span>
   <ng-container *ngIf="mapping != null">
     <span class="menu-spacer"></span>
     <button
@@ -21,15 +24,15 @@
     <span matTooltip="Save the mapping">
       <button
         (click)="openDialog(saveDialog)"
-        [disabled]="mapping.start == null || (!fresh && mapping.undoStack.length == 0)"
+        [disabled]="mapping.start == null || (!saveRequired && mapping.undoStack.length == 0)"
         mat-icon-button>
-        <mat-icon>save<span *ngIf="fresh">*</span></mat-icon>
+        <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
     </span>
     <span matTooltip="Download the mapping">
       <button
         (click)="openDialog(downloadDialog)"
-        [disabled]="fresh || mapping.undoStack.length > 0"
+        [disabled]="saveRequired || mapping.undoStack.length > 0"
         mat-icon-button>
         <mat-icon>download</mat-icon>
       </button>
@@ -41,10 +44,7 @@
 <mat-tab-group [selectedIndex]="selectedIndex">
 
   <mat-tab label="Start">
-    <div class="center-content" *ngIf="mapping.start == null">
-      Start an event mapping either from a search for relevant concepts in free text.
-    </div>
-    <div class="center-content">
+    <div class="center-content spaced mat-elevation-z2">
       <div *ngIf="mapping.start == null || isIndexing(mapping.start)">
         <h2>Search concepts in free text</h2>
         <indexer
@@ -69,17 +69,25 @@
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
+
   <mat-tab label="Codes">
     <codes
       *ngIf="!mapping.isEmpty() && mapping.numVocabularies() > 0"
       [mapping]="mapping"
       [allTopics]="allTopics"
       (run)="run($event)"
-      (reviewRun)="reviewRun($event)"></codes>
+      (reviewRun)="reviewRun($event)"
+      class="center-content spaced mat-elevation-z2"></codes>
   </mat-tab>
+
   <mat-tab label="Vocabularies">
-    <vocabularies *ngIf="!mapping.isEmpty()" [mapping]="mapping" (run)="run($event)"></vocabularies>
+    <vocabularies
+      *ngIf="!mapping.isEmpty()"
+      [mapping]="mapping"
+      (run)="run($event)"
+      class="center-content spaced mat-elevation-z2"></vocabularies>
   </mat-tab>
+
   <!-- <mat-tab label="Review"> -->
   <!--   <reviews -->
   <!--     *ngIf="allTopics != null && !allTopics.isEmpty()" -->
@@ -88,12 +96,14 @@
   <!--     [concepts]="mapping.concepts" -->
   <!--     (run)="reviewRun($event)"></reviews> -->
   <!-- </mat-tab> -->
-  <mat-tab label="History">
+  <mat-tab label="Versions">
     <history
-      *ngIf="!mapping.isEmpty()"
+      *ngIf="mappingUUID && !mapping.isEmpty()"
+      [mappingUUID]="mappingUUID"
       [mapping]="mapping"
       [revisions]="revisions"
-      [version]="version">
+      [version]="version"
+      class="center-content spaced mat-elevation-z2">
     </history>
   </mat-tab>
 </mat-tab-group>
@@ -118,16 +128,17 @@
 </ng-template>
 
 <ng-template #downloadDialog>
-  <h2 matDialogTitle>Download event</h2>
+  <h2 matDialogTitle>Download mapping</h2>
   <mat-dialog-content>
-    Download the event as TSV format (tab-separated values).
+    Download the mapping as CSV format (tab-separated values).
     <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
     <button
       mat-raised-button
-      (click)="download(mapping, projectName, mappingName, includeDescendants.checked)"
+      *ngIf="mappingUUID != null"
+      (click)="download(mappingUUID, includeDescendants.checked)"
       matDialogClose
       color="primary">Download</button>
   </mat-dialog-actions>

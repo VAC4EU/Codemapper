@@ -1,30 +1,30 @@
-/**
- * ***************************************************************************** Copyright 2017
- * Erasmus Medical Center, Department of Medical Informatics.
- *
- * <p>This program shall be referenced as “Codemapper”.
- *
- * <p>This program is free software: you can redistribute it and/or modify it under the terms of the
- * GNU Affero General Public License as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * <p>You should have received a copy of the GNU Affero General Public License along with this
- * program. If not, see <http://www.gnu.org/licenses/>.
- * ****************************************************************************
- */
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.persistency;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,9 +32,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import javax.xml.bind.DatatypeConverter;
-import org.biosemantics.codemapper.ClientState;
+import javax.xml.bind.annotation.XmlRootElement;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.Comment;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
@@ -83,7 +84,7 @@ public class PersistencyApi {
     }
   }
 
-  public Map<String, Set<ProjectPermission>> getProjectPermissions(String username)
+  public Map<String, ProjectPermission> getProjectPermissions(String username)
       throws CodeMapperException {
     String query =
         "SELECT projects.name as project, users_projects.role as role "
@@ -95,14 +96,12 @@ public class PersistencyApi {
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       ResultSet result = statement.executeQuery();
-      Map<String, Set<ProjectPermission>> permissions = new HashMap<>();
+      Map<String, ProjectPermission> permissions = new HashMap<>();
       while (result.next()) {
         String project = result.getString("project");
         String role0 = result.getString("role");
         ProjectPermission role = ProjectPermission.fromString(role0);
-        if (!permissions.containsKey(project))
-          permissions.put(project, new HashSet<ProjectPermission>());
-        permissions.get(project).add(role);
+        permissions.put(project, role);
       }
       return permissions;
     } catch (SQLException e) {
@@ -149,37 +148,59 @@ public class PersistencyApi {
     }
   }
 
-  public String getCaseDefinition(String project, String caseDefinitionName)
-      throws CodeMapperException {
-    String query =
-        "SELECT case_definitions.state FROM case_definitions "
-            + "JOIN projects ON projects.id = case_definitions.project_id "
-            + "WHERE projects.name = ? AND case_definitions.name = ?";
+  public String getCaseDefinition(String mappingUUID) throws CodeMapperException {
+    String query = "SELECT cd.state FROM case_definitions cd WHERE cd.uuid = ?::UUID";
     try {
-      return parameterizedStringQuery(query, project, caseDefinitionName);
+      return parameterizedStringQuery(query, mappingUUID);
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get case definition", e);
     }
   }
 
-  public MappingRevision getLatestRevision(String projectName, String caseDefinitionName)
+  public MappingRevision getRevision(String mappingUUID, Integer version)
       throws CodeMapperException {
     String query =
-        "SELECT r.version, r.mapping, r.timestamp, r.summary, u.username as user "
-            + "FROM case_definition_revisions r "
-            + "INNER JOIN projects_case_definitions pcd "
-            + "ON r.case_definition_id = pcd.case_definition_id "
-            + "INNER JOIN users u "
-            + "ON u.id = r.user_id "
-            + "WHERE pcd.project_name = ? "
-            + "AND pcd.case_definition_name = ? "
+        "SELECT r.mapping, r.timestamp, r.summary, u.username as user "
+            + "FROM case_definitions cd "
+            + "INNER JOIN case_definition_revisions r ON r.case_definition_id = cd.id "
+            + "INNER JOIN users u ON u.id = r.user_id "
+            + "WHERE cd.uuid = ?::UUID "
+            + "AND r.version = ? "
             + "ORDER BY r.timestamp DESC "
             + "LIMIT 1";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, projectName);
-      statement.setString(2, caseDefinitionName);
+      statement.setString(1, mappingUUID);
+      statement.setInt(2, version);
+      ResultSet result = statement.executeQuery();
+      if (result.next()) {
+        String mapping = result.getString("mapping");
+        String timestamp = result.getString("timestamp");
+        String summary = result.getString("summary");
+        String user = result.getString("user");
+        return new MappingRevision(version, user, timestamp, summary, mapping);
+      } else {
+        return null;
+      }
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to get revision", e);
+    }
+  }
+
+  public MappingRevision getLatestRevision(String mappingUUID) throws CodeMapperException {
+    String query =
+        "SELECT r.version, r.mapping, r.timestamp, r.summary, u.username as user "
+            + "FROM case_definitions cd "
+            + "INNER JOIN case_definition_revisions r ON r.case_definition_id = cd.id "
+            + "INNER JOIN users u ON u.id = r.user_id "
+            + "WHERE cd.uuid = ?::UUID "
+            + "ORDER BY r.timestamp DESC "
+            + "LIMIT 1";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, mappingUUID);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
         int version = result.getInt("version");
@@ -196,23 +217,20 @@ public class PersistencyApi {
     }
   }
 
-  public List<MappingRevision> getRevisions(String projectName, String caseDefinitionName)
-      throws CodeMapperException {
+  public List<MappingRevision> getRevisions(String mappingUUID) throws CodeMapperException {
     String query =
         "SELECT r.version, u.username AS user, r.timestamp, r.summary "
             + "FROM case_definition_revisions r "
-            + "INNER JOIN projects_case_definitions pcd "
-            + "ON r.case_definition_id = pcd.case_definition_id "
+            + "INNER JOIN case_definitions cd "
+            + "ON r.case_definition_id = cd.id "
             + "INNER JOIN users u "
             + "ON u.id = r.user_id "
-            + "WHERE pcd.project_name = ? "
-            + "AND pcd.case_definition_name = ? "
+            + "WHERE cd.uuid = ?::UUID "
             + "ORDER BY r.timestamp DESC";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, projectName);
-      statement.setString(2, caseDefinitionName);
+      statement.setString(1, mappingUUID);
       ResultSet result = statement.executeQuery();
       List<MappingRevision> res = new LinkedList<>();
       while (result.next()) {
@@ -228,32 +246,24 @@ public class PersistencyApi {
     }
   }
 
-  public int saveRevision(
-      String projectName,
-      String caseDefinitionName,
-      String username,
-      String summary,
-      String mappingJson)
+  public int saveRevision(String mappingUUID, String username, String summary, String mappingJson)
       throws CodeMapperException {
-    int caseDefId = setCaseDefinition(projectName, caseDefinitionName, null);
     String query =
-        ""
-            + "INSERT INTO case_definition_revisions "
-            + "(case_definition_id, user_id, mapping, summary) "
-            + "SELECT ?, u.id, ?::jsonb, ? "
-            + "FROM users u "
-            + "WHERE u.username = ? "
-            + "RETURNING id";
+        "INSERT INTO case_definition_revisions (case_definition_id, user_id, mapping, summary) "
+            + "SELECT cd.id, u.id, ?::jsonb, ? "
+            + "FROM case_definitions cd, users u "
+            + "WHERE u.username = ? AND cd.uuid = ?::UUID "
+            + "RETURNING version";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
-      statement.setInt(ix++, caseDefId);
       statement.setString(ix++, mappingJson);
       statement.setString(ix++, summary);
       statement.setString(ix++, username);
+      statement.setString(ix++, mappingUUID);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
-        return result.getInt("id");
+        return result.getInt("version");
       } else {
         throw CodeMapperException.server("Save revision did not return an id");
       }
@@ -262,71 +272,17 @@ public class PersistencyApi {
     }
   }
 
-  public int setCaseDefinition(String projectName, String caseDefinitionName, String stateJson)
-      throws CodeMapperException {
-    if (stateJson != null) {
-      try {
-        new ClientState().ofJson(stateJson);
-      } catch (JsonProcessingException e) {
-        throw CodeMapperException.user("Invalid state", e);
-      }
-    }
-    String query =
-        ""
-            + "WITH "
-            + "arg(projectName, caseDefinitionName, state) AS ( "
-            + "  VALUES (?, ?, ?) "
-            + "), "
-            + "p AS ( "
-            + "  SELECT id FROM projects, arg WHERE name = arg.projectName"
-            + "), "
-            + "ins AS ( "
-            // insert new case def with new state or 'null', or update state with non-null new state
-            + "  INSERT INTO case_definitions (project_id, name, state) "
-            + "  SELECT p.id, arg.caseDefinitionName, arg.state "
-            + "  FROM p, arg "
-            + "  ON CONFLICT (project_id, name) "
-            + (stateJson != null ? "DO UPDATE SET state = arg.state " : "DO NOTHING ")
-            + "  RETURNING id "
-            + "), "
-            + "get AS ( " // get casedef
-            + "  SELECT cd.id"
-            + "  FROM case_definitions AS cd, p, arg "
-            + "  WHERE cd.project_id = p.id "
-            + "  AND cd.name = arg.caseDefinitionName"
-            + ") "
-            + "SELECT id FROM ins UNION ALL SELECT id FROM get";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
-      int ix = 1;
-      statement.setString(ix++, projectName);
-      statement.setString(ix++, caseDefinitionName);
-      statement.setString(ix++, stateJson != null ? stateJson : "null");
-      ResultSet res = statement.executeQuery();
-      if (res.next()) {
-        return res.getInt(1);
-      } else {
-        throw CodeMapperException.server("No id from setting case definition");
-      }
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot execute query to set case definition", e);
-    }
-  }
-
-  public List<Comment> getComments(String project, String caseDefinition)
-      throws CodeMapperException {
+  public List<Comment> getComments(String mappingUUID) throws CodeMapperException {
     String query =
         "SELECT users.username AS author, DATE_TRUNC ('second', timestamp) as timestamp, cui, content, timestamp as full_timestamp "
             + "FROM comments "
             + "INNER JOIN users ON comments.author = users.id "
             + "INNER JOIN case_definitions on comments.case_definition_id = case_definitions.id "
-            + "INNER JOIN projects ON projects.id = case_definitions.project_id "
-            + "WHERE projects.name = ? AND case_definitions.name = ? "
+            + "WHERE case_definitions.uuid = ?::UUID "
             + "ORDER BY full_timestamp";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, project);
-      statement.setString(2, caseDefinition);
+      statement.setString(1, mappingUUID);
       ResultSet result = statement.executeQuery();
       List<Comment> comments = new LinkedList<>();
       while (result.next()) {
@@ -350,24 +306,19 @@ public class PersistencyApi {
     return DatatypeConverter.printDateTime(calendar);
   }
 
-  public void createComment(
-      String project, String caseDefinition, User user, String cui, String content)
+  public void createComment(String mappingUUID, User user, String cui, String content)
       throws CodeMapperException {
     String query =
         "INSERT INTO comments (case_definition_id, cui, author, content) "
-            + "SELECT case_definitions.id, ?, users.id, ? "
-            + "FROM users, projects "
-            + "INNER JOIN case_definitions ON projects.id = case_definitions.project_id "
-            + "WHERE projects.name = ? "
-            + "AND case_definitions.name = ? "
-            + "AND users.username = ?";
+            + "SELECT cd.id, ?, u.id, ? "
+            + "FROM users u, case_definitions cd "
+            + "WHERE cd.uuid = ? AND users.username = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, cui);
       statement.setString(2, content);
-      statement.setString(3, project);
-      statement.setString(4, caseDefinition);
-      statement.setString(5, user.getUsername());
+      statement.setString(3, mappingUUID);
+      statement.setString(4, user.getUsername());
       statement.executeUpdate();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create comments", e);
@@ -407,6 +358,165 @@ public class PersistencyApi {
   public void ensureUsers(Set<String> users) throws CodeMapperException {
     for (String user : users) {
       ensureUser(user);
+    }
+  }
+
+  @XmlRootElement
+  public static class MappingInfo {
+    public String mappingName;
+    public String mappingUUID;
+    public String projectName;
+  }
+
+  public MappingInfo getMappingInfo(String mappingUUID) throws CodeMapperException {
+    String query =
+        "SELECT mapping_name, project_name "
+            + "FROM projects_mappings_uuid "
+            + "WHERE mapping_uuid = ?::UUID";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, mappingUUID);
+      ResultSet res = statement.executeQuery();
+      if (!res.next()) {
+        throw CodeMapperException.user("Invalid mapping UUID " + mappingUUID);
+      }
+      MappingInfo mapping = new MappingInfo();
+      mapping.mappingUUID = mappingUUID;
+      mapping.mappingName = res.getString(1);
+      mapping.projectName = res.getString(2);
+      return mapping;
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query for mapping info", e);
+    }
+  }
+
+  public MappingInfo getMappingInfoByOldName(String projectName, String mappingName)
+      throws CodeMapperException {
+    String query =
+        "SELECT mapping_uuid, mapping_name, project_name "
+            + "FROM projects_mappings_uuid "
+            + "WHERE project_name = ? AND mapping_old_name = ?";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, projectName);
+      statement.setString(2, mappingName);
+      ResultSet res = statement.executeQuery();
+      if (!res.next()) {
+        throw CodeMapperException.user("Invalid mapping UUID " + projectName + "/" + mappingName);
+      }
+      MappingInfo mapping = new MappingInfo();
+      mapping.mappingUUID = res.getString(1);
+      mapping.mappingName = res.getString(2);
+      mapping.projectName = res.getString(3);
+      return mapping;
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query for mapping info", e);
+    }
+  }
+
+  @XmlRootElement
+  public static class ProjectInfo {
+    public String name;
+    public ProjectPermission permission;
+  }
+
+  public Collection<ProjectInfo> getProjectInfos(String username) throws CodeMapperException {
+
+    String query =
+        "SELECT projects.name, up.role "
+            + "FROM users "
+            + "INNER JOIN users_projects up ON up.user_id = users.id "
+            + "INNER JOIN projects ON projects.id = up.project_id "
+            + "WHERE users.username = ?";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, username);
+      ResultSet result = statement.executeQuery();
+      Map<String, ProjectPermission> permissions = new HashMap<>();
+      while (result.next()) {
+        String projectName = result.getString(1);
+        String role0 = result.getString(2);
+        ProjectPermission role = ProjectPermission.fromString(role0);
+        permissions.put(projectName, role);
+      }
+      return permissions.entrySet().stream()
+          .map(
+              e -> {
+                ProjectInfo info = new ProjectInfo();
+                info.name = e.getKey();
+                info.permission = e.getValue();
+                return info;
+              })
+          .collect(Collectors.toList());
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to get projects", e);
+    }
+  }
+
+  public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
+    String query =
+        "SELECT cd.uuid, cd.name "
+            + "FROM projects p "
+            + "INNER JOIN case_definitions cd ON cd.project_id = p.id "
+            + "WHERE p.name = ?";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, project);
+      System.out.println(statement);
+      ResultSet set = statement.executeQuery();
+      List<MappingInfo> mappings = new LinkedList<>();
+      while (set.next()) {
+        MappingInfo mapping = new MappingInfo();
+        mapping.mappingUUID = set.getString(1);
+        mapping.mappingName = set.getString(2);
+        mapping.projectName = project;
+        mappings.add(mapping);
+      }
+      return mappings;
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to get case definition names", e);
+    }
+  }
+
+  public MappingInfo createMapping(String projectName, String mappingName)
+      throws CodeMapperException {
+    String query =
+        "INSERT INTO case_definitions (project_id, name) "
+            + "SELECT p.id, ? FROM projects p WHERE p.name = ? "
+            + "RETURNING uuid";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, mappingName);
+      statement.setString(2, projectName);
+      ResultSet set = statement.executeQuery();
+      if (!set.next()) {
+        throw CodeMapperException.server("no uuid when creating a mapping");
+      }
+      MappingInfo mapping = new MappingInfo();
+      mapping.mappingName = mappingName;
+      mapping.projectName = projectName;
+      mapping.mappingUUID = set.getString(1);
+      return mapping;
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to create mapping", e);
+    }
+  }
+
+  public void setName(String mappingUUID, String name) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET name = ? WHERE uuid = ?::UUID";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, name);
+      statement.setString(2, mappingUUID);
+      statement.execute();
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to rename mapping", e);
     }
   }
 }

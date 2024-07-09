@@ -1,21 +1,21 @@
-/**
- * ***************************************************************************** Copyright 2017
- * Erasmus Medical Center, Department of Medical Informatics.
- *
- * <p>This program shall be referenced as “Codemapper”.
- *
- * <p>This program is free software: you can redistribute it and/or modify it under the terms of the
- * GNU Affero General Public License as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * <p>You should have received a copy of the GNU Affero General Public License along with this
- * program. If not, see <http://www.gnu.org/licenses/>.
- * ****************************************************************************
- */
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.authentification;
 
 import java.nio.charset.StandardCharsets;
@@ -25,16 +25,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
+import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
 import org.biosemantics.codemapper.rest.UnauthorizedException;
 
@@ -127,7 +125,7 @@ public class AuthentificationApi {
       if (result.next()) {
         String passwordHash = result.getString(1);
         if (passwordHash.equals(hash(password))) {
-          Map<String, Set<ProjectPermission>> projectPermissions =
+          Map<String, ProjectPermission> projectPermissions =
               CodeMapperApplication.getPersistencyApi().getProjectPermissions(username);
           User user = new User(username, projectPermissions);
           request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
@@ -209,11 +207,22 @@ public class AuthentificationApi {
   }
 
   /** Test if user has any of the projectPermissions in a project. */
-  public static void assertProjectRoles(
-      User user, String project, ProjectPermission... projectPermissions) {
+  public static void assertProjectRolesImplies(
+      User user, String project, ProjectPermission requiredPerm) {
     assertAuthentificated(user);
-    Set<ProjectPermission> perms = user.getProjectPermissions().get(project);
-    if (perms != null && !Collections.disjoint(perms, Arrays.asList(projectPermissions))) return;
+    ProjectPermission perm = user.getProjectPermissions().get(project);
+    if (perm != null) {
+      if (perm.implies(requiredPerm)) {
+        return;
+      }
+    }
     throw new UnauthorizedException();
+  }
+
+  public static MappingInfo assertMappingProjectRolesImplies(
+      User user, String mappingUUID, ProjectPermission perm) throws CodeMapperException {
+    MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingUUID);
+    assertProjectRolesImplies(user, mapping.projectName, perm);
+    return mapping;
   }
 }

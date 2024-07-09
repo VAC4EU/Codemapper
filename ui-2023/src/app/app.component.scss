@@ -16,3 +16,20 @@
     padding: .5em;
     border-radius: 3px;
 }
+
+::ng-deep .mat-column-select {
+    width: 40px;
+}
+
+
+::ng-deep .mat-column-comments {
+    width: 4em;
+}
+
+::ng-deep .column-concept-codes, ::ng-deep .mat-column-tag {
+    width: 10em;
+}
+
+::ng-deep .mat-column-concepts {
+    width: 15em;
+}

@@ -1,4 +1,4 @@
-<a mat-icon-button [matMenuTriggerFor]="menu">
+<a mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Access your projects and mappings">
   <mat-icon>menu</mat-icon>
 </a>
 <mat-menu #menu="matMenu">
@@ -16,16 +16,17 @@
     [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button"
     mat-menu-item>
-    <mat-icon class="marker">chevron_right</mat-icon>All projects
+    <mat-icon class="marker">chevron_right</mat-icon>Projects
   </a>
   <a
     *ngFor="let proj of projects | async"
-    routerLink="/project/{{proj}}"
+    [class]='{active: proj.name == projectName}'
+    routerLink="/project/{{proj.name}}"
     routerLinkActive="active"
     [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button"
     mat-menu-item>
-    <mat-icon class="list">remove</mat-icon><mat-icon class="marker">chevron_right</mat-icon>{{proj}}
+    <mat-icon class="list">remove</mat-icon><mat-icon class="marker">chevron_right</mat-icon>Project: {{proj.name}}
   </a>
   <a
     routerLink="/news"

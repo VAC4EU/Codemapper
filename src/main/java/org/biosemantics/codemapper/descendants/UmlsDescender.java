@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.descendants;
 
 import com.mchange.v2.c3p0.DataSources;
@@ -136,16 +154,11 @@ public class UmlsDescender implements GeneralDescender {
   static Map<String, SourceConcept> getConcepts(DataSource connectionPool, Collection<String> auis)
       throws CodeMapperException {
     String query = "SELECT DISTINCT aui, code, str, ispref FROM mrconso WHERE aui = ANY(?)";
-
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-
       Array array = connection.createArrayOf("VARCHAR", auis.toArray());
       statement.setArray(1, array);
-
-      logger.debug(statement);
       ResultSet set = statement.executeQuery();
-
       Map<String, SourceConcept> res = new HashMap<>();
       while (set.next()) {
         String aui = set.getString(1);

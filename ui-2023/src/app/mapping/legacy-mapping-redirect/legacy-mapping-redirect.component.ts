@@ -16,18 +16,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { PersistencyService } from '../persistency.service';
 
-@Injectable()
-@Injectable({
-  providedIn: 'root'
+@Component({
+  selector: 'app-legacy-mapping-redirect',
+  templateUrl: './legacy-mapping-redirect.component.html',
+  styleUrls: ['./legacy-mapping-redirect.component.scss']
 })
-export class LoadingService {
-  private isLoading$ = new BehaviorSubject<boolean>(false);
-  isLoading = this.isLoading$.asObservable();
-
-  setLoading(isLoading : boolean) {
-    this.isLoading$.next(isLoading);
+export class LegacyMappingRedirectComponent {
+  constructor(
+    private route : ActivatedRoute,
+    private router : Router,
+    private persistency : PersistencyService,
+  ) { }
+  ngOnInit() {
+    this.route.params.subscribe(async params => {
+      let projectName = params['projectName'];
+      let mappingName = params['mappingName'];
+      let info = (await this.persistency.mappingInfoByOldName(projectName, mappingName).toPromise())!;
+      this.router.navigate(["/mapping", info.mappingUUID]);
+    });
   }
 }

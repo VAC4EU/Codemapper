@@ -95,6 +95,18 @@ as $$
   returning id
 $$ language sql;
 
+drop function if exists review_new_topic_uuid;
+create function review_new_topic_uuid(mapping_uuid UUID, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
+returns table (topic_id int)
+as $$
+  insert into review_topic (case_definition_id, cui, sab, code, heading, created_by, created_at)
+  select cd.id, review_new_topic_uuid.cui, review_new_topic_uuid.sab, review_new_topic_uuid.code, review_new_topic_uuid.heading, u.id, review_new_topic_uuid.t
+  from case_definitions cd, users u
+  where cd.uuid = review_new_topic_uuid.mapping_uuid
+  and u.username = review_new_topic_uuid.username
+  returning id
+$$ language sql;
+
 -- mark all messages of a topic read for a given user
 drop function if exists review_mark_topic_read;
 create function review_mark_topic_read(topic_id int, username text)
@@ -135,6 +147,33 @@ create function review_all_messages(project text, casedef text, username text)
     left join review_message_is_read r on (r.message_id = m.id and r.user_id = ru.id)
     where p.name = review_all_messages.project
     and c.name = review_all_messages.casedef
+    order by t.cui, t.sab, t.code, t.id, m.timestamp
+$$ language sql;
+
+drop function if exists review_all_messages_uuid;
+create function review_all_messages_uuid(mapping_uuid UUID, username text)
+  returns table (
+    cui char(8), sab varchar(40), code text,
+    topic_id int, topic_heading text,
+    created_by text, created_at TIMESTAMP,
+    resolved boolean, resolved_user text, resolved_timestamp TIMESTAMP,
+    message_id int, message_author text, message_timestamp TIMESTAMP, message_content text,
+    is_read boolean
+  ) as $$
+    select
+      t.cui, t.sab, t.code, t.id, t.heading,
+      cu.username, t.created_at,
+      t.resolved, ru.username, t.resolved_at,
+      m.id, mu.username, m.timestamp, m.content,
+      r.message_id is not null
+    from case_definitions cd
+    inner join review_topic t on t.case_definition_id = cd.id
+    left join users cu on cu.id = t.created_by
+    left join review_message m on m.topic_id = t.id
+    left join users mu on mu.id = m.author_id
+    left join users ru on ru.username = review_all_messages_uuid.username
+    left join review_message_is_read r on (r.message_id = m.id and r.user_id = ru.id)
+    where cd.uuid = review_all_messages_uuid.mapping_uuid
     order by t.cui, t.sab, t.code, t.id, m.timestamp
 $$ language sql;
 

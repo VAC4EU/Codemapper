@@ -53,6 +53,7 @@ def preprocess(name, df):
         df
         .rename(lambda s: s.lower(), axis=1)
         .rename(dict(zip(*COLUMN_MAPPING)), axis=1)
+        .pipe(lambda df: df[df.code != '-'])
         .assign(code=lambda df: df.code.map(f))
         .apply(lambda s: s.str.strip())
     )

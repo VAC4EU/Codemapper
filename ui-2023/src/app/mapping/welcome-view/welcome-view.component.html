@@ -1,18 +1,18 @@
-<mat-toolbar>
-  <app-navigation></app-navigation>
-  CodeMapper: Welcome!
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-</mat-toolbar>
 
 <section class="center-content max-vertical mat-elevation-z1">
+  <mat-toolbar>
+    <app-navigation></app-navigation>
+    CodeMapper: Welcome!
+    <span class="menu-spacer"></span>
+    <app-loggedin></app-loggedin>
+  </mat-toolbar>
 
   <login-form *ngIf="!user">
   </login-form>
 
   <section *ngIf="user">
-    <p>Use the menu button <mat-icon class="text-align">menu</mat-icon> at the
-    top left to go to your projects and event definitions.</p>
+    <p>Use the menu button <mat-icon class="text-align">menu</mat-icon> above
+    access your projects and mappings.</p>
 
     <h4><mat-icon class="text-align">warning</mat-icon> Testing
       version <mat-icon class="text-align">warning</mat-icon></h4>

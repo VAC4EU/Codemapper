@@ -16,18 +16,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-@Injectable()
-@Injectable({
-  providedIn: 'root'
-})
-export class LoadingService {
-  private isLoading$ = new BehaviorSubject<boolean>(false);
-  isLoading = this.isLoading$.asObservable();
+import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect.component';
 
-  setLoading(isLoading : boolean) {
-    this.isLoading$.next(isLoading);
-  }
-}
+describe('LegacyMappingRedirectComponent', () => {
+  let component : LegacyMappingRedirectComponent;
+  let fixture : ComponentFixture<LegacyMappingRedirectComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [LegacyMappingRedirectComponent]
+    });
+    fixture = TestBed.createComponent(LegacyMappingRedirectComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});

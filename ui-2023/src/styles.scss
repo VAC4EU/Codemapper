@@ -49,12 +49,16 @@ body {
 }
 
 .center-content {
-    width: 60em;
+    max-width: 60em;
     margin-bottom: 2.5em;
     display: block;
     margin-left: auto;
     margin-right: auto;
     padding: 1em;
+}
+
+.spaced {
+    margin-top: 1ex;
 }
 
 .max-vertical {

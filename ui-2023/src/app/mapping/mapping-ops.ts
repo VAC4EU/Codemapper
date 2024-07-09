@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { MappingData, Code, Concept, ConceptsCodes, Concepts, Codes, ConceptId, Mapping, Tag, Vocabulary, VocabularyId, CodeId, Indexing, emptyIndexing } from './data';
 import { ApiService } from './api.service';
 import * as comp from './data-compatibility';
@@ -39,7 +57,7 @@ export abstract class Operation {
   // and it can be undone, and raise Error if the operation could not be applied
   public abstract run(mapping : Mapping) : Operation | undefined;
   public abstract describe() : string;
-  makesFresh : boolean = false;
+  saveRequired : boolean = false;
   afterRunCallback : () => void = () => { };
   public withAfterRunCallback(callback : () => void) {
     this.afterRunCallback = callback;
@@ -119,7 +137,7 @@ export class SetStartIndexing extends Operation {
     readonly codes : Codes,
   ) {
     super();
-    this.makesFresh = true;
+    this.saveRequired = true;
   }
   override describe() : string {
     return `Set start to ${this.indexing.selected.join(", ")}`
@@ -448,7 +466,7 @@ export class Remap extends Operation {
     private conceptsCodes : ConceptsCodes
   ) {
     super();
-    this.makesFresh = true;
+    this.saveRequired = true;
   }
   override describe() : string {
     return "Remap concept codes";
@@ -503,7 +521,7 @@ export class ImportMapping extends Operation {
     private mapping : MappingData
   ) {
     super();
-    this.makesFresh = true;
+    this.saveRequired = true;
   }
   override describe() : string {
     return "Import initial mapping";

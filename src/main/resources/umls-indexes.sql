@@ -18,6 +18,7 @@ CREATE INDEX mrhier_ptra ON mrhier USING GIN(ptra);
 CREATE INDEX mrsty_ix_cui ON mrsty(cui);
 CREATE INDEX mrsab_ix_curver ON mrsab(curver);
 CREATE INDEX mrdef_ix_cui ON mrdef(cui);
+CREATE INDEX mrcui_ix_cui1 ON mrcui(cui1);
 VACUUM ANALYZE;
 
 -- Extract mrhier(sab,aui,ptr) into a table (sab,aui,ppaui) The result has

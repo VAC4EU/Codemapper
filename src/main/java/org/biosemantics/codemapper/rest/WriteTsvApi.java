@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.rest;
 
 import java.io.IOException;
@@ -17,6 +35,7 @@ import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
 import org.biosemantics.codemapper.descendants.DescendersApi.Descendants;
+import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 
 public class WriteTsvApi {
   static final String NO_CODE = "-";
@@ -156,12 +175,11 @@ public class WriteTsvApi {
       MappingData mapping,
       Map<String, Descendants> descendants,
       List<Comment> comments,
-      String project,
-      String event,
+      MappingInfo info,
       int version,
       String url)
       throws IOException {
-    writeInfo(output, project, event, url, version);
+    writeInfo(output, info, url, version);
     writeHeader(output, CODES_HEADERS);
     PreparedMapping prepared = prepare(mapping, descendants);
     writePrepared(output, prepared);
@@ -185,11 +203,12 @@ public class WriteTsvApi {
     output.write(line.getBytes());
   }
 
-  private void writeInfo(OutputStream output, String project, String name, String url, int version)
+  private void writeInfo(OutputStream output, MappingInfo info, String url, int version)
       throws IOException {
     String line =
         String.format(
-            "# Mapping: %s, version: %d, created with CodeMapper: %s\n", name, version, url);
+            "# Mapping: %s, version: %d, project: %s, created with CodeMapper: %s\n",
+            info.mappingName, version, info.projectName, url);
     output.write(line.getBytes());
   }
   /** Auxiliary to format an array of tags in the export file. */

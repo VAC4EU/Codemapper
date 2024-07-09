@@ -12,7 +12,7 @@ jsonpath "$.username" == {{USERNAME}}
 GET {{URL}}/rest/code-mapper/version-info
 HTTP 200
 [Asserts]
-jsonpath "$.umlsVersion" == "2023AA"
+jsonpath "$.umlsVersion" == "2024AA"
 
 # Non-UMLS vocabularies included
 GET {{URL}}/rest/code-mapper/coding-systems
@@ -54,12 +54,10 @@ GET {{URL}}/rest/code-mapper/descendants?codingSystem=TEST&codes=30
 HTTP 200
 [Asserts]
 jsonpath "$[*]" count == 1
-jsonpath "$.TEST[*]" count == 1
-jsonpath "$.TEST['30']" count == 2
-jsonpath "$.TEST['30'][0].cui" == "C0001122"
-jsonpath "$.TEST['30'][0].id" == "31"
-jsonpath "$.TEST['30'][1].cui" == "C0001122"
-jsonpath "$.TEST['30'][1].id" == "32"
+jsonpath "$[*]" count == 1
+jsonpath "$['30']" count == 2
+jsonpath "$['30'][1].id" == "32"
+jsonpath "$['30'][0].id" == "31"
 
 # UMLS narrower
 POST {{URL}}/rest/code-mapper/narrower-concepts
@@ -130,3 +128,9 @@ jsonpath "$[0].sourceConcepts[0].id" == "M05.2"
 jsonpath "$[0].sourceConcepts[0].codingSystem" == "ICD10CM"
 jsonpath "$[0].sourceConcepts[1].id" == "M05.20"
 jsonpath "$[0].sourceConcepts[1].codingSystem" == "ICD10CM"
+
+GET {{URL}}/rest/code-mapper/autocomplete-code?str=M05.2
+HTTP 200
+[Asserts]
+jsonpath "$[*]" count == 14
+jsonpath "$[0].cui" == "C2889165"

@@ -1,14 +1,31 @@
-<mat-toolbar>
-  <app-navigation></app-navigation>
-  <span>Projects</span>
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-</mat-toolbar>
 
-<ul>
-  <li *ngFor="let project of projectPermissions | keyvalue">
-    <a [routerLink]="['/project', project.key]" mat-button>
-      {{project.key}}
-    </a>
-  </li>
-</ul>
+<div class="center-content">
+  <mat-toolbar>
+    <app-navigation></app-navigation>
+    <span>CodeMapper: Your projects</span>
+    <span class="menu-spacer"></span>
+    <app-loggedin></app-loggedin>
+  </mat-toolbar>
+  <table mat-table [dataSource]="projects">
+    <tr mat-header-row *matHeaderRowDef="['name', 'role']"></tr>
+    <tr mat-row *matRowDef="let mapping; columns: ['name', 'role'];"></tr>
+
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Project name</th>
+      <td mat-cell *matCellDef="let project">
+        <a [routerLink]="['/project', project.name]" mat-button>
+          {{project.name}}
+        </a>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="role">
+      <th mat-header-cell *matHeaderCellDef>Your role</th>
+      <td mat-cell *matCellDef="let project">
+        <a [routerLink]="['/project', project.name]" mat-button>
+          {{project.permission.toLowerCase()}}
+        </a>
+      </td>
+    </ng-container>
+  </table>
+</div>

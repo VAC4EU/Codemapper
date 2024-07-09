@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { Input, Component, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -6,7 +24,7 @@ import { Concept, Vocabulary, VocabularyId, ConceptId, CodeId, Code } from '../d
 import { AllTopics, TopicsInfo, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 
-const BASE_COLUMNS = ["select", "concept", "tag", "review"];
+const BASE_COLUMNS = ["select", "concept", "tag", "comments"];
 
 function sortConcepts(c1 : Concept, c2 : Concept) : number {
   return (c1.name ?? "").localeCompare(c2.name ?? "");
@@ -48,19 +66,16 @@ export class ConceptsTableComponent {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
     this.columns = Object.assign([], BASE_COLUMNS);
-    let off = 2;
     if (this.hideTagColumn) {
       this.columns = this.columns.filter(c => c != "tag");
-      off--;
     }
     if (!this.allTopics) {
-      this.columns = this.columns.filter(c => c != "review");
-      off--;
+      this.columns = this.columns.filter(c => c != "comments");
     }
     let vocIds = [...this.vocabularies];
-    vocIds.sort((id1, id2) => id1.localeCompare(id2));
+    vocIds.sort((id1, id2) => -id1.localeCompare(id2));
     for (let vocId of vocIds) {
-      this.columns.splice(-off, 0, "codes-" + vocId);
+      this.columns.splice(3, 0, "codes-" + vocId);
     }
     for (const concept of this.selection.selected) {
       if (this.concepts[concept.id] === undefined) {
@@ -97,7 +112,7 @@ export class ConceptsTableComponent {
   showReviews(cui : ConceptId) {
     const dialogRef = this.dialog.open(ReviewsDialogComponent, {
       data: {
-        heading: `Review of oncept ${cui}: ${this.concepts[cui].name}`,
+        heading: `Comments on concept ${cui}: ${this.concepts[cui].name}`,
         cui,
         allTopicsObj: this.allTopicsObj,
         data: this.reviewData,

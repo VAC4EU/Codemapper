@@ -1,18 +1,32 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
 import { filter, map } from 'rxjs/operators';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { urlEncodedOptions } from '../app.module';
-import { PersistencyService, ProjectsPermissions } from './persistency.service';
-
-export enum ProjectPermission {
-  Editor, Commentator
-}
+import { PersistencyService, ProjectInfo, ProjectPermission } from './persistency.service';
 
 export interface User {
   username : string,
-  projectPermissions : { [key : string] : Set<ProjectPermission> }
+  projectPermissions : { [key : string] : ProjectPermission }
 }
 
 export interface LoginResult {
@@ -22,7 +36,7 @@ export interface LoginResult {
 }
 
 type UserFunction = (user : User | null | PromiseLike<User | null>) => void;
-type ProjectsFunction = (projects : ProjectsPermissions | PromiseLike<ProjectsPermissions>) => void;
+type ProjectsFunction = (projects : ProjectInfo[] | PromiseLike<ProjectInfo[]>) => void;
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +51,7 @@ export class AuthService {
   public redirectUrl : string | null = null;
 
   user : Promise<User | null> | User | null;
-  projects! : Promise<ProjectsPermissions>;
+  projects! : Promise<ProjectInfo[]>;
   userIsEditor : boolean = false;
   userSubject : BehaviorSubject<User | null> = new BehaviorSubject(null as User | null);
   private redirectURL : string | null = null
@@ -56,7 +70,6 @@ export class AuthService {
         (user) => {
           this.resolveUser(user);
           this.userSubject.next(user);
-          // TODO set userIsEditor
         },
         (err) => {
           this.rejectUser(err);
@@ -65,7 +78,7 @@ export class AuthService {
       this.resolveProjects = resolve;
       this.rejectProjects = reject;
     });
-    persistency.projectPermissions().subscribe((pps) => {
+    this.persistency.projectInfos().subscribe((pps) => {
       this.resolveProjects(pps);
     });
   }
@@ -82,6 +95,9 @@ export class AuthService {
           this.userSubject.next(res.user);
           let redirectUrl = this.redirectUrl;
           this.redirectUrl = null;
+          this.persistency.projectInfos().subscribe((projects) => {
+            this.resolveProjects(projects);
+          });
           return { success: true, error: undefined, redirectUrl };
         } else {
           this.user = null;
@@ -95,7 +111,12 @@ export class AuthService {
     return this.http.post<void>(this.url + '/logout', {})
       .pipe(map(() => {
         this.userSubject.next(null);
+        this.resolveProjects([]);
         this.user = null;
       }));
+  }
+
+  projectRole(projectName : string) : ProjectPermission | undefined {
+    return this.userSubject.value?.projectPermissions[projectName];
   }
 }

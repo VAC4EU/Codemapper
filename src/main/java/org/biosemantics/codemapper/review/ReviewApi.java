@@ -1,3 +1,21 @@
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper.review;
 
 import static org.biosemantics.codemapper.persistency.PersistencyApi.timestampToString;
@@ -43,13 +61,12 @@ public class ReviewApi {
   }
 
   public void newMessage(
-      String project, String mapping, int topicId, String content, String user, String timestamp)
+      String mappingUUID, int topicId, String content, String user, String timestamp)
       throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
-    logger.info(
-        String.format("new message %s %s %d %s %s", project, mapping, topicId, content, timestamp));
+    logger.info(String.format("new message %s %d %s %s", mappingUUID, topicId, content, timestamp));
     String query = "SELECT * FROM review_new_message(?, ?, ?, ?::TIMESTAMP)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -65,8 +82,7 @@ public class ReviewApi {
   }
 
   public int newTopic(
-      String project,
-      String mapping,
+      String mappingUUID,
       String cui,
       String sab,
       String code,
@@ -78,14 +94,12 @@ public class ReviewApi {
       timestamp = now();
     }
     logger.info(
-        String.format(
-            "new topic %s %s %s %s %s %s", project, mapping, cui, heading, user, timestamp));
-    String query = "SELECT * FROM review_new_topic(?, ?, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
+        String.format("new topic %s %s %s %s %s", mappingUUID, cui, heading, user, timestamp));
+    String query = "SELECT * FROM review_new_topic_uuid(?::UUID, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
-      statement.setString(ix++, project);
-      statement.setString(ix++, mapping);
+      statement.setString(ix++, mappingUUID);
       statement.setString(ix++, cui);
       statement.setString(ix++, sab);
       statement.setString(ix++, code);
@@ -148,14 +162,12 @@ public class ReviewApi {
     }
   }
 
-  public AllTopics getAll(String project, String mapping, String user) throws CodeMapperException {
-    String query = "SELECT * FROM review_all_messages(?::TEXT, ?::TEXT, ?::TEXT)";
-
+  public AllTopics getAll(String mappingUUID, String user) throws CodeMapperException {
+    String query = "SELECT * FROM review_all_messages_uuid(?::UUID, ?::TEXT)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, project);
-      statement.setString(2, mapping);
-      statement.setString(3, user);
+      statement.setString(1, mappingUUID);
+      statement.setString(2, user);
       AllTopics allTopics = new AllTopics();
       ResultSet result = statement.executeQuery();
       while (result.next()) {
@@ -263,6 +275,31 @@ public class ReviewApi {
     }
   }
 
+  public static class TopicInfo {
+    public String mappingUUID;
+  }
+
+  public TopicInfo getTopicInfo(int topicId) throws CodeMapperException {
+    String query =
+        "SELECT cd.uuid FROM review_topic t "
+            + "INNER JOIN case_definitions cd ON cd.id = t.case_definition_id "
+            + "WHERE t.id = ?";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setInt(1, topicId);
+      ResultSet set = statement.executeQuery();
+      if (!set.next()) {
+        throw CodeMapperException.user("No such topic: " + topicId);
+      }
+      TopicInfo info = new TopicInfo();
+      info.mappingUUID = set.getString(1);
+      return info;
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to get topic info", e);
+    }
+  }
+
   public String getTopicCreatedBy(int topicId) throws CodeMapperException {
     String query = "SELECT * FROM review_topic_created_by(?)";
     try (Connection connection = connectionPool.getConnection();
@@ -274,41 +311,39 @@ public class ReviewApi {
       }
       return set.getString(1);
     } catch (SQLException e) {
+      e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to get topic creator", e);
     }
   }
 
-  public void saveReviews(String project, String caseDefinition, AllTopics allTopics)
-      throws CodeMapperException {
+  public void saveReviews(String mappingUUID, AllTopics allTopics) throws CodeMapperException {
     for (String cui : allTopics.byConcept.keySet()) {
       for (Topic top : allTopics.byConcept.get(cui).values()) {
-        saveTopic(project, caseDefinition, cui, null, null, top);
+        saveTopic(mappingUUID, cui, null, null, top);
       }
     }
     for (String sab : allTopics.byCode.keySet()) {
       for (String code : allTopics.byCode.get(sab).keySet()) {
         for (Topic top : allTopics.byCode.get(sab).get(code).values()) {
-          saveTopic(project, caseDefinition, null, sab, code, top);
+          saveTopic(mappingUUID, null, sab, code, top);
         }
       }
     }
     for (Topic top : allTopics.general.values()) {
-      saveTopic(project, caseDefinition, null, null, null, top);
+      saveTopic(mappingUUID, null, null, null, top);
     }
   }
 
-  private void saveTopic(
-      String project, String caseDefinition, String cui, String sab, String code, Topic top)
+  private void saveTopic(String mappingUUID, String cui, String sab, String code, Topic top)
       throws CodeMapperException {
 
     String timestamp = top.created.timestamp;
     if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-    int id =
-        newTopic(project, caseDefinition, cui, sab, code, top.heading, top.created.user, timestamp);
+    int id = newTopic(mappingUUID, cui, sab, code, top.heading, top.created.user, timestamp);
     for (Message msg : top.messages) {
       timestamp = msg.timestamp;
       if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-      newMessage(project, caseDefinition, id, msg.content, msg.username, timestamp);
+      newMessage(mappingUUID, id, msg.content, msg.username, timestamp);
     }
     if (top.resolved != null) {
       resolveTopic(id, top.resolved.user, top.resolved.timestamp);

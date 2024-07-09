@@ -1,21 +1,21 @@
-/**
- * ***************************************************************************** Copyright 2017-2020
- * Erasmus Medical Center, Department of Medical Informatics.
- *
- * <p>This program shall be referenced as “Codemapper”.
- *
- * <p>This program is free software: you can redistribute it and/or modify it under the terms of the
- * GNU Affero General Public License as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * <p>You should have received a copy of the GNU Affero General Public License along with this
- * program. If not, see <http://www.gnu.org/licenses/>.
- * ****************************************************************************
- */
+// This file is part of CodeMapper.
+//
+// Copyright 2022-2024 VAC4EU - Vaccine monitoring Collaboration for Europe.
+// Copyright 2017-2021 Erasmus Medical Center, Department of Medical Informatics.
+//
+// CodeMapper is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package org.biosemantics.codemapper;
 
 import com.opencsv.CSVReader;
@@ -31,13 +31,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -236,14 +236,13 @@ public class UmlsApi {
     String query =
         "SELECT DISTINCT cui, sab, code, str "
             + "FROM mrconso WHERE "
-            + "((code like ? AND sab LIKE ?) OR cui = ?) "
-            + "AND ts = 'P' AND stt = 'PF' AND ispref = 'Y' AND lat = 'ENG' "
-            + "LIMIT 20";
+            + "(cui = ? or (code = ? AND sab like ?)) "
+            + "AND ispref = 'Y' AND lat = 'ENG' LIMIT 20";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, str + "%");
-      statement.setString(2, (codingSystem == null ? "" : codingSystem) + "%");
-      statement.setString(3, str);
+      statement.setString(1, str);
+      statement.setString(2, str);
+      statement.setString(3, codingSystem == null ? "%" : codingSystem);
       ResultSet result = statement.executeQuery();
       Map<String, UmlsConcept> concepts = new TreeMap<>();
       while (result.next()) {
@@ -254,11 +253,15 @@ public class UmlsApi {
         String name;
         if (str.equals(cui)) name = String.format("CUI %s: %s", cui, str1);
         else name = String.format("%s in %s: %s", code, sab, str1);
-        if (!concepts.containsKey(cui)) concepts.put(cui, new UmlsConcept(cui, name));
-        UmlsConcept concept = concepts.get(cui);
-        concept.getSourceConcepts().add(new SourceConcept(cui, sab, code));
+        System.out.println("SOURCE CONCEPT: " + name);
+        concepts
+            .computeIfAbsent(cui, k -> new UmlsConcept(cui, name))
+            .getSourceConcepts()
+            .add(new SourceConcept(cui, sab, code));
       }
-      return new LinkedList<UmlsConcept>(concepts.values());
+      List<UmlsConcept> res = new LinkedList<>(concepts.values());
+      res.sort(Comparator.comparing(c -> c.toString()));
+      return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for completions", e);
     }
@@ -335,13 +338,6 @@ public class UmlsApi {
       ignoreTermTypes = this.ignoreTermTypes;
     }
 
-    logger.debug(
-        String.format(
-            "get source concepts - %s - %s - %s",
-            cuis.stream().collect(Collectors.joining(",")),
-            codingSystems.stream().collect(Collectors.joining(",")),
-            ignoreTermTypes.stream().collect(Collectors.joining(","))));
-
     Map<String, List<SourceConcept>> sourceConcepts =
         nonUmls.getSourceConcepts(cuis, codingSystems);
 
@@ -356,13 +352,10 @@ public class UmlsApi {
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-
       statement.setArray(1, connection.createArrayOf("VARCHAR", cuis.toArray()));
       statement.setArray(2, connection.createArrayOf("VARCHAR", codingSystems.toArray()));
       statement.setArray(3, connection.createArrayOf("VARCHAR", ignoreTermTypes.toArray()));
-      logger.debug(statement);
       ResultSet result = statement.executeQuery();
-
       String lastCui = null, lastSab = null, lastCode = null;
       SourceConcept currentSourceConcept = null;
       while (result.next()) {
@@ -703,9 +696,44 @@ public class UmlsApi {
 
         return definitions;
       } catch (SQLException e) {
+        e.printStackTrace();
         throw CodeMapperException.server("Cannot execute query for definitions", e);
       }
     }
+  }
+
+  private Map<String, Collection<String>> getRetiredConcepts(Collection<String> cuis)
+      throws CodeMapperException {
+    String query = "SELECT cui1, cui2 FROM mrcui WHERE cui1 = ANY(?)";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setArray(1, connection.createArrayOf("VARCHAR", cuis.toArray()));
+      System.out.println(statement);
+      ResultSet set = statement.executeQuery();
+      Map<String, Collection<String>> res = new HashMap<>();
+      while (set.next()) {
+        String cui1 = set.getString(1);
+        String cui2 = set.getString(2);
+        res.computeIfAbsent(cui1, key -> new HashSet<>()).add(cui2);
+      }
+      return res;
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query for retired concepts", e);
+    }
+  }
+
+  private Collection<String> replaceRetired(
+      Map<String, Collection<String>> retired, Collection<String> conceptIds) {
+    Collection<String> res = new HashSet<>();
+    for (String cui : conceptIds) {
+      if (retired.containsKey(cui)) {
+        res.addAll(retired.get(cui));
+      } else {
+        res.add(cui);
+      }
+    }
+    return res;
   }
 
   public Map<String, UmlsConcept> getConcepts(
@@ -732,109 +760,10 @@ public class UmlsApi {
         if (semanticTypes.containsKey(cui)) concept.setSemanticTypes(semanticTypes.get(cui));
         concepts.put(cui, concept);
       }
-      logger.debug("Found source concepts " + concepts.size());
-
       return concepts;
     }
   }
-  /*
-    class Node {
-      final String cui;
-      final String relation;
 
-      public Node(String cui, String relation) {
-        this.cui = cui;
-        this.relation = relation;
-      }
-
-      public String toString() {
-        return String.format("%s/%s", cui, relation);
-      }
-    }
-
-    public List<UmlsConcept> getSimilarConcepts(
-        List<String> cuis,
-        List<String> missingCodingSystems,
-        List<String> codingSystems,
-        List<String> excludeCuis0)
-        throws CodeMapperException {
-
-      if (cuis.isEmpty() || missingCodingSystems.isEmpty()) return Arrays.asList();
-
-      Set<String> excludedCuis = new HashSet<>(excludeCuis0);
-      Map<String, List<Node>> paths = new HashMap<>();
-      for (String cui : cuis) paths.put(cui, new LinkedList<Node>());
-
-      for (int i = 0; i <= SIMILAR_CONCEPTS_MAX_DEPTH; i++) {
-        Set<String> newCuis = new HashSet<>();
-        List<String> resultCuis = new LinkedList<>();
-        Map<String, List<String>> cuisByRel = new HashMap<>();
-        for (String cui : cuis) {
-          String rel = null;
-          List<Node> path = paths.get(cui);
-          if (path.size() > 0)
-            for (Node node : path)
-              if (RELATIONS_MORE_SPECIFIC_OR_GENERAL.contains(node.relation)) {
-                rel = node.relation;
-                break;
-              }
-          if (!cuisByRel.containsKey(rel)) cuisByRel.put(rel, new LinkedList<String>());
-          cuisByRel.get(rel).add(cui);
-        }
-        Map<String, Map<String, List<UmlsConcept>>> relateds = new HashMap<>();
-        for (String rel0 : cuisByRel.keySet()) {
-          List<String> relations1;
-          if (rel0 == null) {
-            relations1 = new LinkedList<>(RELATIONS_MORE_SPECIFIC_OR_GENERAL);
-            // relations1.addAll(RELATIONS_SIBLING);
-          } else if (RELATIONS_MORE_SPECIFIC.contains(rel0))
-            relations1 = new LinkedList<>(RELATIONS_MORE_SPECIFIC);
-          else if (RELATIONS_MORE_GENERAL.contains(rel0))
-            relations1 = new LinkedList<>(RELATIONS_MORE_GENERAL);
-          else throw new RuntimeException("Impossible relation");
-          relations1.addAll(RELATIONS_LOCAL);
-          Map<String, Map<String, List<UmlsConcept>>> relateds1 =
-              getRelated(
-                  cuisByRel.get(rel0),
-                  missingCodingSystems,
-                  new LinkedList<>(relations1),
-                  new LinkedList<>());
-          for (String cui : relateds1.keySet()) {
-            if (!relateds.containsKey(cui))
-              relateds.put(cui, new HashMap<String, List<UmlsConcept>>());
-            for (String rel : relateds1.get(cui).keySet()) {
-              if (!relateds.get(cui).containsKey(rel))
-                relateds.get(cui).put(rel, new LinkedList<UmlsConcept>());
-              relateds.get(cui).get(rel).addAll(relateds1.get(cui).get(rel));
-            }
-          }
-        }
-        for (String cui : relateds.keySet())
-          for (String rel : relateds.get(cui).keySet())
-            for (UmlsConcept concept : relateds.get(cui).get(rel))
-              if (!excludedCuis.contains(concept.getCui())) {
-                excludedCuis.add(concept.getCui());
-                List<Node> path = new LinkedList<>(paths.get(cui));
-                path.add(new Node(cui, rel));
-                paths.put(concept.getCui(), path);
-                if (!RELATIONS_LOCAL.contains(rel)) newCuis.add(concept.getCui());
-                for (SourceConcept sourceConcept : concept.getSourceConcepts())
-                  if (missingCodingSystems.contains(sourceConcept.getCodingSystem())) {
-                    resultCuis.add(concept.getCui());
-                    break;
-                  }
-              }
-        if (!resultCuis.isEmpty()) {
-          Map<String, UmlsConcept> concepts = getConcepts(resultCuis, codingSystems, null);
-          //                for (UmlsConcept concept: concepts.values())
-          //                    System.out.println(String.format(" - %s: %s", concept,
-          // paths.get(concept.getCui())));
-          return new LinkedList<>(concepts.values());
-        } else cuis = new LinkedList<>(newCuis);
-      }
-      return Arrays.asList();
-    }
-  */
   public VersionInfo getVersionInfo() {
     return this.versionInfo;
   }
@@ -948,7 +877,7 @@ public class UmlsApi {
       Map<String, Map<String, String>> codeNames = new HashMap<>(); // vocId -> codeId -> names
       Map<String, Map<String, String>> codeTags = new HashMap<>(); // vocId -> codeId -> tags
       Map<String, Map<String, Topic>> topicByCode = new HashMap<>(); // vocId -> codeId -> topic
-      Map<String, Topics> topicsByConcept = new HashMap<>();
+      Map<String, List<String>> messagesByConcept = new HashMap<>();
       String importAuthor = "SharePoint import";
 
       int rowIx = 1;
@@ -1006,8 +935,11 @@ public class UmlsApi {
         }
       }
 
+      Map<String, Collection<String>> retired = getRetiredConcepts(conceptIds);
+      Collection<String> conceptIds1 = replaceRetired(retired, conceptIds);
+
       // retrieve UMLS data
-      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds, vocIds, null);
+      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds1, vocIds, null);
       Map<String, CodingSystem> codingSystems = new HashMap<>();
       for (CodingSystem codingSystem : getCodingSystems()) {
         codingSystems.put(codingSystem.getAbbreviation(), codingSystem);
@@ -1050,7 +982,10 @@ public class UmlsApi {
         for (String codeId : codeIds.get(vocId)) {
           boolean customCode =
               !mapping.codes.getOrDefault(vocId, new HashMap<>()).containsKey(codeId);
-          Set<String> conceptIds1 = codeConcepts.getOrDefault(vocId, new HashMap<>()).get(codeId);
+          Collection<String> conceptIds2 =
+              codeConcepts.getOrDefault(vocId, new HashMap<>()).get(codeId);
+          Collection<String> conceptIds3 =
+              conceptIds2 == null ? null : replaceRetired(retired, conceptIds2);
           if (customCode) {
             // create custom code
             String codeName =
@@ -1060,7 +995,7 @@ public class UmlsApi {
             Code code = new Code(codeId, codeName, true, true, null);
             mapping.codes.computeIfAbsent(vocId, k -> new HashMap<>()).put(codeId, code);
             // add custom code to concepts
-            if (conceptIds1 == null) {
+            if (conceptIds3 == null) {
               mapping
                   .concepts
                   .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
@@ -1068,7 +1003,7 @@ public class UmlsApi {
                   .computeIfAbsent(vocId, k -> new HashSet<>())
                   .add(codeId);
             } else {
-              for (String conceptId : conceptIds1) {
+              for (String conceptId : conceptIds3) {
                 Concept concept = mapping.concepts.get(conceptId);
                 if (concept == null) {
                   throw CodeMapperException.user(
@@ -1084,10 +1019,10 @@ public class UmlsApi {
             }
           } else {
             // check code validity
-            if (conceptIds1 == null) {
+            if (conceptIds3 == null) {
               warnNoConcept.computeIfAbsent(vocId, (key) -> new HashSet<>()).add(codeId);
             } else {
-              for (String conceptId : conceptIds1) {
+              for (String conceptId : conceptIds3) {
                 Concept concept = mapping.concepts.get(conceptId);
                 assert concept != null;
                 boolean hasCode =
@@ -1169,36 +1104,39 @@ public class UmlsApi {
 
       // Attach warnings as comment on custom CUI
       if (!warnings.isEmpty()) {
-        String date =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
         String content = warnings.stream().collect(Collectors.joining("\n"));
-        Message msg = new Message(messageIx++, importAuthor, date, content, false);
         mapping.concepts.computeIfAbsent(CUSTOM_CUI, k -> customConcept);
-        Topics tops = topicsByConcept.computeIfAbsent(CUSTOM_CUI, k -> new Topics());
-        Integer topicId = tops.size();
-        Topic top = new Topic(topicId, "Import warnings", new Action(importAuthor, date), null);
-        top.messages.add(msg);
-        tops.put(topicId, top);
+        messagesByConcept.computeIfAbsent(CUSTOM_CUI, k -> new LinkedList<>()).add(content);
+      }
+
+      for (String cui1 : retired.keySet()) {
+        for (String cui2 : retired.get(cui1)) {
+          messagesByConcept
+              .computeIfAbsent(cui2, k -> new LinkedList<>())
+              .add(String.format("Changed from retired CUI %s", cui1));
+        }
       }
 
       AllTopics allTopics = new AllTopics();
-      allTopics.byConcept = topicsByConcept;
-      allTopics.byCode =
-          topicByCode.entrySet().stream()
-              .collect(
-                  Collectors.toMap(
-                      Entry::getKey,
-                      entry ->
-                          entry.getValue().entrySet().stream()
-                              .collect(
-                                  Collectors.toMap(
-                                      Entry::getKey,
-                                      entry1 -> {
-                                        Topic topic = entry1.getValue();
-                                        Topics topics = new Topics();
-                                        topics.put(topic.id, topic);
-                                        return topics;
-                                      }))));
+      for (String cui : messagesByConcept.keySet()) {
+        String date =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
+        Topic topic = new Topic(0, "CSV import", new Action(importAuthor, date), null);
+        for (String content : messagesByConcept.get(cui)) {
+          Message msg = new Message(messageIx++, importAuthor, date, content, false);
+          topic.messages.add(msg);
+        }
+        allTopics.byConcept.computeIfAbsent(cui, k -> new Topics()).put(0, topic);
+      }
+      for (String voc : topicByCode.keySet()) {
+        allTopics.byCode.put(voc, new HashMap<>());
+        for (String code : topicByCode.get(voc).keySet()) {
+          Topic topic = topicByCode.get(voc).get(code);
+          Topics topics = new Topics();
+          topics.put(topic.id, topic);
+          allTopics.byCode.get(voc).put(code, topics);
+        }
+      }
 
       return new ImportedMapping(mapping, allTopics, warnings);
     } catch (CsvValidationException | IOException e) {
