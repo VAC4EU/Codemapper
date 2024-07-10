@@ -277,11 +277,12 @@ public class ReviewApi {
 
   public static class TopicInfo {
     public String mappingUUID;
+    public boolean isResolved;
   }
 
   public TopicInfo getTopicInfo(int topicId) throws CodeMapperException {
     String query =
-        "SELECT cd.uuid FROM review_topic t "
+        "SELECT cd.uuid, t.resolved FROM review_topic t "
             + "INNER JOIN case_definitions cd ON cd.id = t.case_definition_id "
             + "WHERE t.id = ?";
     try (Connection connection = connectionPool.getConnection();
@@ -293,6 +294,7 @@ public class ReviewApi {
       }
       TopicInfo info = new TopicInfo();
       info.mappingUUID = set.getString(1);
+      info.isResolved = set.getBoolean(2);
       return info;
     } catch (SQLException e) {
       e.printStackTrace();
