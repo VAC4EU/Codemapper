@@ -5,7 +5,7 @@
       Modify {{selectedConcepts.length}} concept{{selectedConcepts.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)" [disabled]="!hasSelectedConcepts()">Tags</button>
+      <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)" [disabled]="!hasSelectedConcepts()">Tag</button>
       <button mat-stroked-button (click)="delete(selectedConcepts)" [disabled]="!hasSelectedConcepts()" color="warn">Delete</button>
     </mat-card-actions>
   </mat-card>

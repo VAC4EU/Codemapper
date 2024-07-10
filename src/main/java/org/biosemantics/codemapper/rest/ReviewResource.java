@@ -98,7 +98,7 @@ public class ReviewResource {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
       if (topic.isResolved) {
-    	  throw CodeMapperException.user("cannot create message on resolved topic");
+        throw CodeMapperException.user("cannot create message on resolved topic");
       }
       CodeMapperApplication.getReviewApi()
           .newMessage(mappingUUID, topicId, content, user.getUsername(), null);
