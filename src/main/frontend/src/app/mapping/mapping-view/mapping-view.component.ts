@@ -187,7 +187,7 @@ export class MappingViewComponent implements HasPendingChanges {
   async reviewRun(op : ReviewOperation) {
     console.log("review run", op);
     if (this.mappingUUID == null) {
-      alert("cannot run review operation, not saved yet");
+      alert("Please save the mapping before review");
     } else {
       await op.run(this.apiService, this.mappingUUID).toPromise()!;
       await this.reloadReviews();
