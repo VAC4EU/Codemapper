@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, Component } from '@angular/core';
+import { Input, Component, SimpleChanges } from '@angular/core';
 import { Vocabulary } from '../data';
 import { SelectionModel } from '@angular/cdk/collections';
+import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'vocabularies-table',
@@ -26,10 +27,18 @@ import { SelectionModel } from '@angular/cdk/collections';
   styleUrls: ['./vocabularies-table.component.scss']
 })
 export class VocabulariesTableComponent {
+  @Input() showFilter : boolean = false;
   @Input() vocabularies : Vocabulary[] = [];
+  dataSource : MatTableDataSource<Vocabulary> = new MatTableDataSource<Vocabulary>();
   public selection = new SelectionModel<Vocabulary>(true, []);
 
   columns : string[] = ['select', 'id', 'name', 'version'];
+
+  ngOnChanges(changes : SimpleChanges) {
+    if (changes['vocabularies']) {
+      this.dataSource.data = changes['vocabularies'].currentValue;
+    }
+  }
 
   isAllSelected() {
     return this.selection.selected.length == this.vocabularies.length;
@@ -49,5 +58,12 @@ export class VocabulariesTableComponent {
     } else {
       this.vocabularies.forEach(row => this.selection.select(row));
     }
+  }
+  resetFilter(input : HTMLInputElement) {
+    this.dataSource.filter = input.value = '';
+  }
+  applyFilter(event : Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 }

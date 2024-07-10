@@ -1,4 +1,12 @@
-<table mat-table [dataSource]="vocabularies">
+<mat-form-field *ngIf="showFilter">
+  <mat-label>Filter</mat-label>
+  <input matInput (keyup)="applyFilter($event)" #input>
+    <button matSuffix mat-icon-button aria-label="Clear" (click)="resetFilter(input)">
+      <mat-icon>close</mat-icon>
+    </button>
+</mat-form-field>
+
+<table mat-table [dataSource]="dataSource">
   <ng-container matColumnDef="select">
     <th mat-header-cell *matHeaderCellDef>
       <mat-checkbox (change)="$event ? toggleAllRows() : null"
