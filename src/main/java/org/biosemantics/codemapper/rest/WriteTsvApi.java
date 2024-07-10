@@ -128,7 +128,7 @@ public class WriteTsvApi {
               concept.concept.getId(),
               concept.concept.getName(),
               tag,
-              "-");
+              "");
           writtenCodes.add(code0);
           wroteCode = true;
           for (Code code1 : code.descendants) {
@@ -181,14 +181,9 @@ public class WriteTsvApi {
       String url)
       throws IOException {
     writeInfo(output, info, url, version);
-    writeHeader(output, CODES_HEADERS);
+    writeRow(output, CODES_HEADERS);
     PreparedMapping prepared = prepare(mapping, descendants);
     writePrepared(output, prepared);
-  }
-
-  private void writeHeader(OutputStream output, String... args) throws IOException {
-    String line = String.join(",", Arrays.asList(args)) + "\n";
-    output.write(line.getBytes());
   }
 
   private void writeRow(OutputStream output, String... args) throws IOException {
@@ -198,7 +193,11 @@ public class WriteTsvApi {
       if (arg == null) {
         arg = "";
       }
-      args1[i] = "\"" + arg.replaceAll("\"", "\"\"") + "\"";
+      if (arg.contains("\"") || arg.contains(",")) {
+    	  args1[i] = "\"" + arg.replaceAll("\"", "\"\"") + "\"";
+      } else {
+    	  args1[i] = arg;
+      }
     }
     String line = String.join(",", Arrays.asList(args1)) + "\n";
     output.write(line.getBytes());
