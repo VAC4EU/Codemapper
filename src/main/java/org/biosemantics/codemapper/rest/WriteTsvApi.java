@@ -43,7 +43,8 @@ public class WriteTsvApi {
   public static final String FILE_EXTENSION = "csv";
   public static final String MIME_TYPE = "text/csv";
   static final String[] CODES_HEADERS = {
-    "coding_system", "code", "term", "concept", "concept_name", "tag", "comment"
+    "Coding system", "Code", "Term", "Concept", "Concept name", "Tag", "Origin"
+    //"coding_system", "code", "term", "concept", "concept_name", "tag", "comment"
   };
 
   @XmlRootElement
