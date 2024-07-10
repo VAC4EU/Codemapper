@@ -8,15 +8,7 @@
 
 $pad: calc((var(--mdc-checkbox-state-layer-size) - 18px) / 2);
 
-.code {
-    padding: $pad;
-}
-
-.concept {
-    padding: $pad;
-}
-
-.comment {
+.tag, .code, .concept, .comment {
     padding: $pad;
 }
 

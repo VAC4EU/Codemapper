@@ -34,6 +34,11 @@ export type Concepts = { [key : ConceptId] : Concept }
 
 export type Codes = { [key : VocabularyId] : { [key : CodeId] : Code } }
 
+export interface Tags {
+  concepts : { [key : ConceptId] : Tag },
+  codes : { [key : VocabularyId] : { [key : CodeId] : Tag } }
+}
+
 export interface ConceptsCodes {
   concepts : Concepts,
   codes : Codes
@@ -146,22 +151,98 @@ export class Mapping {
     return res;
   }
   public getCustomCodes() : CustomCodes {
-    let codes : Codes = {};
-    let concepts : CustomConcepts = {};
-    for (let [vocId, codes1] of Object.entries(this.codes)) {
-      for (let [codeId, code] of Object.entries(codes1)) {
+    let res : CustomCodes = { codes: {}, concepts: {} };
+    for (let [vocId, codes] of Object.entries(this.codes)) {
+      for (let [codeId, code] of Object.entries(codes)) {
         if (code.custom) {
-          codes[vocId] ??= {};
-          codes[vocId][codeId] = code;
+          res.codes[vocId] ??= {};
+          res.codes[vocId][codeId] = code;
           for (let conceptId of this.getConceptsByCode(vocId, codeId)) {
-            concepts[conceptId] ??= {};
-            concepts[conceptId][vocId] ??= [];
-            concepts[conceptId][vocId].push(codeId);
+            res.concepts[conceptId] ??= {};
+            res.concepts[conceptId][vocId] ??= [];
+            res.concepts[conceptId][vocId].push(codeId);
           }
         }
       }
     }
-    return { codes, concepts };
+    return res;
+  }
+  public setCustomCodes(custom : CustomCodes) {
+    for (let vocId of Object.keys(custom.codes)) {
+      for (let code of Object.values(custom.codes[vocId])) {
+        this.codes[vocId] ??= {};
+        if (this.codes[vocId][code.id] !== undefined) {
+          throw new Error(`Custom code ${code.id} in ${vocId} already defined as regular code`);
+        }
+        this.codes[vocId][code.id] = code;
+      }
+    }
+    for (let conceptId of Object.keys(custom.concepts)) {
+      if (this.concepts[conceptId] === undefined) {
+        throw new Error(`Custom code with unavailable concept ${conceptId}`)
+      }
+      for (let vocId of Object.keys(custom.concepts[conceptId])) {
+        for (let codeId of custom.concepts[conceptId][vocId]) {
+          this.concepts[conceptId].codes[vocId] ??= new Set();
+          this.concepts[conceptId].codes[vocId].add(codeId);
+        }
+      }
+    }
+  }
+  public getTags() : Tags {
+    let res : Tags = { concepts: {}, codes: {} };
+    for (let concept of Object.values(this.concepts)) {
+      if (concept.tag != null) {
+        res.concepts[concept.id] = concept.tag;
+      }
+    }
+    let codes : { [key : VocabularyId] : { [key : CodeId] : Tag } } = {};
+    for (let vocId of Object.keys(this.codes)) {
+      for (let code of Object.values(this.codes[vocId])) {
+        if (code.tag != null) {
+          res.codes[vocId] ??= {};
+          res.codes[vocId][code.id] = code.tag;
+        }
+      }
+    }
+    return res;
+  }
+  public setTags(tags : Tags) {
+    for (let id of Object.keys(tags.concepts)) {
+      if (this.concepts[id]) {
+        this.concepts[id].tag = tags.concepts[id];
+      }
+    }
+    for (let vocId of Object.keys(tags.codes)) {
+      if (this.codes[vocId]) {
+        for (let codeId of Object.keys(tags.codes[vocId])) {
+          if (this.codes[vocId][codeId]) {
+            this.codes[vocId][codeId].tag = tags.codes[vocId][codeId];
+          }
+        }
+      }
+    }
+  }
+  public getCodesDisabled() : { [key : VocabularyId] : Set<CodeId> } {
+    let res : { [key : VocabularyId] : Set<CodeId> } = {};
+    for (let vocId of Object.keys(this.codes)) {
+      res[vocId] ??= new Set();
+      for (let code of Object.values(this.codes[vocId])) {
+        if (!code.enabled) {
+          res[vocId].add(code.id);
+        }
+      }
+    }
+    return res;
+  }
+  public setCodesDisabled(disabled : { [key : VocabularyId] : Set<CodeId> }) {
+    for (let vocId of Object.keys(disabled)) {
+      for (let codeId of disabled[vocId]) {
+        if (this.codes[vocId]?.[codeId]) {
+          this.codes[vocId][codeId].enabled = false;
+        }
+      }
+    }
   }
   public runIntern(op : Operation) {
     let inv = op.run(this);

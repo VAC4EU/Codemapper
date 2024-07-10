@@ -204,7 +204,7 @@ export class ConceptsComponent implements OnInit {
   }
   remap() {
     if (this.umlsVersion != null) {
-      let ignoreTermTypes = this.ignoreTermTypes.split(",");
+      let ignoreTermTypes = this.ignoreTermTypes ? this.ignoreTermTypes.split(",") : [];
       let umlsVersion = this.umlsVersion;
       this.api.concepts(Object.keys(this.mapping.concepts), Object.keys(this.mapping.vocabularies), ignoreTermTypes)
         .subscribe(conceptsCodes => {

@@ -472,43 +472,16 @@ export class Remap extends Operation {
     return "Remap concept codes";
   }
   override run(mapping : Mapping) : Operation | undefined {
-    let custom = mapping.getCustomCodes();
-    let enabled : { [key : VocabularyId] : { [key : CodeId] : boolean } } = {};
-    for (let vocId of Object.keys(mapping.codes)) {
-      enabled[vocId] = {};
-      for (let [codeId, code] of Object.entries(mapping.codes[vocId])) {
-        enabled[vocId][codeId] = code.enabled;
-      }
-    }
+    let customCodes = mapping.getCustomCodes();
+    let disabled = mapping.getCodesDisabled();
+    let tags = mapping.getTags();
     let customConcept = mapping.concepts[CUSTOM_CUI];
     mapping.umlsVersion = this.umlsVersion;
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
-    for (let [vocId, codes] of Object.entries(custom.codes)) {
-      mapping.codes[vocId] ??= {};
-      for (let codeId of Object.keys(codes)) {
-        if (mapping.codes[vocId][codeId] !== undefined) {
-          throw new Error(`Custom code ${codeId} in ${vocId} already defined as regular code`);
-        }
-        mapping.codes[vocId][codeId] = codes[codeId];
-      }
-    }
-    for (let [conceptId, codes] of Object.entries(custom.concepts)) {
-      if (mapping.concepts[conceptId] === undefined) {
-        throw new Error(`Custom code with unavailable concept ${conceptId}`)
-      }
-      for (let vocId of Object.keys(codes)) {
-        for (let codeId of codes[vocId]) {
-          mapping.concepts[conceptId].codes[vocId] ??= new Set();
-          mapping.concepts[conceptId].codes[vocId].add(codeId);
-        }
-      }
-    }
-    for (let vocId of Object.keys(mapping.codes)) {
-      for (let [codeId, code] of Object.entries(mapping.codes[vocId])) {
-        code.enabled = enabled?.[vocId]?.[codeId] ?? true;
-      }
-    }
+    mapping.setCustomCodes(customCodes);
+    mapping.setCodesDisabled(disabled);
+    mapping.setTags(tags);
     if (customConcept) {
       mapping.concepts[customConcept.id] = customConcept;
     }
