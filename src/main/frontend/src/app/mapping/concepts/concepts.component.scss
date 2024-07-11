@@ -1,0 +1,8 @@
+::ng-deep .codeSearchVocId {
+    .mat-mdc-select-value {
+        max-width: max-content !important;
+    }
+    .mat-mdc-form-field-infix {
+        width: fit-content !important;  // <= and HERE...
+    }
+ }

@@ -1,8 +1,26 @@
 
-[//]: # (pandoc -s --metadata title="CodeMapper NEWS" --css style.css -i NEWS.md -o src/main/webapp/NEWS.html)
+[//]: # (pandoc -i NEWS.md -o ui-2023/src/app/mapping/news-view/news-view.component.html)
 
-Next
-----
+<section class="center-content mat-elevation-z3">
+
+<mat-toolbar>
+  <app-navigation></app-navigation>
+  CodeMapper: News
+  <span class="menu-spacer"></span>
+  <app-loggedin></app-loggedin>
+</mat-toolbar>
+
+Testing
+-------
+
+- complete overhaul of the user interface
+- import a mapping from a CSV file
+- remap a mapping using the latest UMLS data
+- review on codes
+- view, select and tag codes per coding system, and create custom codes
+- view coding systems, and create custom coding systems
+- integrated non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
+- rename mappings
 
 October 4, 2023
 ----
@@ -124,3 +142,5 @@ Published as
 
 Development under the IMI ADVANCE project at the Erasmus Medical Center,
 Rotterdam.
+
+</section>

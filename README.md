@@ -14,6 +14,14 @@ our article:
 > project. Pharmacoepidemiology and Drug Safety 2017. doi:10.1002/pds.4245
 > ([link](http://onlinelibrary.wiley.com/doi/10.1002/pds.4245/full))
 
+## Components
+
+- `src/main/java`: backend (J2EE)
+- `src/main/frontend/`: frontend (Angular)
+- `AESI-import/`: normalization of mapping files from SharePoint
+- `non-umls/`: integration of non-UMLS coding systems
+- `codemapper_manager`: administration interface
+
 ## Installation
 
 The installation of CodeMapper requires two Java web applications which can be deployed on

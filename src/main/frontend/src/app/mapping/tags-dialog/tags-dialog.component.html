@@ -1,0 +1,22 @@
+<h1 mat-dialog-title>Set tags for selection</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <mat-icon matPrefix fontIcon="label"></mat-icon>
+    <input type="text"
+           matInput
+           [(ngModel)]="tag"
+           [matAutocomplete]="auto">
+    <button *ngIf="tag" matSuffix mat-icon-button aria-label="Clear" (click)="tag=''">
+      <mat-icon>close</mat-icon>
+    </button>
+    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" (optionSelected)="selected($event)">
+      <mat-option *ngFor="let tag of availableTags" [value]="tag">
+        {{tag}}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-button [mat-dialog-close]="tag || null" color="primary" cdkFocusInitial>Ok</button>
+</div>

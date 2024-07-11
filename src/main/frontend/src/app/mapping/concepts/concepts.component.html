@@ -1,0 +1,132 @@
+<div class="toolbox">
+
+  <mat-card>
+    <mat-card-header matTooltip="Modify the selected concepts.">
+      Modify {{selectedConcepts.length}} concept{{selectedConcepts.length == 1 ? '' : 's'}}
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)" [disabled]="!hasSelectedConcepts()">Tag</button>
+      <button mat-stroked-button (click)="delete(selectedConcepts)" [disabled]="!hasSelectedConcepts()" color="warn">Delete</button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header matTooltip="Expand a concept to related concepts. Operates on a single selected concept.">
+      Expand concept
+    </mat-card-header>
+    <mat-card-actions>
+      <button
+        matTooltip="Expand to concepts that are broader than the selected concept."
+        (click)="broaderConcepts(selectedConcepts[0], vocIds())"
+        [disabled]="selectedConcepts.length != 1"
+        mat-stroked-button>
+        Broader
+      </button>
+      <button
+        matTooltip="Expand to concepts that are narrower than the selected concept"
+        (click)="narrowerConcepts(selectedConcepts[0], vocIds())"
+        [disabled]="selectedConcepts.length != 1"
+        mat-stroked-button>
+        Narrower
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header matTooltip="Search and add concepts by CUI, code or term. Concepts that match a CUI or code are shown in dropdown, optionally with vocabulary as prefix (e.g., ICD9:780). Use the search button to retrieve all concepts that mention the query text.">
+      Search concepts
+    </mat-card-header>
+    <mat-card-actions class="dense">
+      <mat-form-field>
+        <input #query matInput type="text" placeholder="Code or concept query" [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option *ngFor="let option of codeConcepts" (click)="selectAutocompleteCode(option, query.value)">
+            {{option.name}}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+      <button
+        (click)="searchAddConcepts(query.value)"
+        mat-stroked-button
+        matTooltip="Search concepts by query">Search</button>
+      <button
+        (click)="openDialog(indexer)"
+        mat-stroked-button
+        matTooltip="Search concepts in free text">
+        Free&#8209;text
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header>
+      Mapping
+    </mat-card-header>
+    <mat-card-actions>
+      <div matTooltip="Remap concept codes with the currently supported version of the UMLS.">
+        <button (click)="openDialog(remapDialog)" [disabled]="mapping.undoStack.length > 0" mat-stroked-button>
+          Remap
+        </button>
+      </div>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<concepts-table
+  #table
+  [showCodeTagIndication]="true"
+  [concepts]="mapping.concepts"
+  [codes]="mapping.codes"
+  [vocabularies]="vocIds()"
+  [allTopics]="allTopics"
+  (reviewRun)="reviewRun.emit($event)"
+  (selected)="setSelectedConcepts($event)">
+</concepts-table>
+
+<ng-template #remapDialog>
+  <h2 matDialogTitle>Remap concept codes using the current version of UMLS</h2>
+  <mat-dialog-content>
+    <p>UMLS version</p>
+    <ul>
+      <li>used in the mapping: {{mapping.umlsVersion || "unknown"}}</li>
+      <li>latest available: {{umlsVersion}}</li>
+    </ul>
+    <div>
+      <mat-form-field>
+        <mat-label>Ignored term types</mat-label>
+        <input matInput [(ngModel)]="ignoreTermTypes" type="text">
+      </mat-form-field>
+      <p>
+        (See the
+        <a target="_blank" href="https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/abbreviations.html#mrdoc_TTY">list of term types</a>
+        and its
+        <a target="_blank" href="https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/abbreviations.html#tty_class">classes</a>.)
+      </p>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button matDialogClose>Cancel</button>
+    <div matTooltip="Update the concept codes using the latest version of the UMLS. Save before, remapping cannot be undone.">
+      <button
+        (click)="remap()"
+        color="primary"
+        mat-raised-button
+        matDialogClose
+        color="primary">
+        Remap
+      </button>
+    </div>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #indexer>
+  <h2 matDialogTitle>Search and add concepts from free-text</h2>
+  <mat-dialog-content>
+    <indexer
+      (confirmedIndexing)="addIndexing($event); dialogRef!.close()"
+      confirmLabel="Add selected concepts"></indexer>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-button matDialogClose>Cancel</button>
+  </mat-dialog-actions>
+</ng-template>

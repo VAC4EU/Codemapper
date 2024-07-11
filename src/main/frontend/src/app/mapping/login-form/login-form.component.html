@@ -1,0 +1,13 @@
+<mat-form-field>
+  <mat-label>Username</mat-label>
+  <input matInput [formControl]="username" type="text">
+</mat-form-field>
+<mat-form-field>
+  <mat-label>Password</mat-label>
+  <input matInput [formControl]="password" [type]="hide ? 'password' : 'text'" (keydown.enter)="login()">
+  <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
+    <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+  </button>
+</mat-form-field>
+<p *ngIf="error">{{error}}</p>
+<button mat-raised-button color="primary" (click)="login()" type="button">Login</button>

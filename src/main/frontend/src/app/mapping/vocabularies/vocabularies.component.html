@@ -1,0 +1,22 @@
+<div class="toolbox">
+  <mat-card>
+    <mat-card-header>
+      Modify {{table.selection.selected.length}} vocabular{{table.selection.selected.length == 1 ? 'y' : 'ies'}}
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="delete(table.selection.selected)" [disabled]="table.selection.selected.length == 0">Delete</button>
+    </mat-card-actions>
+  </mat-card>
+  <mat-card>
+    <mat-card-header>
+      Add vocabulary
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="addStandard()">Standard</button>
+      <button mat-stroked-button (click)="createCustom()">Custom</button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<vocabularies-table #table [vocabularies]="vocabularies">
+</vocabularies-table>

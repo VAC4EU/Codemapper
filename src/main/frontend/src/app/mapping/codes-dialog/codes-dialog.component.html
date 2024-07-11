@@ -1,0 +1,14 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<div mat-dialog-content>
+  <codes-table
+    [vocabularyId]="data.vocabularyId"
+    [mapping]="data.mapping"
+    [codes]="data.codes"
+    [codeParents]="data.codeParents"
+    [showTags]="false"
+    [showConcepts]="false">
+  </codes-table>
+</div>
+<div mat-dialog-actions>
+  <button mat-raised-button color="primary" (click)="close()">Close</button>
+</div>

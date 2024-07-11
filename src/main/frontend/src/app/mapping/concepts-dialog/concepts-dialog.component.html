@@ -1,0 +1,13 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<div mat-dialog-content>
+  <concepts-table
+    #table
+    [concepts]="data.concepts"
+    [codes]="data.codes"
+    [vocabularies]="data.vocabularies">
+  </concepts-table>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button [mat-dialog-close]="table.selection.selected" color="primary" cdkFocusInitial>{{data.action}}</button>
+</div>
