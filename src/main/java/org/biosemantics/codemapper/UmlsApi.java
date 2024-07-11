@@ -236,12 +236,14 @@ public class UmlsApi {
     String query =
         "SELECT DISTINCT cui, sab, code, str "
             + "FROM mrconso WHERE "
-            + "(cui = ? or (code = ? AND sab like ?)) "
-            + "AND ispref = 'Y' AND lat = 'ENG' LIMIT 20";
+            + "(cui = ? or (code LIKE ? AND sab like ?)) "
+            + "AND lat = 'ENG' "
+            + "ORDER BY code "
+            + "LIMIT 20";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, str);
-      statement.setString(2, str);
+      statement.setString(2, str + "%");
       statement.setString(3, codingSystem == null ? "%" : codingSystem);
       ResultSet result = statement.executeQuery();
       Map<String, UmlsConcept> concepts = new TreeMap<>();
