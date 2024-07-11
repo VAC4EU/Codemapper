@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, Output, Component, SimpleChanges, EventEmitter } from '@angular/core';
+import { Input, Output, Component, SimpleChanges, EventEmitter, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
 import { Code, CodeId, Concept, ConceptId, Mapping, VocabularyId } from '../data';
@@ -40,6 +42,8 @@ export class CodesTableComponent {
   @Input() reviewData : ReviewData | null = null;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Code[]> = new EventEmitter();
+  dataSource = new MatTableDataSource<Code>();
+  @ViewChild(MatSort) sort! : MatSort;
 
   columns : string[] = [];
   selectedCodes = new SelectionModel<Code>(true, []);
@@ -53,12 +57,26 @@ export class CodesTableComponent {
       .subscribe(s => this.selected.emit(s.source.selected));
   }
 
+  ngAfterViewInit() {
+    this.dataSource.sort = this.sort;
+    this.dataSource.sortingDataAccessor = (item : any, property : string) => {
+      switch (property) {
+        case 'code': return item.id;
+        case 'concepts': return this.codeConcepts(item.id).map(id => this.mapping.concepts[id].name).join(',');
+        default: return item[property];
+      }
+    };
+  }
+
   ngOnChanges(changes : SimpleChanges) {
     if (changes['allTopics'] !== undefined) {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
     if (changes['vocabularyId']) {
       setTimeout(() => this.selectedCodes.clear(), 0);
+    }
+    if (changes['codes']) {
+      this.dataSource.data = changes['codes'].currentValue;
     }
     let tag = this.showTags ? ["tag"] : [];
     let parents = this.codeParents == null ? [] : ["parents"];

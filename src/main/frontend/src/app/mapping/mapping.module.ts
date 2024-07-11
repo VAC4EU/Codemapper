@@ -42,7 +42,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-
+import { MatSortModule } from '@angular/material/sort';
 import { AppRoutingModule } from '../app-routing.module';
 import { MappingViewComponent } from './mapping-view/mapping-view.component';
 import { ConceptsComponent } from './concepts/concepts.component';
@@ -133,6 +133,7 @@ import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy
     MatToolbarModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatSortModule,
     NgFor,
     NgIf,
     NoopAnimationsModule,

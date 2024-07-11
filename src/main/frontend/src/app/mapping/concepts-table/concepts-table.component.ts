@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, Component, SimpleChanges, Output, EventEmitter } from '@angular/core';
+import { Input, Component, SimpleChanges, Output, EventEmitter, ViewChild } from '@angular/core';
+import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
 import { Concept, Vocabulary, VocabularyId, ConceptId, CodeId, Code } from '../data';
@@ -46,9 +48,10 @@ export class ConceptsTableComponent {
   @Input() showCodeTagIndication : boolean = false;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Concept[]> = new EventEmitter();
-  conceptsList : Concept[] = [];
+  dataSource : MatTableDataSource<Concept> = new MatTableDataSource<Concept>();
   selection = new SelectionModel<Concept>(true, []);
   columns : string[] = [];
+  @ViewChild(MatSort) sort! : MatSort;
 
   // indirection to reviews to get updates in the review dialog
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
@@ -59,6 +62,16 @@ export class ConceptsTableComponent {
   ) {
     this.selection.changed
       .subscribe(c => this.selected.emit(Array.from(this.selection.selected)))
+  }
+
+  ngAfterViewInit() {
+    this.dataSource.sort = this.sort;
+    this.dataSource.sortingDataAccessor = (item : any, property : string) => {
+      switch (property) {
+        case 'concept': return item.name;
+        default: return item[property];
+      }
+    };
   }
 
   ngOnChanges(changes : SimpleChanges) {
@@ -82,12 +95,12 @@ export class ConceptsTableComponent {
         this.selection.deselect(concept);
       }
     }
-    this.conceptsList = Object.values(this.concepts);
-    this.conceptsList.sort(sortConcepts);
+    this.dataSource.data = Object.values(this.concepts);
+    this.dataSource.data.sort(sortConcepts);
   }
 
   isAllSelected() {
-    return this.selection.selected.length == this.conceptsList.length;
+    return this.selection.selected.length == this.dataSource.data.length;
   }
 
   toggleAllRows() {
@@ -99,7 +112,7 @@ export class ConceptsTableComponent {
   }
 
   selectAll() {
-    this.conceptsList.forEach(row => this.selection.select(row));
+    this.dataSource.data.forEach(row => this.selection.select(row));
   }
 
   setSelected(concepts : Concept[]) {
