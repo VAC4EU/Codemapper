@@ -4,6 +4,13 @@
     <app-navigation [projectName]="projectName"></app-navigation>
     <span>CodeMapper: Project {{projectName}} ({{projectPerm?.toLowerCase()}})</span>
     <span class="menu-spacer"></span>
+    <span matTooltip="Download all mappings of the project">
+      <button
+        (click)="openDialog(downloadDialog)"
+        mat-icon-button>
+        <mat-icon>download</mat-icon>
+      </button>
+    </span>
     <app-loggedin></app-loggedin>
   </mat-toolbar>
   <h2>Mappings</h2>
@@ -13,7 +20,7 @@
         New mapping
       </mat-card-header>
       <mat-card-actions>
-        <span matTooltip="Create a new mapping (only for project admins)">
+        <span matTooltip="Create a new mapping (only for project owners)">
           <button
             (click)="openDialog(createMapping)"
             [disabled]="projectPerm != 'Admin'"
@@ -21,7 +28,7 @@
             Create
           </button>
         </span>
-        <span matTooltip="Import a mapping from a CSV file (only for project admins)">
+        <span matTooltip="Import a mapping from a CSV file (only for project owners)">
           <button
             (click)="importNew(projectName)"
             [disabled]="projectPerm != 'Admin'"
@@ -36,11 +43,11 @@
         {{selected.selected.length}} selected mapping{{selected.selected.length == 1 ? '' : 's'}}
       </mat-card-header>
       <mat-card-actions>
-        <span matTooltip="Rename one selected mapping (only for project admins)">
-        <button
-          mat-raised-button
-          [disabled]="projectPerm != 'Admin' || selected.selected.length != 1"
-          (click)="openDialog(renameDialog)">Rename</button>
+        <span matTooltip="Rename one selected mapping (only for project owners)">
+          <button
+            mat-raised-button
+            [disabled]="projectPerm != 'Admin' || selected.selected.length != 1"
+            (click)="openDialog(renameDialog)">Rename</button>
         </span>
       </mat-card-actions>
     </mat-card>
@@ -110,5 +117,21 @@
       (click)="renameMapping(selected.selected[0], newName.value)"
       matDialogClose
       color="primary">Ok</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #downloadDialog>
+  <h2 matDialogTitle>Download mapping</h2>
+  <mat-dialog-content>
+    Download selected mapping as CSV format (tab-separated values).
+    <mat-checkbox #includeDescendants checked=false [disabled]="true">Include descendant codes</mat-checkbox>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button matDialogClose>Cancel</button>
+    <button
+      mat-raised-button
+      (click)="download(projectName, includeDescendants.checked)"
+      matDialogClose
+      color="primary">Download</button>
   </mat-dialog-actions>
 </ng-template>

@@ -188,6 +188,7 @@ public class PersistencyApi {
     }
   }
 
+  /** Return the latest revision of a mapping, if it has one, or null otherwise. */
   public MappingRevision getLatestRevision(String mappingUUID) throws CodeMapperException {
     String query =
         "SELECT r.version, r.mapping, r.timestamp, r.summary, u.username as user "

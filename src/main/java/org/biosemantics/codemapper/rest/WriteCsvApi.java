@@ -25,30 +25,64 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.bind.annotation.XmlRootElement;
-import org.biosemantics.codemapper.Comment;
 import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
 import org.biosemantics.codemapper.descendants.DescendersApi.Descendants;
+import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 
-public class WriteTsvApi {
+public class WriteCsvApi {
   static final String NO_CODE = "-";
 
   public static final String FILE_EXTENSION = "csv";
   public static final String MIME_TYPE = "text/csv";
-  static final String[] CODES_HEADERS = {
-    "Coding system", "Code", "Term", "Concept", "Concept name", "Tag", "Origin"
-    // "coding_system", "code", "term", "concept", "concept_name", "tag", "comment"
+  static final String[] MAPPING_HEADERS = {"Mapping"};
+  static final String[] HEADERS = {
+    "Coding system", "Code", "Code name", "Concept", "Concept name", "Tag", "Origin"
   };
+
+  public void writeMappingCSV(OutputStream output, Mapping mapping, String url) throws IOException {
+    writeMappingHeader(output, mapping.info, url, mapping.revision.getVersion());
+    writeHeaders(output, false);
+    PreparedMapping prepared = prepare(mapping.info, mapping.data, mapping.descendants);
+    writePrepared(output, prepared, false);
+  }
+
+  public void writeProjectCSV(
+      OutputStream output,
+      String project,
+      Collection<Mapping> mappings,
+      String formattedTime,
+      String url)
+      throws IOException {
+    writeProjectHeader(output, project, mappings, formattedTime, url);
+    writeHeaders(output, true);
+    for (Mapping mapping : mappings) {
+      PreparedMapping prepared = prepare(mapping.info, mapping.data, mapping.descendants);
+      writePrepared(output, prepared, true);
+    }
+  }
+
+  public static class Mapping {
+    MappingInfo info;
+    MappingRevision revision;
+    MappingData data;
+    Map<String, Descendants> descendants;
+
+    String meta() {
+      return String.format("%s@v%d", info.mappingName, revision.getVersion());
+    }
+  }
 
   @XmlRootElement
   public static class PreparedMapping {
+    public String mappingName;
     public Map<String, Map<String, PreparedConcept>> data =
         new HashMap<>(); // voc -> cui -> forConcept
     public Map<String, Set<String>> disablad = new HashMap<>(); // voc -> set(code)
@@ -74,8 +108,10 @@ public class WriteTsvApi {
     public String comments;
   }
 
-  PreparedMapping prepare(MappingData mapping, Map<String, Descendants> descendants) {
+  PreparedMapping prepare(
+      MappingInfo info, MappingData mapping, Map<String, Descendants> descendants) {
     PreparedMapping prepared = new PreparedMapping();
+    prepared.mappingName = info.mappingName;
     for (String voc : mapping.getVocabularies().keySet()) {
       Map<String, PreparedConcept> vocData =
           prepared.data.computeIfAbsent(voc, key -> new HashMap<>());
@@ -103,7 +139,8 @@ public class WriteTsvApi {
     return prepared;
   }
 
-  void writePrepared(OutputStream output, PreparedMapping prepared) throws IOException {
+  void writePrepared(OutputStream output, PreparedMapping prepared, boolean writeMappingName)
+      throws IOException {
     for (String voc : prepared.data.keySet()) {
       Set<String> disabled = prepared.disablad.getOrDefault(voc, new HashSet<>());
       Set<String> writtenCodes = new HashSet<>(); // write each code only once
@@ -122,6 +159,8 @@ public class WriteTsvApi {
           }
           writeRow(
               output,
+              writeMappingName,
+              prepared.mappingName,
               voc,
               code.code.getId(),
               code.code.getTerm(),
@@ -136,7 +175,17 @@ public class WriteTsvApi {
             if (writtenCodes.contains(code1.getId())) continue;
             if (conceptCodes.contains(code1.getId())) continue;
             String origin = String.format("Desc: code %s", code0);
-            writeRow(output, voc, code1.getId(), code1.getTerm(), "-", "-", tag, origin);
+            writeRow(
+                output,
+                writeMappingName,
+                prepared.mappingName,
+                voc,
+                code1.getId(),
+                code1.getTerm(),
+                "-",
+                "-",
+                tag,
+                origin);
             writtenCodes.add(code1.getId());
           }
         }
@@ -147,6 +196,8 @@ public class WriteTsvApi {
           String origin = String.format("Desc: concept %s", cui);
           writeRow(
               output,
+              writeMappingName,
+              prepared.mappingName,
               voc,
               code.getId(),
               code.getTerm(),
@@ -159,6 +210,8 @@ public class WriteTsvApi {
         if (!wroteCode) {
           writeRow(
               output,
+              writeMappingName,
+              prepared.mappingName,
               voc,
               NO_CODE,
               "",
@@ -171,22 +224,26 @@ public class WriteTsvApi {
     }
   }
 
-  public void write(
+  void writeRow(
       OutputStream output,
-      MappingData mapping,
-      Map<String, Descendants> descendants,
-      List<Comment> comments,
-      MappingInfo info,
-      int version,
-      String url)
+      boolean writeMappingName,
+      String mapping,
+      String voc,
+      String code,
+      String term,
+      String concept,
+      String conceptName,
+      String tag,
+      String origin)
       throws IOException {
-    writeInfo(output, info, url, version);
-    writeRow(output, CODES_HEADERS);
-    PreparedMapping prepared = prepare(mapping, descendants);
-    writePrepared(output, prepared);
+    if (writeMappingName) {
+      writeRawRow(output, mapping, voc, code, term, concept, conceptName, tag, origin);
+    } else {
+      writeRawRow(output, voc, code, term, concept, conceptName, tag, origin);
+    }
   }
 
-  private void writeRow(OutputStream output, String... args) throws IOException {
+  private void writeRawRow(OutputStream output, String... args) throws IOException {
     String[] args1 = new String[args.length];
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
@@ -203,14 +260,42 @@ public class WriteTsvApi {
     output.write(line.getBytes());
   }
 
-  private void writeInfo(OutputStream output, MappingInfo info, String url, int version)
+  private void writeMappingHeader(OutputStream output, MappingInfo info, String url, int version)
       throws IOException {
-    String line =
+    String meta =
         String.format(
             "# Mapping: %s, version: %d, project: %s, created with CodeMapper: %s\n",
             info.mappingName, version, info.projectName, url);
-    output.write(line.getBytes());
+    output.write(meta.getBytes());
   }
+
+  public void writeProjectHeader(
+      OutputStream output,
+      String project,
+      Collection<Mapping> mappings,
+      String formattedTime,
+      String url)
+      throws IOException {
+    String mappingMetas = mappings.stream().map(Mapping::meta).collect(Collectors.joining(", "));
+    String meta =
+        String.format(
+            "# Project: %s, timestamp: %s, created with CodeMapper: %s, mappings: %s\n",
+            project, formattedTime, url, mappingMetas);
+    output.write(meta.getBytes());
+  }
+
+  void writeHeaders(OutputStream output, boolean writeMappingName) throws IOException {
+    String[] headers;
+    if (writeMappingName) {
+      headers =
+          Stream.concat(Arrays.stream(MAPPING_HEADERS), Arrays.stream(HEADERS))
+              .toArray(String[]::new);
+    } else {
+      headers = HEADERS;
+    }
+    writeRawRow(output, headers);
+  }
+
   /** Auxiliary to format an array of tags in the export file. */
   static String formatTags(Collection<String> tagsArray) {
     if (tagsArray == null) return "";

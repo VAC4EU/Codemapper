@@ -315,4 +315,15 @@ public class MappingData {
       this.tag = tag;
     }
   }
+
+  public Map<String, Collection<String>> getCodesByVoc() {
+    Map<String, Collection<String>> codesByVoc = new HashMap<>();
+    for (String voc : getVocabularies().keySet()) {
+      Map<String, Code> codes = getCodes().get(voc);
+      if (codes != null) {
+        codesByVoc.put(voc, codes.keySet());
+      }
+    }
+    return codesByVoc;
+  }
 }

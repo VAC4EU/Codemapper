@@ -41,7 +41,7 @@ export class HistoryComponent {
   }
 
   downloadUrl(version : number) {
-    let url = new URL(this.apiService.downloadUrl);
+    let url = new URL(this.apiService.downloadMappingUrl);
     url.searchParams.set('mappingUUID', this.mappingUUID);
     url.searchParams.set('version', "" + version);
     url.searchParams.set('includeDescendants', "true");

@@ -114,4 +114,11 @@ export class EventsViewComponent {
     mapping.mappingName = newName;
     console.log("renamed");
   }
+  download(project: string, includeDescendants: boolean) {
+    let url = new URL(this.api.downloadProjectUrl);
+    url.searchParams.set('project', project);
+    url.searchParams.set('includeDescendants', "" + includeDescendants);
+    url.searchParams.set('url', window.location.href);
+    window.open(url, '_blank');
+  }
 }

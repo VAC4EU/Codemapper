@@ -40,7 +40,8 @@ export class ApiService {
   private broaderConceptsUrl : string = `${environment.apiUrl}/code-mapper/broader-concepts`;
   private narrowerConceptsUrl : string = `${environment.apiUrl}/code-mapper/narrower-concepts`;
   private descendantsUrl : string = `${environment.apiUrl}/code-mapper/descendants`;
-  public downloadUrl : string = `${environment.apiUrl}/code-mapper/export-csv`;
+  public downloadMappingUrl : string = `${environment.apiUrl}/code-mapper/export-mapping-csv`;
+  public downloadProjectUrl : string = `${environment.apiUrl}/code-mapper/export-project-csv`;
   public downloadJsonUrl : string = `${environment.apiUrl}/code-mapper/output-json`;
   private reviewUrl : string = `${environment.apiUrl}/review`;
   private peregrineIndexUrl : string = `${environment.peregrineUrl}/index`;

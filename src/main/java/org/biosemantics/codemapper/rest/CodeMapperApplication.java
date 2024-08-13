@@ -82,7 +82,6 @@ public class CodeMapperApplication extends ResourceConfig {
   private static UmlsApi umlsApi;
   private static PersistencyApi persistencyApi;
   private static AuthentificationApi authentificationApi;
-  private static WriteTsvApi writeTsvApi;
   private static UtsApi utsApi;
   private static DescendersApi descendersApi;
   private static ReviewApi reviewApi;
@@ -174,7 +173,6 @@ public class CodeMapperApplication extends ResourceConfig {
 
     persistencyApi = new PersistencyApi(codeMapperConnectionPool);
     authentificationApi = new AuthentificationApi(codeMapperConnectionPool);
-    writeTsvApi = new WriteTsvApi();
 
     String utsApiKey = propertiesConfig.getProperty(UTS_API_KEY);
     utsApi = new UtsApi(utsApiKey);
@@ -227,10 +225,6 @@ public class CodeMapperApplication extends ResourceConfig {
 
   public static AuthentificationApi getAuthentificationApi() {
     return authentificationApi;
-  }
-
-  public static WriteTsvApi getWriteTsvApi() {
-    return writeTsvApi;
   }
 
   public static UtsApi getUtsApi() {

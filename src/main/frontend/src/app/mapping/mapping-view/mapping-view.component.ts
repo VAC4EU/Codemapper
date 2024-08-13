@@ -239,10 +239,10 @@ export class MappingViewComponent implements HasPendingChanges {
     });
   }
 
-  download(mappingUUID : string, descendants : boolean) {
-    let url = new URL(this.apiService.downloadUrl);
+  download(mappingUUID : string, includeDescendants : boolean) {
+    let url = new URL(this.apiService.downloadMappingUrl);
     url.searchParams.set('mappingUUID', mappingUUID);
-    url.searchParams.set('includeDescendants', "" + descendants);
+    url.searchParams.set('includeDescendants', "" + includeDescendants);
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');
   }
