@@ -119,6 +119,46 @@ create table case_definition_revisions (
   constraint case_definition_version UNIQUE (case_definition_id, version)
 );
 
+drop table if exists cached_descendants;
+create table cached_descendants (
+  id int generated always as identity,
+  last_access timestamp DEFAULT now(),
+  vsab varchar(20),
+  code varchar(100),
+  descendants text
+);
+
+create or replace function set_cached_descendants(
+  vsab varchar(20),
+  code varchar(100),
+  descendants text
+) returns void as $$
+insert into cached_descendants (vsab, code, descendants)
+values (set_cached_descendants.vsab, set_cached_descendants.code, set_cached_descendants.descendants) 
+$$ language sql;
+
+create or replace function get_cached_descendants(
+  vsab varchar(20),
+  codes varchar[]
+) returns table (
+  code varchar(20),
+  descendants text
+) as $$
+update cached_descendants set last_access = NOW()
+where vsab = get_cached_descendants.vsab
+and code = any(codes)
+returning code, descendants
+$$ language sql;
+
+create or replace function evict_cached_descendants (keep int)
+returns void
+as $$
+delete from cached_descendants where id in
+( select id from cached_descendants
+  order by last_access desc
+  offset evict_cached_descendants.keep )
+$$ language sql;
+
 create or replace function set_revision_version()
 returns trigger as $$
 begin
