@@ -111,10 +111,11 @@ public class UmlsApi {
         PreparedStatement statement = connection.prepareStatement(query)) {
       ResultSet result = statement.executeQuery();
       while (result.next()) {
-        String rsab = result.getString(1);
-        String name = result.getString(2);
-        String family = result.getString(2);
-        String version = result.getString(3);
+    	  int ix = 1;
+        String rsab = result.getString(ix++);
+        String name = result.getString(ix++);
+        String family = result.getString(ix++);
+        String version = result.getString(ix++);
         if (availableCodingSystems == null || availableCodingSystems.contains(rsab)) {
           CodingSystem codingSystem = new CodingSystem(rsab, name, family, version);
           res.add(codingSystem);

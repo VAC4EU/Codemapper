@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
-import org.biosemantics.codemapper.descendants.DescendersApi.Descendants;
+import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 

@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import { firstValueFrom } from 'rxjs';
 import { Component, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -71,20 +72,19 @@ export class EventsViewComponent {
       this.mappings.forEach(row => this.selected.select(row));
     }
   }
-  newMapping(projectName : string, mappingName : string) {
+  async newMapping(projectName : string, mappingName : string) {
     if (!projectName || !mappingName) {
       return;
     }
-    this.api.vocabularies()
-      .subscribe(vocs0 => {
-        let vocabularies = Object.fromEntries(
-          vocs0
-            .filter(v => environment.defaultVocabularies.includes(v.id))
-            .map(v => [v.id, v]));
-        let mapping = new Mapping(null, vocabularies, {}, {}, null);
-        let initial = { mappingName, projectName, mapping };
-        this.router.navigate(["/mapping"], { state: { initial } });
-      });
+    let vocs0 = await firstValueFrom(this.api.vocabularies());
+    let vers = await firstValueFrom(this.api.versionInfo());
+    let vocabularies = Object.fromEntries(
+      vocs0
+        .filter(v => environment.defaultVocabularies.includes(v.id))
+        .map(v => [v.id, v]));
+    let mapping = new Mapping(null, vocabularies, {}, {}, vers.umlsVersion);
+    let initial = { mappingName, projectName, mapping };
+    this.router.navigate(["/mapping"], { state: { initial } });
   }
   importNew(projectName : string) {
     if (!projectName) {
@@ -114,7 +114,7 @@ export class EventsViewComponent {
     mapping.mappingName = newName;
     console.log("renamed");
   }
-  download(project: string, includeDescendants: boolean) {
+  download(project : string, includeDescendants : boolean) {
     let url = new URL(this.api.downloadProjectUrl);
     url.searchParams.set('project', project);
     url.searchParams.set('includeDescendants', "" + includeDescendants);

@@ -32,7 +32,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.SourceConcept;
-import org.biosemantics.codemapper.descendants.DescendersApi.SpecificDescender;
+import org.biosemantics.codemapper.descendants.DescendantsApi.SpecificDescender;
 
 public class UmlsTCDescender implements SpecificDescender {
 

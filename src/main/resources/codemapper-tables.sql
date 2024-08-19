@@ -123,13 +123,14 @@ drop table if exists cached_descendants;
 create table cached_descendants (
   id int generated always as identity,
   last_access timestamp DEFAULT now(),
-  vsab varchar(20),
+  vsab varchar(24),
   code varchar(100),
-  descendants text
+  descendants text,
+  unique (vsab, code)
 );
 
 create or replace function set_cached_descendants(
-  vsab varchar(20),
+  vsab varchar(24),
   code varchar(100),
   descendants text
 ) returns void as $$
@@ -138,7 +139,7 @@ values (set_cached_descendants.vsab, set_cached_descendants.code, set_cached_des
 $$ language sql;
 
 create or replace function get_cached_descendants(
-  vsab varchar(20),
+  vsab varchar(24),
   codes varchar[]
 ) returns table (
   code varchar(20),

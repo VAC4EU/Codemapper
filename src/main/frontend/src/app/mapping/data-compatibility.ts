@@ -81,9 +81,10 @@ export function importConcepts(umlsConcepts : UmlsConcept[]) : data.ConceptsCode
 
 export interface Vocabulary {
   abbreviation : string,
-  family : string,
+  name : string,
+  version : string,
 }
 
 export function importVocabulary(voc : Vocabulary) : data.Vocabulary {
-  return new data.Vocabulary(voc.abbreviation, voc.family, "unknown (imported)", false);
+  return new data.Vocabulary(voc.abbreviation, voc.name, voc.version, false);
 }

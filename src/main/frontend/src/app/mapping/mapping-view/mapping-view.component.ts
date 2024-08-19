@@ -16,16 +16,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { of } from 'rxjs';
+import { of, firstValueFrom } from 'rxjs';
 import { Component, OnInit, ChangeDetectorRef, NgZone, ViewChild, TemplateRef } from '@angular/core';
 import { Title } from "@angular/platform-browser";
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTabGroup } from '@angular/material/tabs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Subscription, Observable, map } from 'rxjs';
-import { Start, StartType, Indexing, CsvImport, Vocabularies, Concept, Concepts, Codes, Mapping, Code, JSONObject, ConceptsCodes, Revision } from '../data';
+import { Start, StartType, Indexing, CsvImport, Vocabularies, Concept, Concepts, Codes, Mapping, Code, JSONObject, ConceptsCodes, Revision, VersionInfo } from '../data';
 import { AllTopics, AllTopics0, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService } from '../api.service';
@@ -51,16 +51,17 @@ enum Tabs {
   styleUrls: ['./mapping-view.component.scss']
 })
 export class MappingViewComponent implements HasPendingChanges {
-  sub : Subscription | null = null;
   mappingUUID : string | null = null;
   mappingName : string = "??";
   projectName : string = "??";
   viewName! : string;
-  mapping : Mapping = Mapping.empty();
+  mapping : Mapping = new Mapping(null, {}, {}, {}, null); // initial value needed to avoid Expression has changed after it was checked
+  versionInfo! : VersionInfo;
   version : number = -1;
   revisions : Revision[] = [];
   allTopics : AllTopics = new AllTopics();
   reviewData : ReviewData = new ReviewData();
+  vocabularies! : Vocabularies;
   selectedIndex : number = 1;
   saveRequired : boolean = false;
   error : string | null = null;
@@ -84,40 +85,62 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   async ngOnInit() {
-    this.sub = this.route.params.subscribe(async params => {
-      this.mappingUUID = params['mappingUUID'];
-      if (this.mappingUUID == null) {
-        let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
-        if (initial && initial.mapping instanceof Mapping) {
-          this.saveRequired = true;
-          this.mappingName = initial.mappingName;
-          this.projectName = initial.projectName;
-          this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
-          this.setTitle();
-          if (this.auth.projectRole(this.projectName) != 'Admin') {
-            this.error = "you are not a PI, you won't be able to save";
-          }
-        } else {
-          this.error = "no mapping found";
+    let params = await firstValueFrom(this.route.params);
+    let vocabularies = await firstValueFrom(this.apiService.vocabularies());
+    this.vocabularies = Object.fromEntries(vocabularies.map(v => [v.id, v]));
+    this.versionInfo = await firstValueFrom(this.apiService.versionInfo());
+    this.mappingUUID = params['mappingUUID'];
+    if (this.mappingUUID == null) {
+      let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
+      if (initial && initial.mapping instanceof Mapping) {
+        this.saveRequired = true;
+        this.mappingName = initial.mappingName;
+        this.projectName = initial.projectName;
+        this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
+        this.setTitle();
+        if (this.auth.projectRole(this.projectName) != 'Admin') {
+          this.error = "you are not a PI, you won't be able to save";
         }
       } else {
-        try {
-          let info = (await this.persistency.mappingInfo(this.mappingUUID).toPromise())!;
-          this.mappingName = info.mappingName;
-          this.projectName = info.projectName;
-          this.setTitle();
-          let [version, mapping] = (await this.persistency.latestRevisionOrImportMapping(this.mappingUUID).toPromise())!;
-          mapping.cleanupRecacheCheck()
-          this.version = version;
-          this.mapping = mapping;
-          this.reloadReviews();
-          this.reloadRevisions();
-        } catch (err) {
-          this.error = "not mapping found";
-          console.error(this.error, err);
-        }
+        this.error = "no mapping found";
       }
-    });
+    } else {
+      try {
+        let info = await firstValueFrom(this.persistency.mappingInfo(this.mappingUUID));
+        this.mappingName = info.mappingName;
+        this.projectName = info.projectName;
+        this.setTitle();
+        let postOp : null | ops.Operation = null;
+        let version, mapping;
+        try {
+          [version, mapping] = await firstValueFrom(
+            this.persistency.latestRevisionMapping(this.mappingUUID));
+        } catch (err) {
+          console.log(err, typeof err);
+          if ((err as HttpErrorResponse).status == 404) {
+            [version, mapping] = await firstValueFrom(
+              this.persistency.legacyMapping(this.mappingUUID));
+            let ignoreTermTypes = this.versionInfo.ignoreTermTypes;
+            let { conceptsCodes, vocabularies } =
+              await this.apiService.remapData(mapping, this.vocabularies, ignoreTermTypes);
+            let umlsVersion = this.versionInfo.umlsVersion;
+            postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
+            this.snackBar.open("Imported mapping from the old version of CodeMapper and remapped, please save.", "Close");
+          } else {
+            throw err;
+          }
+        }
+        mapping.cleanupRecacheCheck()
+        this.version = version;
+        this.mapping = mapping;
+        this.reloadReviews();
+        this.reloadRevisions();
+        if (postOp != null) this.run(postOp);
+      } catch (err) {
+        this.error = "not mapping found";
+        console.error(this.error, err);
+      }
+    }
   }
 
   setTitle() {
@@ -148,13 +171,6 @@ export class MappingViewComponent implements HasPendingChanges {
   async reloadRevisions() {
     if (this.mappingUUID != null) {
       this.revisions = (await this.persistency.getRevisions(this.mappingUUID).toPromise())!;
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.sub != null) {
-      this.sub.unsubscribe();
-      this.sub = null;
     }
   }
 
@@ -259,6 +275,15 @@ export class MappingViewComponent implements HasPendingChanges {
       return;
     }
     return `Redo (${this.mapping.redoStack[0][0]})`
+  }
+
+  titleTooltip() : string {
+    let role = this.auth.projectRole(this.projectName)?.toLowerCase();
+    let res = `Project: ${this.projectName} (you are ${role})`;
+    if (this.saveRequired) {
+      res += `, mapping needs save`;
+    }
+    return res;
   }
 
   async setStartIndexing(indexing : Indexing) {

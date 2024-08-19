@@ -16,17 +16,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, TemplateRef, Input, Output, EventEmitter, OnChanges, OnInit, ViewChild, SimpleChanges } from '@angular/core';
+import { Component, TemplateRef, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
 import { debounceTime, catchError, distinctUntilChanged, switchMap, map } from 'rxjs/operators';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { FormControl } from '@angular/forms';
-import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatTable } from '@angular/material/table';
-import { SelectionModel } from '@angular/cdk/collections';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
-import { Mapping, Concept, ConceptId, Concepts, Code, Codes, CodeId, Indexing, VocabularyId, Vocabulary, tagsInConcepts, filterConcepts } from '../data';
-import { AllTopics, AllTopics0, ReviewOperation } from '../review';
+import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, VersionInfo, Vocabularies, filterConcepts } from '../data';
+import { AllTopics, ReviewOperation } from '../review';
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 
@@ -37,14 +35,14 @@ import * as ops from '../mapping-ops';
 })
 export class ConceptsComponent implements OnInit {
   @Input() mapping! : Mapping;
+  @Input() vocabularies! : Vocabularies;
   @Input() allTopics : AllTopics = new AllTopics();
+  @Input() versionInfo! : VersionInfo;
   @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
 
   selectedConcepts : Concept[] = [];
-  ignoreTermTypes : string = "";
-  umlsVersion : string | null = null;
   codeSearchQueryControl = new FormControl('');
   codeConcepts : Concept[] = [];
   dialogRef : MatDialogRef<any, any> | null = null;
@@ -54,8 +52,7 @@ export class ConceptsComponent implements OnInit {
     private api : ApiService,
   ) {
     this.api.versionInfo().subscribe(info => {
-      this.umlsVersion = info.umlsVersion
-      this.ignoreTermTypes = info.ignoreTermTypes.join(",");
+      this.versionInfo = info
     });
   }
 
@@ -101,6 +98,10 @@ export class ConceptsComponent implements OnInit {
             }));
         }))
       .subscribe(codeConcepts => this.codeConcepts = codeConcepts);
+  }
+
+  ignoreTermTypes() : string {
+    return this.versionInfo.ignoreTermTypes.join(",");
   }
 
   vocIds() : VocabularyId[] {
@@ -202,14 +203,16 @@ export class ConceptsComponent implements OnInit {
         }
       });
   }
+
   remap() {
-    if (this.umlsVersion != null) {
-      let ignoreTermTypes = this.ignoreTermTypes ? this.ignoreTermTypes.split(",") : [];
-      let umlsVersion = this.umlsVersion;
-      this.api.concepts(Object.keys(this.mapping.concepts), Object.keys(this.mapping.vocabularies), ignoreTermTypes)
-        .subscribe(conceptsCodes => {
-          this.run.emit(new ops.Remap(umlsVersion, conceptsCodes));
-        });
+    let umlsVersion = this.versionInfo.umlsVersion;
+    let ignoreTermTypes = this.versionInfo.ignoreTermTypes;
+    if (umlsVersion != null) {
+      (async () => {
+        let { conceptsCodes, vocabularies } =
+          await this.api.remapData(this.mapping, this.vocabularies, ignoreTermTypes);
+        this.run.emit(new ops.Remap(umlsVersion, conceptsCodes, vocabularies));
+      })();
     } else {
       console.error("unknown UMLS version");
     }

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { MappingData, Code, Concept, ConceptsCodes, Concepts, Codes, ConceptId, Mapping, Tag, Vocabulary, VocabularyId, CodeId, Indexing, emptyIndexing } from './data';
+import { MappingData, Code, Concept, ConceptsCodes, Vocabularies, Concepts, Codes, ConceptId, Mapping, Tag, Vocabulary, VocabularyId, CodeId, Indexing, emptyIndexing } from './data';
 import { ApiService } from './api.service';
 import * as comp from './data-compatibility';
 
@@ -463,7 +463,8 @@ export class DeleteVocabularies extends Operation {
 export class Remap extends Operation {
   constructor(
     private umlsVersion : string,
-    private conceptsCodes : ConceptsCodes
+    private conceptsCodes : ConceptsCodes,
+    private vocabularies : Vocabularies,
   ) {
     super();
     this.saveRequired = true;
@@ -479,6 +480,7 @@ export class Remap extends Operation {
     mapping.umlsVersion = this.umlsVersion;
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
+    mapping.vocabularies = this.vocabularies;
     mapping.setCustomCodes(customCodes);
     mapping.setCodesDisabled(disabled);
     mapping.setTags(tags);

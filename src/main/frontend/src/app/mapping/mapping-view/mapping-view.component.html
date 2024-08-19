@@ -1,10 +1,8 @@
 <mat-toolbar>
   <app-navigation [projectName]="projectName"></app-navigation>
-  <mat-error  *ngIf="error">Error: {{error}}</mat-error>
-  <span *ngIf="!error">
-    Mapping:&nbsp;
-    <span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired" matTooltip="Needs save">*</span> ({{projectName}}, {{this.auth.projectRole(projectName)?.toLowerCase()}})
-  </span>
+  <span matTooltip="{{titleTooltip()}}">
+    CodeMapper:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+  </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <ng-container *ngIf="mapping != null">
     <span class="menu-spacer"></span>
     <button
@@ -41,7 +39,7 @@
   <app-loggedin></app-loggedin>
 </mat-toolbar>
 
-<mat-tab-group [selectedIndex]="selectedIndex">
+<mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
 
   <mat-tab label="Start">
     <div class="center-content spaced mat-elevation-z2">
@@ -66,6 +64,8 @@
       *ngIf="!mapping.isEmpty()"
       [mapping]="mapping"
       [allTopics]="allTopics"
+      [versionInfo]="versionInfo"
+      [vocabularies]="vocabularies"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
@@ -98,7 +98,7 @@
   <!-- </mat-tab> -->
   <mat-tab label="Versions">
     <history
-      *ngIf="mappingUUID && !mapping.isEmpty()"
+      *ngIf="mappingUUID && mapping && !mapping.isEmpty()"
       [mappingUUID]="mappingUUID"
       [mapping]="mapping"
       [revisions]="revisions"

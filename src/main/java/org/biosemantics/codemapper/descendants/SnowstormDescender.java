@@ -45,7 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.SourceConcept;
-import org.biosemantics.codemapper.descendants.DescendersApi.SpecificDescender;
+import org.biosemantics.codemapper.descendants.DescendantsApi.SpecificDescender;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
 
 public class SnowstormDescender implements SpecificDescender {

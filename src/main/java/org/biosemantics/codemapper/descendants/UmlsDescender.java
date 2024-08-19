@@ -40,7 +40,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.SourceConcept;
-import org.biosemantics.codemapper.descendants.DescendersApi.GeneralDescender;
+import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 
 public class UmlsDescender implements GeneralDescender {
 

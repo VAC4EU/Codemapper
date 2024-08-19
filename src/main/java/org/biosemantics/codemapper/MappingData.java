@@ -33,10 +33,6 @@ public class MappingData {
   Map<String, Vocabulary> vocabularies; // voc -> voc info
   String umlsVersion;
 
-  public MappingData() {
-    this(null, null, null, null);
-  }
-
   public MappingData(
       Map<String, Concept> concepts,
       Map<String, Map<String, Code>> codes,

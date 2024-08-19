@@ -89,20 +89,8 @@
     <p>UMLS version</p>
     <ul>
       <li>used in the mapping: {{mapping.umlsVersion || "unknown"}}</li>
-      <li>latest available: {{umlsVersion}}</li>
+      <li>latest available: {{versionInfo.umlsVersion}}</li>
     </ul>
-    <div>
-      <mat-form-field>
-        <mat-label>Ignored term types</mat-label>
-        <input matInput [(ngModel)]="ignoreTermTypes" type="text">
-      </mat-form-field>
-      <p>
-        (See the
-        <a target="_blank" href="https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/abbreviations.html#mrdoc_TTY">list of term types</a>
-        and its
-        <a target="_blank" href="https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/abbreviations.html#tty_class">classes</a>.)
-      </p>
-    </div>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>

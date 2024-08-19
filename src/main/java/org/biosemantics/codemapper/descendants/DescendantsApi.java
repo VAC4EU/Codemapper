@@ -30,7 +30,7 @@ import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.SourceConcept;
 import org.biosemantics.codemapper.rest.NonUmlsTargets;
 
-public class DescendersApi {
+public class DescendantsApi {
 
   public static interface SpecificDescender {
 
@@ -53,7 +53,7 @@ public class DescendersApi {
   GeneralDescender generalDescender;
   NonUmlsTargets nonUmls;
 
-  public DescendersApi(GeneralDescender generalDescender, NonUmlsTargets nonUmls) {
+  public DescendantsApi(GeneralDescender generalDescender, NonUmlsTargets nonUmls) {
     this.generalDescender = generalDescender;
     this.specificDescenders = new HashMap<>();
     this.nonUmls = nonUmls;

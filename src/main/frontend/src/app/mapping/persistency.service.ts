@@ -19,7 +19,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { JSONObject, Mapping, Revision } from './data';
+import { JSONObject, Mapping, Revision, Vocabularies } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, map, catchError } from 'rxjs';
 
@@ -72,29 +72,17 @@ export class PersistencyService {
     return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
   }
 
-  mapping(mappingUUID : string) : Observable<[number, Mapping]> {
+  legacyMapping(mappingUUID : string) : Observable<[number, Mapping]> {
     return this.http.get<JSONObject>(this.url + `/mapping/${mappingUUID}/legacy`)
-      .pipe(map((json) => [-1, Mapping.importOG(json)]));
+      .pipe(map((json) => [-1, Mapping.importV1(json)]));
   }
 
-  latestRevision(mappingUUID : string) : Observable<[number, Mapping]> {
+  latestRevisionMapping(mappingUUID : string) : Observable<[number, Mapping]> {
     return this.http.get<Revision>(this.url + `/mapping/${mappingUUID}/latest-revision`)
       .pipe(map(rev => {
         let mapping = Mapping.importJSON(JSON.parse(rev.mapping));
         return [rev.version, mapping];
       }))
-  }
-
-  latestRevisionOrImportMapping(mappingUUID : string) : Observable<[number, Mapping]> {
-    return this.latestRevision(mappingUUID)
-      .pipe(catchError(err => {
-        if (err.status == 404) {
-          console.info("no revision found, importing old JSON");
-          return this.mapping(mappingUUID);
-        } else {
-          throw err;
-        }
-      }));
   }
 
   getRevisions(mappingUUID : string) {

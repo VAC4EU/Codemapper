@@ -33,7 +33,7 @@ import { AuthService } from '../auth.service';
 })
 export class CodesTableComponent {
   @Input() vocabularyId! : VocabularyId;
-  @Input() mapping : Mapping = Mapping.empty();
+  @Input() mapping! : Mapping;
   @Input() codes : Code[] = [];
   @Input() codeParents : null | { [key : CodeId] : Set<CodeId> } = null;
   @Input() showConcepts : boolean = true;

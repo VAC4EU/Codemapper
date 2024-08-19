@@ -44,8 +44,8 @@ import org.biosemantics.codemapper.UtsApi;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.descendants.DescendantsCache;
-import org.biosemantics.codemapper.descendants.DescendersApi;
-import org.biosemantics.codemapper.descendants.DescendersApi.GeneralDescender;
+import org.biosemantics.codemapper.descendants.DescendantsApi;
+import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 import org.biosemantics.codemapper.descendants.UmlsDescender;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.review.ReviewApi;
@@ -84,7 +84,7 @@ public class CodeMapperApplication extends ResourceConfig {
   private static PersistencyApi persistencyApi;
   private static AuthentificationApi authentificationApi;
   private static UtsApi utsApi;
-  private static DescendersApi descendersApi;
+  private static DescendantsApi descendersApi;
   private static ReviewApi reviewApi;
   private static DescendantsCache descendantsCacheApi;
 
@@ -184,7 +184,7 @@ public class CodeMapperApplication extends ResourceConfig {
     descendantsCacheApi = new DescendantsCache(codeMapperConnectionPool);
 
     GeneralDescender umlsDescender = new UmlsDescender(umlsConnectionPool);
-    descendersApi = new DescendersApi(umlsDescender, nonUmls);
+    descendersApi = new DescendantsApi(umlsDescender, nonUmls);
   }
 
   public static DataSource getConnectionPool(String prefix) throws SQLException {
@@ -235,7 +235,7 @@ public class CodeMapperApplication extends ResourceConfig {
     return utsApi;
   }
 
-  public static DescendersApi getDescendantsApi() {
+  public static DescendantsApi getDescendantsApi() {
     return descendersApi;
   }
   

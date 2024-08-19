@@ -38,7 +38,7 @@ import { CodesTableComponent } from '../codes-table/codes-table.component';
   styleUrls: ['./codes.component.scss'],
 })
 export class CodesComponent {
-  @Input() mapping : Mapping = Mapping.empty();
+  @Input() mapping! : Mapping;
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
   @Output() run = new EventEmitter<ops.Operation>();

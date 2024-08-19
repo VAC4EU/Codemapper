@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
@@ -57,8 +58,9 @@ import org.biosemantics.codemapper.UmlsConcept;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
-import org.biosemantics.codemapper.descendants.DescendersApi;
-import org.biosemantics.codemapper.descendants.DescendersApi.Descendants;
+import org.biosemantics.codemapper.descendants.DescendantsCache;
+import org.biosemantics.codemapper.descendants.DescendantsApi;
+import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
@@ -279,8 +281,11 @@ public class CodeMapperResource {
       mapping.revision = revision;
       mapping.data = revision.parseMappingData();
       if (includeDescendants) {
-        DescendersApi descendantsApi = CodeMapperApplication.getDescendantsApi();
-        mapping.descendants = descendantsApi.getDescendantCodes(mapping.data.getCodesByVoc());
+          DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
+          DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
+        Map<String, Collection<String>> codes = mapping.data.getCodesByVoc();
+        Map<String, CodingSystem> codingSystems = api.getCodingSystems().stream().collect(Collectors.toMap(CodingSystem::getName, v -> v));
+		mapping.descendants = descendantsCacheApi.getDescendants(codes, codingSystems, descendantsApi);
       } else {
         mapping.descendants = Collections.emptyMap();
       }
@@ -323,7 +328,7 @@ public class CodeMapperResource {
     try {
       OutputStream output = new ByteArrayOutputStream();
       PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
-      DescendersApi descendantsApi = CodeMapperApplication.getDescendantsApi();
+      DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
       WriteCsvApi writeApi = new WriteCsvApi();
       Collection<Mapping> mappings = new LinkedList<>();
       for (MappingInfo info : persistencyApi.getMappingInfos(project)) {

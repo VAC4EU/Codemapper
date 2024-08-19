@@ -58,7 +58,7 @@ export interface MappingData {
   vocabularies : Vocabularies,
   concepts : Concepts,
   codes : Codes,
-  umlsVersion : string | null,
+  umlsVersion : string,
 }
 
 export interface Span {
@@ -107,7 +107,7 @@ export class Mapping {
     public vocabularies : Vocabularies,
     public concepts : Concepts,
     public codes : Codes,
-    public umlsVersion : string | null,
+    public umlsVersion : string | null, // null indicates import from v1
   ) {
     this.cleanupRecacheCheck();
   }
@@ -255,7 +255,7 @@ export class Mapping {
     if (inv !== undefined) {
       this.undoStack.push([op.describe(), inv]);
     } else {
-      console.log("no inversion");
+      console.log("no inverse operation");
     }
   }
   public undo() {
@@ -280,9 +280,6 @@ export class Mapping {
   }
   public isEmpty() {
     return this.start == null && Object.keys(this.concepts).length === 0;
-  }
-  static empty() {
-    return new Mapping(null, {}, {}, {}, null);
   }
   cleanupRecacheCheck() {
     // reset: conceptsByCode lookup
@@ -327,21 +324,20 @@ export class Mapping {
   }
   static importJSON(json0 : JSONValue) : Mapping {
     let json = json0 as JSONObject;
-    let mapping = new Mapping(null, {}, {}, {}, null);
+    let start : Start = null;
     if (json['start']) {
-      let start = json['start'] as JSONObject;
-      if (!start['type']) {
-        if (["text", "spans", "concepts", "selected"].every(s => start.hasOwnProperty(s))) {
-          start['type'] = StartType.Indexing;
+      let start0 = json['start'] as JSONObject;
+      if (!start0['type']) {
+        if (["text", "spans", "concepts", "selected"].every(s => start0.hasOwnProperty(s))) {
+          start0['type'] = StartType.Indexing;
         }
-        if (["csvContent"].every(s => start.hasOwnProperty(s))) {
-          start['type'] = StartType.CsvImport;
+        if (["csvContent"].every(s => start0.hasOwnProperty(s))) {
+          start0['type'] = StartType.CsvImport;
         }
       }
-      mapping.start = start as unknown as Start;
-    } else {
-      mapping.start = null;
+      start = start0 as unknown as Start;
     }
+    let vocabularies : Vocabularies = {};
     for (const vocJson0 of Object.values(json['vocabularies'] as JSONObject)) {
       let vocJson = vocJson0 as JSONObject;
       let id = vocJson["id"] as VocabularyId;
@@ -349,8 +345,9 @@ export class Mapping {
       let version = vocJson["version"] as string | null;
       let custom = vocJson["custom"] as boolean;
       let voc = new Vocabulary(id, name, version, custom);
-      mapping.vocabularies[voc.id] = voc;
+      vocabularies[voc.id] = voc;
     }
+    let concepts : Concepts = {};
     for (const conceptJson0 of Object.values(json['concepts'] as JSONObject)) {
       let conceptJson = conceptJson0 as JSONObject;
       let id = conceptJson["id"] as ConceptId;
@@ -365,10 +362,11 @@ export class Mapping {
       }
       let tag = getTag(conceptJson);
       let concept = new Concept(id, name, definition, codes, tag);
-      mapping.concepts[concept.id] = concept;
+      concepts[concept.id] = concept;
     }
+    let codes : Codes = {};
     for (let [vocId, codesJson] of Object.entries(json['codes'] as JSONObject)) {
-      mapping.codes[vocId] = {};
+      codes[vocId] = {};
       for (let codeJson0 of Object.values(codesJson as JSONObject)) {
         let codeJson = codeJson0 as JSONObject;
         let id = codeJson['id'] as CodeId;
@@ -377,18 +375,21 @@ export class Mapping {
         let enabled = codeJson['enabled'] as boolean;
         let tag = getTag(codeJson);
         let code = new Code(id, term, custom, enabled, tag);
-        mapping.codes[vocId][code.id] = code;
+        codes[vocId][code.id] = code;
       }
     }
-    mapping.umlsVersion = json["umlsVersion"] as string | null;
-    return mapping;
+    let umlsVersion = json["umlsVersion"] as string;
+    if (umlsVersion === undefined) {
+      throw new Error("umls version missing in mapping JSON, assume current");
+    }
+    return new Mapping(start, vocabularies, concepts, codes, umlsVersion);
   }
-  static importOG(v0 : JSONValue) : Mapping {
+  static importV1(v0 : JSONValue) : Mapping {
     let v = v0 as JSONObject;
     let vocabularies : { [key : VocabularyId] : Vocabulary } = {};
     for (const id0 of v['codingSystems'] as JSONArray) {
       let id = id0 as string;
-      vocabularies[id] = new Vocabulary(id, id, "unknown (imported)", false);
+      vocabularies[id] = new Vocabulary(id, "unknown (imported mapping)", "unknown (imported mapping)", false);
     }
     let concepts : { [key : ConceptId] : Concept } = {};
     let codes : { [key : VocabularyId] : { [key : CodeId] : Code } } = {};

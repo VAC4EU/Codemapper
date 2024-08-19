@@ -51,7 +51,7 @@ public class NonUmlsTargets {
   }
 
   private Collection<CodingSystem> retrieveVocabularies() throws CodeMapperException {
-    String query = "" + "SELECT DISTINCT abbr, full_name, ver FROM non_umls_latest_vocs";
+    String query = "SELECT DISTINCT abbr, full_name, ver FROM non_umls_latest_vocs";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       Collection<CodingSystem> vocs = new LinkedList<>();

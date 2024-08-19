@@ -16,15 +16,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import { firstValueFrom } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
 import * as compat from './data-compatibility';
-import { MappingData, Vocabulary, VocabularyId, ConceptId, Concept, Concepts, ConceptsCodes, Code, CodeId, VersionInfo, Span, cuiOfId } from './data';
-import { AllTopics, AllTopics0 } from './review';
+import { MappingData, Vocabulary, VocabularyId, ConceptId, Concept, Concepts, ConceptsCodes, Code, CodeId, VersionInfo, Span, Mapping, Vocabularies, cuiOfId } from './data';
+import { AllTopics0 } from './review';
 import { urlEncodedOptions } from '../app.module';
 
 @Injectable({
@@ -112,6 +113,15 @@ export class ApiService {
     }
     return this.http.post<compat.UmlsConcept[]>(this.conceptsUrl, body, urlEncodedOptions)
       .pipe(map(compat.importConcepts))
+  }
+
+  async remapData(mapping : Mapping, vocabularies : Vocabularies, ignoreTermTypes : string[]) : Promise<{ conceptsCodes : ConceptsCodes, vocabularies : Vocabularies }> {
+    let cuis = Object.keys(mapping.concepts);
+    let vocIds = Object.keys(mapping.vocabularies);
+    let vocs = Object.fromEntries(vocIds.map(id => [id, vocabularies[id]]));
+    let conceptsCodes = await firstValueFrom(
+      this.concepts(cuis, vocIds, ignoreTermTypes));
+    return { conceptsCodes, vocabularies: vocs }
   }
 
   concept(cui : ConceptId, vocIds : VocabularyId[]) :
