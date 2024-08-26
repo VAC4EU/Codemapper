@@ -132,9 +132,12 @@ export class EventsViewComponent {
     mapping.mappingName = newName;
     console.log("renamed");
   }
-  download(project : string, includeDescendants : boolean) {
+  download(project : string, includeDescendants : boolean, mappings : MappingInfo[]) {
     let url = new URL(this.api.downloadProjectUrl);
     url.searchParams.set('project', project);
+    for (let mapping of mappings) {
+      url.searchParams.append("mappings", mapping.mappingShortkey);
+    }
     url.searchParams.set('includeDescendants', "" + includeDescendants);
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');

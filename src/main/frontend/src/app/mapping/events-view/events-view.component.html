@@ -4,13 +4,6 @@
     <app-navigation [projectName]="projectName"></app-navigation>
     <span>Project: {{projectName}}</span>
     <span class="menu-spacer"></span>
-    <span matTooltip="Download all mappings of the project">
-      <button
-        (click)="openDialog(downloadDialog)"
-        mat-icon-button>
-        <mat-icon>download</mat-icon>
-      </button>
-    </span>
     <app-loggedin></app-loggedin>
   </mat-toolbar>
   <p>You are {{projectPerm?.toLowerCase()}} in this project.</p>
@@ -49,6 +42,11 @@
             mat-raised-button
             [disabled]="projectPerm != 'Admin' || selected.selected.length != 1"
             (click)="openDialog(renameDialog)">Rename</button>
+        </span>
+        <span matTooltip="Download all mappings of the project">
+          <button mat-raised-button (click)="openDialog(downloadDialog)" [disabled]="selected.selected.length == 0">
+            Download <mat-icon>download</mat-icon>
+          </button>
         </span>
       </mat-card-actions>
     </mat-card>
@@ -125,13 +123,13 @@
   <h2 matDialogTitle>Download mapping</h2>
   <mat-dialog-content>
     Download selected mapping as CSV format (tab-separated values).
-    <mat-checkbox #includeDescendants checked=false>Include descendant codes</mat-checkbox>
+    <mat-checkbox #includeDescendants>Include descendant codes</mat-checkbox>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
     <button
       mat-raised-button
-      (click)="download(projectName, includeDescendants.checked)"
+      (click)="download(projectName, includeDescendants.checked, selected.selected)"
       matDialogClose
       color="primary">Download</button>
   </mat-dialog-actions>

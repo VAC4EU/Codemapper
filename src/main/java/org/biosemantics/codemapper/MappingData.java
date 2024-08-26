@@ -32,6 +32,15 @@ public class MappingData {
   Map<String, Map<String, Code>> codes; // voc -> code -> code info
   Map<String, Vocabulary> vocabularies; // voc -> voc info
   String umlsVersion;
+  MappingMeta meta;
+
+  public MappingMeta getMeta() {
+    return meta;
+  }
+
+  public void setMeta(MappingMeta meta) {
+    this.meta = meta;
+  }
 
   public MappingData() {}
 
@@ -125,6 +134,54 @@ public class MappingData {
 
   public void setStart(Map<String, Object> start) {
     this.start = start;
+  }
+
+  public static class MappingMeta {
+    int formatVersion;
+    String umlsVersion;
+    String[] allowedTags;
+    String[] ignoreTermTypes;
+    String[] ignoreSemanticTypes;
+
+    public int getFormatVersion() {
+      return formatVersion;
+    }
+
+    public void setFormatVersion(int formatVersion) {
+      this.formatVersion = formatVersion;
+    }
+
+    public String getUmlsVersion() {
+      return umlsVersion;
+    }
+
+    public void setUmlsVersion(String umlsVersion) {
+      this.umlsVersion = umlsVersion;
+    }
+
+    public String[] getAllowedTags() {
+      return allowedTags;
+    }
+
+    public void setAllowedTags(String[] allowedTags) {
+      this.allowedTags = allowedTags;
+    }
+
+    public String[] getIgnoreTermTypes() {
+      return ignoreTermTypes;
+    }
+
+    public void setIgnoreTermTypes(String[] ignoreTermTypes) {
+      this.ignoreTermTypes = ignoreTermTypes;
+    }
+
+    public String[] getIgnoreSemanticTypes() {
+      return ignoreSemanticTypes;
+    }
+
+    public void setIgnoreSemanticTypes(String[] ignoreSemanticTypes) {
+      this.ignoreSemanticTypes = ignoreSemanticTypes;
+    }
   }
 
   @XmlRootElement

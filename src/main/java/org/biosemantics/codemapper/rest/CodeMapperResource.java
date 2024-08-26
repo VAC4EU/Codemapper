@@ -318,6 +318,7 @@ public class CodeMapperResource {
       @Context User user,
       @QueryParam("project") final String project,
       @QueryParam("url") final String url,
+      @QueryParam("mappings") final List<String> mappingShortkeys,
       @QueryParam("includeDescendants") final boolean includeDescendants) {
     boolean ignoreMappingFailures = false;
     AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
@@ -333,6 +334,9 @@ public class CodeMapperResource {
       WriteCsvApi writeApi = new WriteCsvApi();
       Collection<Mapping> mappings = new LinkedList<>();
       for (MappingInfo info : persistencyApi.getMappingInfos(project)) {
+        if (!mappingShortkeys.contains(info.mappingShortkey)) {
+          continue;
+        }
         Mapping mapping = new Mapping();
         mapping.info = info;
         mapping.revision = persistencyApi.getLatestRevision(mapping.info.mappingShortkey);
