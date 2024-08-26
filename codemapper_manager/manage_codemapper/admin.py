@@ -7,7 +7,7 @@ import django.contrib.auth.admin as auth_admin
 import django.contrib.auth.models as auth_models
 from django.shortcuts import get_object_or_404, render
 
-from .models import User, Project, Member, Mapping
+from .models import User, Project, Member
 import codemapper
 
 class MyAdminSite(admin.AdminSite):
@@ -72,55 +72,10 @@ class MemberAdmin(admin.ModelAdmin):
         return True
 
 
-@admin.register(Mapping, site=admin_site)
-class MappingAdmin(admin.ModelAdmin):
-
-    fields = ["project", "name"]
-    search_fields = ['name']
-    save_as = True
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return ["state"]
-        else:
-            return []
-
-    def has_add_permission(self, request):
-        return True
-
-    def has_change_permission(self, request, obj=None):
-        return True
-
-    def has_module_permission(self, request):
-        return True
-
-
-class MappingInline(admin.TabularInline):
-
-    model = Mapping
-    extra = 0
-    show_change_link = True
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return ["name"]
-        else:
-            return []
-
-    def has_add_permission(self, request):
-        return True
-
-    def has_change_permission(self, request, obj=None):
-        return True
-
-    def has_module_permission(self, request):
-        return True
-
-
 @admin.register(Project, site=admin_site)
 class ProjectAdmin(admin.ModelAdmin):
 
-    inlines = (MemberInline, MappingInline,)
+    inlines = (MemberInline, )
     search_fields = ['name']
 
     def get_readonly_fields(self, request, obj=None):

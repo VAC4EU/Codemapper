@@ -45,17 +45,3 @@ class Member(models.Model):
         db_table = 'users_projects'
         unique_together = (("user", "project"),)
         ordering = ['project', 'user']
-
-
-class Mapping(models.Model):
-
-    project = models.ForeignKey(Project, db_column='project_id', on_delete=models.CASCADE, related_name='mappings')
-    name = models.CharField(max_length=255)
-    state = models.TextField(editable=False)
-
-    def __str__(self):
-        return "{} ({})".format(self.name, self.project.name)
-
-    class Meta:
-        db_table = 'case_definitions'
-        ordering = ['project', 'name']
