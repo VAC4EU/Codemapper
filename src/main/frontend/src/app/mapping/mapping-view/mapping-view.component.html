@@ -44,8 +44,8 @@
         (run)="run($event)"></mapping-tab>
     </div>
 
-    <div class="center-content">
-      <mat-card *ngIf="mapping.start == null">
+    <div *ngIf="mapping.start == null" class="center-content spaced">
+      <mat-card>
         <mat-card-header>
           <h3>Start mapping</h3>
         </mat-card-header>
@@ -58,8 +58,7 @@
           <indexer
             [locked]="false"
             (confirmedIndexing)="setStartIndexing($event)"
-            confirmLabel="Start with selected concepts"
-            class="center-content"></indexer>
+            confirmLabel="Start with selected concepts"></indexer>
         </mat-card-content>
       </mat-card>
     </div>
@@ -81,16 +80,14 @@
       [mapping]="mapping"
       [allTopics]="allTopics"
       (run)="run($event)"
-      (reviewRun)="reviewRun($event)"
-      class="center-content spaced mat-elevation-z2"></codes>
+      (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
 
   <mat-tab label="Vocabularies">
     <vocabularies
       *ngIf="!mapping.isEmpty()"
       [mapping]="mapping"
-      (run)="run($event)"
-      class="center-content spaced mat-elevation-z2"></vocabularies>
+      (run)="run($event)"></vocabularies>
   </mat-tab>
 
   <!-- <mat-tab label="Review"> -->
@@ -107,8 +104,7 @@
       [mappingUUID]="mappingUUID"
       [mapping]="mapping"
       [revisions]="revisions"
-      [version]="version"
-      class="center-content spaced mat-elevation-z2">
+      [version]="version">
     </history>
   </mat-tab>
 </mat-tab-group>
