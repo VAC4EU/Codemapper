@@ -193,7 +193,7 @@ public class PersistencyResource {
       @FormParam("mappingName") String mappingName,
       @Context User user) {
     logger.info(String.format("Create mapping %s/%s (%s)", projectName, mappingName, user));
-    AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Admin);
+    AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
     try {
       return api.createMapping(projectName, mappingName);
     } catch (CodeMapperException e) {
@@ -232,7 +232,7 @@ public class PersistencyResource {
     logger.info(String.format("Set mapping name %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Admin);
+          user, mappingShortkey, ProjectPermission.Owner);
       api.setName(mappingShortkey, name);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't save case definition revision");

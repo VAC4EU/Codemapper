@@ -19,14 +19,14 @@
 package org.biosemantics.codemapper.authentification;
 
 public enum ProjectPermission {
-  Admin,
+  Owner,
   Editor,
   Commentator;
 
   public static ProjectPermission fromString(String c) {
     switch (c) {
-      case "A":
-        return Admin;
+      case "O":
+        return Owner;
       case "E":
         return Editor;
       case "C":
@@ -38,8 +38,8 @@ public enum ProjectPermission {
 
   public boolean implies(ProjectPermission perm) {
     switch (this) {
-      case Admin:
-        return perm.equals(Admin) || perm.equals(Editor) || perm.equals(Commentator);
+      case Owner:
+        return perm.equals(Owner) || perm.equals(Editor) || perm.equals(Commentator);
       case Editor:
         return perm.equals(Editor) || perm.equals(Commentator);
       case Commentator:

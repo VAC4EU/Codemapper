@@ -22,7 +22,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
-import { environment } from '../../../environments/environment';
 import { PersistencyService, MappingInfo, ProjectPermission, mappingInfoLink } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';

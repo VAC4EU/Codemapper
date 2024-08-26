@@ -23,7 +23,7 @@ import { JSONObject, Mapping, Revision, ServerInfo } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, map } from 'rxjs';
 
-export type ProjectPermission = 'Admin' | 'Editor' | 'Commentator';
+export type ProjectPermission = 'Owner' | 'Editor' | 'Commentator';
 
 export interface ProjectInfo {
   name : string;

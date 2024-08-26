@@ -104,8 +104,8 @@ export class MappingViewComponent implements HasPendingChanges {
         console.log("Initial mapping", initial.mapping);
         this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
         this.setTitle();
-        if (this.auth.projectRole(this.projectName) != 'Admin') {
-          this.error = "you are not a PI, you won't be able to save";
+        if (this.auth.projectRole(this.projectName) != 'Owner') {
+          this.error = "you aren't project owner, you won't be able to save this new mapping";
         }
       } else {
         this.error = "no mapping found";

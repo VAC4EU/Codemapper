@@ -17,7 +17,7 @@
         <span matTooltip="Create a new mapping (only for project owners)">
           <button
             (click)="openDialog(createMapping)"
-            [disabled]="projectPerm != 'Admin'"
+            [disabled]="projectPerm != 'Owner'"
             mat-raised-button>
             Create
           </button>
@@ -25,7 +25,7 @@
         <span matTooltip="Import a mapping from a CSV file (only for project owners)">
           <button
             (click)="importNew(projectName)"
-            [disabled]="projectPerm != 'Admin'"
+            [disabled]="projectPerm != 'Owner'"
             mat-raised-button>
             Import CSV
           </button>
@@ -40,7 +40,7 @@
         <span matTooltip="Rename one selected mapping (only for project owners)">
           <button
             mat-raised-button
-            [disabled]="projectPerm != 'Admin' || selected.selected.length != 1"
+            [disabled]="projectPerm != 'Owner' || selected.selected.length != 1"
             (click)="openDialog(renameDialog)">Rename</button>
         </span>
         <span matTooltip="Download all mappings of the project">

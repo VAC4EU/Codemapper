@@ -32,7 +32,11 @@ class Member(models.Model):
 
     user = models.ForeignKey(User, db_column='user_id', on_delete=models.CASCADE)
     project = models.ForeignKey(Project, db_column='project_id', on_delete=models.CASCADE)
-    role = models.CharField(max_length=1, choices=[('E', 'Editor'), ['C', 'Commentor']], default='E')
+    role = models.CharField(max_length=1, choices=[
+        ('O', 'Owner'),
+        ('E', 'Editor'),
+        ['C', 'Commentor'],
+    ], default='E')
 
     def __str__(self):
         return "{} - {}".format(self.project.name, self.user.username)
