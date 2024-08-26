@@ -71,19 +71,6 @@
       </button>
     </mat-card-actions>
   </mat-card>
-
-  <mat-card>
-    <mat-card-header>
-      Mapping
-    </mat-card-header>
-    <mat-card-actions>
-      <div matTooltip="Remap concept codes with the currently supported version of the UMLS.">
-        <button (click)="openDialog(remapDialog)" [disabled]="mapping.undoStack.length > 0" mat-stroked-button>
-          Remap
-        </button>
-      </div>
-    </mat-card-actions>
-  </mat-card>
 </div>
 
 <concepts-table
@@ -97,30 +84,6 @@
   (reviewRun)="reviewRun.emit($event)"
   (selected)="setSelectedConcepts($event)">
 </concepts-table>
-
-<ng-template #remapDialog>
-  <h2 matDialogTitle>Remap concept codes using the current version of UMLS</h2>
-  <mat-dialog-content>
-    <p>UMLS version</p>
-    <ul>
-      <li>used in the mapping: {{mapping.umlsVersion || "unknown"}}</li>
-      <li>latest available: {{versionInfo.umlsVersion}}</li>
-    </ul>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button matDialogClose>Cancel</button>
-    <div matTooltip="Update the concept codes using the latest version of the UMLS. Save before, remapping cannot be undone.">
-      <button
-        (click)="remap()"
-        color="primary"
-        mat-raised-button
-        matDialogClose
-        color="primary">
-        Remap
-      </button>
-    </div>
-  </mat-dialog-actions>
-</ng-template>
 
 <ng-template #indexer>
   <h2 matDialogTitle>Search and add concepts from free-text</h2>

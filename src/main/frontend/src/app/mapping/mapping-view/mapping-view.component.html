@@ -27,35 +27,41 @@
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
     </span>
-    <span matTooltip="Download the mapping">
-      <button
-        (click)="openDialog(downloadDialog)"
-        [disabled]="saveRequired || mapping.undoStack.length > 0"
-        mat-icon-button>
-        <mat-icon>download</mat-icon>
-      </button>
-    </span>
   </ng-container>
   <app-loggedin></app-loggedin>
 </mat-toolbar>
 
 <mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
 
-  <mat-tab label="Start">
-    <div class="center-content spaced mat-elevation-z2">
-      <div *ngIf="mapping.start == null || isIndexing(mapping.start)">
-        <h2>Search concepts in free text</h2>
-        <indexer
-          [initialIndexing]="mapping.start"
-          [locked]="mapping.start != null"
-          (confirmedIndexing)="setStartIndexing($event)"
-          confirmLabel="Use selected concepts"
-          class="center-content"></indexer>
-      </div>
-      <div *ngIf="isCsvImport(mapping.start)">
-        <h2>CSV import</h2>
-        <pre>{{mapping.start.csvContent}}</pre>
-      </div>
+  <mat-tab label="Mapping">
+    <div *ngIf="mapping.start != null">
+      <mapping-tab
+        [mapping]="mapping"
+        [mappingUUID]="mappingUUID"
+        [versionInfo]="versionInfo"
+        [vocabularies]="vocabularies"
+        [canDownload]="!!(mappingUUID && !saveRequired && mapping.undoStack.length == 0)"
+        (run)="run($event)"></mapping-tab>
+    </div>
+
+    <div class="center-content">
+      <mat-card *ngIf="mapping.start == null">
+        <mat-card-header>
+          <h3>Start mapping</h3>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Start the mapping with a textual description of the event.</p>
+          <p>Enter or paste the textual description on the left, click
+            "Search concepts", and review the list of concepts on the right. 
+            Then, click "Start with selected concepts" to start the mapping, 
+            or revise the textual description by clicking "Edit text".</p>
+          <indexer
+            [locked]="false"
+            (confirmedIndexing)="setStartIndexing($event)"
+            confirmLabel="Start with selected concepts"
+            class="center-content"></indexer>
+        </mat-card-content>
+      </mat-card>
     </div>
   </mat-tab>
 
@@ -64,7 +70,6 @@
       *ngIf="!mapping.isEmpty()"
       [mapping]="mapping"
       [allTopics]="allTopics"
-      [versionInfo]="versionInfo"
       [vocabularies]="vocabularies"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></concepts>
@@ -124,22 +129,5 @@
       (click)="save(summary.value)"
       matDialogClose
       color="primary">Save</button>
-  </mat-dialog-actions>
-</ng-template>
-
-<ng-template #downloadDialog>
-  <h2 matDialogTitle>Download mapping</h2>
-  <mat-dialog-content>
-    Download the mapping as CSV format (tab-separated values).
-    <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button matDialogClose>Cancel</button>
-    <button
-      mat-raised-button
-      *ngIf="mappingUUID != null"
-      (click)="download(mappingUUID, includeDescendants.checked)"
-      matDialogClose
-      color="primary">Download</button>
   </mat-dialog-actions>
 </ng-template>

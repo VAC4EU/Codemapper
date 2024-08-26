@@ -23,7 +23,7 @@ import { FormControl } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
-import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, VersionInfo, Vocabularies, filterConcepts } from '../data';
+import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts } from '../data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
@@ -37,7 +37,6 @@ export class ConceptsComponent implements OnInit {
   @Input() mapping! : Mapping;
   @Input() vocabularies! : Vocabularies;
   @Input() allTopics : AllTopics = new AllTopics();
-  @Input() versionInfo! : VersionInfo;
   @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
@@ -51,11 +50,7 @@ export class ConceptsComponent implements OnInit {
   constructor(
     private dialog : MatDialog,
     private api : ApiService,
-  ) {
-    this.api.versionInfo().subscribe(info => {
-      this.versionInfo = info
-    });
-  }
+  ) {  }
 
   openDialog(templateRef : TemplateRef<any>) {
     this.dialogRef = this.dialog.open(templateRef, {
@@ -99,10 +94,6 @@ export class ConceptsComponent implements OnInit {
             }));
         }))
       .subscribe(codeConcepts => this.codeConcepts = codeConcepts);
-  }
-
-  ignoreTermTypes() : string {
-    return this.versionInfo.ignoreTermTypes.join(",");
   }
 
   vocIds() : VocabularyId[] {
@@ -203,20 +194,6 @@ export class ConceptsComponent implements OnInit {
           this.run.emit(new ops.ConceptsSetTag(conceptIdsTags));
         }
       });
-  }
-
-  remap() {
-    let umlsVersion = this.versionInfo.umlsVersion;
-    let ignoreTermTypes = this.versionInfo.ignoreTermTypes;
-    if (umlsVersion != null) {
-      (async () => {
-        let { conceptsCodes, vocabularies } =
-          await this.api.remapData(this.mapping, this.vocabularies, ignoreTermTypes);
-        this.run.emit(new ops.Remap(umlsVersion, conceptsCodes, vocabularies));
-      })();
-    } else {
-      console.error("unknown UMLS version");
-    }
   }
 
   addIndexing(indexing : Indexing) {

@@ -74,6 +74,7 @@ import { SortPipe } from './sort.pipe';
 import { CodesDialogComponent } from './codes-dialog/codes-dialog.component';
 import { CodesTableComponent } from './codes-table/codes-table.component';
 import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy-mapping-redirect.component';
+import { MappingTabComponent } from './mapping-tab/mapping-tab.component';
 
 @NgModule({
   declarations: [
@@ -106,6 +107,7 @@ import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy
     CodesDialogComponent,
     CodesTableComponent,
     LegacyMappingRedirectComponent,
+    MappingTabComponent,
   ],
   imports: [
     HttpClientModule,

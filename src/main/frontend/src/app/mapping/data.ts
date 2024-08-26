@@ -594,6 +594,7 @@ export function tagsInCodes(codes : Code[]) : Tag[] {
   return Array.from(tags);
 }
 
+/// Server version info
 export interface VersionInfo {
   contactEmail : string;
   projectVersion : string;

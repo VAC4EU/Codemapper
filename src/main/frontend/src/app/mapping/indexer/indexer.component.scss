@@ -7,3 +7,17 @@ textarea {
     height: 100%;
     box-sizing: border-box;
 }
+
+.rendering {
+    width: 60ex;
+}
+
+.container {
+    width: 100%;
+    display: flex;
+    flex-grow: grow;
+}
+
+.container > div {
+    width: 50%;
+}

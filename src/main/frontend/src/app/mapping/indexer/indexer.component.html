@@ -1,43 +1,36 @@
-<div class="toolbox">
-  <mat-card>
-    <mat-card-header>
-      <h2>Free text</h2>
-    </mat-card-header>
-    <mat-card-actions *ngIf="!locked">
+<div class="container">
+  <section>
+    <h4>Free text</h4>
+    <div *ngIf="!locked">
       <div [hidden]="state === State.Indexed">
         <button mat-raised-button (click)="index(text)">Search concepts</button>
       </div>
       <div [hidden]="state === State.Editing">
         <button mat-raised-button (click)="setEditing()">Edit text</button>
       </div>
-    </mat-card-actions>
-    <mat-card-content>
+    </div>
       <div [hidden]="state === State.Indexed">
         <textarea [(ngModel)]="text" id="input" rows="25" cols="60" matInput></textarea>
       </div>
       <div [hidden]="state === State.Editing">
-        <div [innerHtml]="rendering"></div>
+        <div [innerHtml]="rendering" class="rendering"></div>
       </div>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card>
-    <mat-card-header>
-      <h2>Concepts</h2>
-    </mat-card-header>
-    <mat-card-actions *ngIf="!locked">
+  </section>
+  <section>
+    <h4>Concepts</h4>   
+    <div *ngIf="!locked">
       <button
         [disabled]="state === State.Editing"
         (click)="confirmedIndexing.emit(getIndexing())"
         mat-raised-button color="primary">{{confirmLabel}}</button>
-    </mat-card-actions>
-    <mat-card-content [hidden]="state == State.Editing">
+    </div>
+    <div [hidden]="state == State.Editing">
       <concepts-table
         [disabled]="initialIndexing != null"
         [concepts]="concepts"
         (selected)="setSelected($event)"
         [hideTagColumn]="true">
       </concepts-table>
-    </mat-card-content>
-  </mat-card>
+    </div> 
+  </section>
 </div>

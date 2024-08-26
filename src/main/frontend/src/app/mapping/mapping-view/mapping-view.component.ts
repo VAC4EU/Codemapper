@@ -60,7 +60,7 @@ export class MappingViewComponent implements HasPendingChanges {
   allTopics : AllTopics = new AllTopics();
   reviewData : ReviewData = new ReviewData();
   vocabularies! : Vocabularies;
-  selectedIndex : number = 1;
+  selectedIndex : number = 0;
   saveRequired : boolean = false;
   error : string | null = null;
 
@@ -253,14 +253,6 @@ export class MappingViewComponent implements HasPendingChanges {
     });
   }
 
-  download(mappingUUID : string, includeDescendants : boolean) {
-    let url = new URL(this.apiService.downloadMappingUrl);
-    url.searchParams.set('mappingUUID', mappingUUID);
-    url.searchParams.set('includeDescendants', "" + includeDescendants);
-    url.searchParams.set('url', window.location.href);
-    window.open(url, '_blank');
-  }
-
   undoTooltip() : string | undefined {
     if (this.mapping.undoStack.length == 0) {
       return;
@@ -294,11 +286,5 @@ export class MappingViewComponent implements HasPendingChanges {
           this.run(op);
         });
     }
-  }
-  isIndexing(start : Start) : start is Indexing {
-    return start != null && start.type == StartType.Indexing
-  }
-  isCsvImport(start : Start) : start is CsvImport {
-    return start != null && start.type == StartType.CsvImport
   }
 }
