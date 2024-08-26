@@ -23,11 +23,12 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
 import { PersistencyService, MappingInfo, ProjectPermission, mappingInfoLink } from '../persistency.service';
-import { AuthService } from '../auth.service';
+import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'events-view',
@@ -42,6 +43,8 @@ export class EventsViewComponent {
   projectPerm : ProjectPermission | undefined = undefined;
   selected = new SelectionModel<MappingInfo>(true, []);
   users : { [key : string] : string[] } = {};
+  user : User | null = null;
+  allUsers : User[] = [];
   constructor(
     private api : ApiService,
     private persistency : PersistencyService,
@@ -49,7 +52,8 @@ export class EventsViewComponent {
     private router : Router,
     private title : Title,
     private dialog : MatDialog,
-    public auth : AuthService,
+    private auth : AuthService,
+    private snackbar : MatSnackBar,
   ) { }
   ngOnInit() {
     this.api.serverInfo().subscribe(info => this.serverInfo = info);
@@ -59,8 +63,16 @@ export class EventsViewComponent {
       this.projectPerm = this.auth.projectRole(this.projectName);
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
-      this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
+      this.reloadUsers();
+      this.auth.userSubject.subscribe(user => this.user = user);
+      this.persistency.allUsers().subscribe(users => {
+        this.allUsers = users;
+        this.allUsers.sort((a, b) => a.username.localeCompare(b.username));
+      });
     });
+  }
+  reloadUsers() {
+    this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;
@@ -142,5 +154,11 @@ export class EventsViewComponent {
     url.searchParams.set('includeDescendants', "" + includeDescendants);
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');
+  }
+  addUserRole(username : string, role : string) {
+    this.persistency.addUserRole(this.projectName, username, role).subscribe({
+      next: _ => this.reloadUsers(),
+      error: err => this.snackbar.open(err.error, "Ok"),
+    });
   }
 }

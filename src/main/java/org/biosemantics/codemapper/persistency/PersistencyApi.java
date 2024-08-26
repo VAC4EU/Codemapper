@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
@@ -38,6 +39,7 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlRootElement;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.Comment;
+import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 
@@ -454,6 +456,41 @@ public class PersistencyApi {
     }
   }
 
+  public Collection<ProjectInfo> getAllProjectInfos(String username) throws CodeMapperException {
+    String query =
+        "SELECT DISTINCT p.name, up.role "
+            + "FROM projects p "
+            + "LEFT JOIN ("
+            + "  SELECT * FROM users_projects up "
+            + "  JOIN users u ON u.id = up.user_id "
+            + "  WHERE u.username = ?"
+            + ") up "
+            + "ON up.project_id = p.id";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, username);
+      ResultSet result = statement.executeQuery();
+      Map<String, ProjectPermission> permissions = new HashMap<>();
+      while (result.next()) {
+        String projectName = result.getString(1);
+        String role0 = result.getString(2);
+        ProjectPermission role = role0 == null ? null : ProjectPermission.fromString(role0);
+        permissions.put(projectName, role);
+      }
+      return permissions.entrySet().stream()
+          .map(
+              e -> {
+                ProjectInfo info = new ProjectInfo();
+                info.name = e.getKey();
+                info.permission = e.getValue();
+                return info;
+              })
+          .collect(Collectors.toList());
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to get projects", e);
+    }
+  }
+
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
         "SELECT cd.shortkey, cd.name "
@@ -465,7 +502,6 @@ public class PersistencyApi {
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, project);
-      System.out.println(statement);
       ResultSet set = statement.executeQuery();
       List<MappingInfo> mappings = new LinkedList<>();
       while (set.next()) {
@@ -519,6 +555,105 @@ public class PersistencyApi {
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to rename mapping", e);
+    }
+  }
+
+  public Collection<User> getUsers() throws CodeMapperException {
+    String query = "SELECT username, is_admin FROM users";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      Collection<User> res = new ArrayList<>();
+      ResultSet results = statement.executeQuery();
+      while (results.next()) {
+        String username = results.getString(1);
+        boolean isAdmin = results.getBoolean(2);
+        User user = new User(username, new HashMap<>(), isAdmin);
+        res.add(user);
+      }
+      return res;
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to get all users", e);
+    }
+  }
+
+  public void createUser(String username, String password, String email)
+      throws CodeMapperException {
+    String query = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, username);
+      statement.setString(2, AuthentificationApi.hash(password));
+      statement.setString(2, email);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to create users", e);
+    }
+  }
+
+  public void setUserPassword(String username, String password) throws CodeMapperException {
+    String query = "UPDATE users SET password = ? WHERE username = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, AuthentificationApi.hash(password));
+      statement.setString(2, username);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to set user password", e);
+    }
+  }
+
+  public void createProject(String name) throws CodeMapperException {
+    String query = "INSERT INTO projects (name) VALUES (?)";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, name);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to create project", e);
+    }
+  }
+
+  public void addProjectUser(String projectName, String username, String role)
+      throws CodeMapperException {
+    if (role == null || role.isEmpty()) {
+      String query =
+          "DELETE FROM users_projects "
+              + "WHERE project_id IN (SELECT id FROM projects WHERE name = ?) "
+              + "AND user_id IN (SELECT id FROM users WHERE username = ?)";
+
+      try {
+        Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, projectName);
+        statement.setString(2, username);
+        statement.execute();
+      } catch (SQLException e) {
+        throw CodeMapperException.server("Cannot execute query to remove project user", e);
+      }
+    } else {
+      String query =
+          "INSERT INTO users_projects (user_id, project_id, role) "
+              + "SELECT u.id, p.id, ? "
+              + "FROM users u, projects p "
+              + "WHERE u.username = ? "
+              + "AND p.name = ? "
+              + "ON CONFLICT (user_id, project_id) DO UPDATE "
+              + "SET role = ?";
+      try {
+        Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, role);
+        statement.setString(2, username);
+        statement.setString(3, projectName);
+        statement.setString(4, role);
+        statement.execute();
+      } catch (SQLException e) {
+        throw CodeMapperException.server("Cannot execute query to remove project user", e);
+      }
     }
   }
 }

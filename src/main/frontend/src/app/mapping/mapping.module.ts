@@ -76,6 +76,7 @@ import { CodesTableComponent } from './codes-table/codes-table.component';
 import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy-mapping-redirect.component';
 import { MappingTabComponent } from './mapping-tab/mapping-tab.component';
 import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
+import { UserViewComponent } from './user-view/user-view.component';
 
 @NgModule({
   declarations: [
@@ -110,6 +111,7 @@ import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
     CodesTableComponent,
     LegacyMappingRedirectComponent,
     MappingTabComponent,
+    UserViewComponent,
   ],
   imports: [
     HttpClientModule,

@@ -61,7 +61,11 @@ public class PersistencyResource {
       @Context HttpServletRequest request, @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
     try {
-      return api.getProjectInfos(user.getUsername());
+      if (user.isAdmin()) {
+        return api.getAllProjectInfos(user.getUsername());
+      } else {
+        return api.getProjectInfos(user.getUsername());
+      }
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get projects");
       e.printStackTrace();
@@ -236,6 +240,80 @@ public class PersistencyResource {
       api.setName(mappingShortkey, name);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't save case definition revision");
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @GET
+  @Path("users")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Collection<User> getUsers(@Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try {
+      return api.getUsers();
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("user")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void createUser(
+      @FormParam("username") String username,
+      @FormParam("password") String password,
+      @FormParam("email") String email,
+      @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try {
+      api.createUser(username, password, email);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("user/password")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void setUserPassword(
+      @FormParam("username") String username,
+      @FormParam("FormParam(\"username\") ") String password,
+      @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try {
+      api.setUserPassword(username, password);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("project")
+  public void createProject(@FormParam("name") String name, @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try {
+      api.createProject(name);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("project/{projectName}/user-role")
+  public void addProjectUser(
+      @PathParam("projectName") String projectName,
+      @FormParam("username") String username,
+      @FormParam("role") String role,
+      @Context User user) {
+    AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+    try {
+      api.addProjectUser(projectName, username, role);
+    } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }

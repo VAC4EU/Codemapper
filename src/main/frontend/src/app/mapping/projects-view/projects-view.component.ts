@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, TemplateRef } from '@angular/core';
 import { PersistencyService, ProjectInfo } from '../persistency.service';
-import { ApiService } from '../api.service';
-import { AuthService } from '../auth.service';
+import { AuthService, User } from '../auth.service';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 
 const DEFAULT_VOCABULARIES = ["ICD10CM", "SNOMEDCT_US"];
 
@@ -33,15 +33,35 @@ const DEFAULT_VOCABULARIES = ["ICD10CM", "SNOMEDCT_US"];
 export class ProjectsViewComponent {
   projects : ProjectInfo[] = [];
   newNames : { [key : string] : string } = {};
+  user : User | null = null;
   constructor(
     private persistency : PersistencyService,
-    private api : ApiService,
     private auth : AuthService,
+    private dialog : MatDialog,
+    private snackbar : MatSnackBar,
     private router : Router,
-    private dialog : MatDialog
   ) {
-    persistency.projectInfos().subscribe((projects) => {
+    this.reloadProjects();
+    this.auth.userSubject.subscribe((user) => this.user = user);
+  }
+
+  reloadProjects() {
+    this.persistency.projectInfos().subscribe((projects) => {
       this.projects = projects;
+      this.projects.sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  createProject(name : string) {
+    this.persistency.createProject(name).subscribe({
+      next: _ => this.reloadProjects(),
+      error: err => this.snackbar.open(err.error, "Ok"),
+    })
+  }
+
+  openDialog(templateRef : TemplateRef<any>) {
+    this.dialog.open(templateRef, {
+      width: '700px'
     });
   }
 }

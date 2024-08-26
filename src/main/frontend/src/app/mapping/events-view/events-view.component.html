@@ -7,7 +7,7 @@
   </mat-toolbar>
   <div class="center-content spaced">
 
-    <p>You are {{projectPerm?.toLowerCase()}} of this project.</p>
+    <p>You are {{(projectPerm ?? "not member").toLowerCase()}} of this project.</p>
 
   <mat-card appearance="outlined">
     <h3>Mappings</h3>
@@ -85,8 +85,28 @@
     </table>
   </mat-card>
 
-  <mat-card appearance="outlined" *ngIf="projectName != 'Tests'">
+  <mat-card appearance="outlined" *ngIf="projectName != 'Tests' || user?.admin">
     <h3>Members</h3>
+    <div *ngIf="user?.admin">
+      <mat-form-field>
+        <mat-label>User</mat-label>
+        <mat-select #addUserRoleName>
+          <mat-option *ngFor="let user of allUsers" value="{{user.username}}">
+            {{user.username}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Role</mat-label>
+        <mat-select #addUserRoleRole >
+          <mat-option>Remove from project</mat-option>
+          <mat-option value="O">Owner</mat-option>
+          <mat-option value="E">Editor</mat-option>
+          <mat-option value="C">Commentator</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Change user role</button>
+    </div>
     <ul class="bullet-separated">
       <li *ngFor="let user of users | keyvalue">
         {{user.key}} ({{user.value.join(", ").toLowerCase()}})

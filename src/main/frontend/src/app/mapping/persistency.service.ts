@@ -22,8 +22,9 @@ import { environment } from '../../../src/environments/environment';
 import { JSONObject, Mapping, Revision, ServerInfo } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, map } from 'rxjs';
+import { User } from './auth.service';
 
-export type ProjectPermission = 'Owner' | 'Editor' | 'Commentator';
+export type ProjectPermission = 'Owner' | 'Editor' | 'Commentator' | null;
 
 export interface ProjectInfo {
   name : string;
@@ -53,6 +54,7 @@ export function mappingInfoLink(mapping : MappingInfo) : string[] {
   providedIn: 'root'
 })
 export class PersistencyService {
+
   private url : string = environment.apiUrl + '/persistency'
 
   constructor(private http : HttpClient) { }
@@ -120,6 +122,35 @@ export class PersistencyService {
   projectUsers(projectName : string) {
     let url = this.url + `/projects/${projectName}/users`;
     return this.http.get<ProjectUsers>(url)
+  }
+
+  createProject(name : string) : Observable<void> {
+    let url = this.url + `/project`;
+    let body = new URLSearchParams();
+    body.append("name", name);
+    return this.http.post<void>(url, body, urlEncodedOptions);
+  }
+
+  allUsers() {
+    return this.http.get<User[]>(this.url + '/users');
+  }
+
+  addUserRole(projectName : string, username : string, role : string) {
+    let url = this.url + '/project/' + projectName + '/user-role';
+    let body = new URLSearchParams();
+    body.append("username", username);
+    if (role) {
+      body.append("role", role);
+    }
+    return this.http.post<void>(url, body, urlEncodedOptions);
+  }
+  createUser(username : string, password : string, email : string) {
+    let url = this.url = '/user';
+    let body = new URLSearchParams();
+    body.set("username", username);
+    body.set("password", password);
+    body.set("email", email);
+    return this.http.post<void>(url, body, urlEncodedOptions)
   }
 }
 

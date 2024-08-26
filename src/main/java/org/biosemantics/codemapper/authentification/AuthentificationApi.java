@@ -48,7 +48,7 @@ public class AuthentificationApi {
     this.connectionPool = connectionPool;
   }
 
-  private String hash(String string) throws CodeMapperException {
+  public static String hash(String string) throws CodeMapperException {
     try {
       MessageDigest sha = MessageDigest.getInstance("SHA-256");
       sha.update(string.getBytes(StandardCharsets.UTF_8));
@@ -117,17 +117,18 @@ public class AuthentificationApi {
   public LoginResult login(String username, String password, HttpServletRequest request)
       throws CodeMapperException {
 
-    String query = "SELECT password FROM users WHERE username = ?";
+    String query = "SELECT password, is_admin FROM users WHERE username = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
         String passwordHash = result.getString(1);
+        boolean isAdmin = result.getBoolean(2);
         if (passwordHash.equals(hash(password))) {
           Map<String, ProjectPermission> projectPermissions =
               CodeMapperApplication.getPersistencyApi().getProjectPermissions(username);
-          User user = new User(username, projectPermissions);
+          User user = new User(username, projectPermissions, isAdmin);
           request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
           logger.info("Authentificated " + username);
           return LoginResult.createSuccess(user);
@@ -177,15 +178,15 @@ public class AuthentificationApi {
     }
   }
 
-  public ChangePasswordResult changePassword(User user, String password, String newPassword)
+  public ChangePasswordResult changePassword(String username, String password, String newPassword)
       throws CodeMapperException {
-    logger.info("Change password " + user.getUsername());
+    logger.info("Change password " + username);
 
     String query = "UPDATE users SET password = ? WHERE username = ? AND password = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, hash(newPassword));
-      statement.setString(2, user.getUsername());
+      statement.setString(2, username);
       statement.setString(3, hash(password));
       int result = statement.executeUpdate();
       switch (result) {
@@ -210,6 +211,9 @@ public class AuthentificationApi {
   public static void assertProjectRolesImplies(
       User user, String project, ProjectPermission requiredPerm) {
     assertAuthentificated(user);
+    if (user.isAdmin()) {
+      return;
+    }
     ProjectPermission perm = user.getProjectPermissions().get(project);
     if (perm != null) {
       if (perm.implies(requiredPerm)) {
@@ -224,5 +228,11 @@ public class AuthentificationApi {
     MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
     assertProjectRolesImplies(user, mapping.projectName, perm);
     return mapping;
+  }
+
+  public static void assertAdmin(User user) {
+    if (!user.isAdmin()) {
+      throw new UnauthorizedException();
+    }
   }
 }

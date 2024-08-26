@@ -26,6 +26,7 @@ import { NewsViewComponent } from './mapping/news-view/news-view.component';
 import { AuthGuard } from './mapping/auth.guard';
 import { PendingChangesGuard } from './mapping/pending-changes.guard';
 import { LegacyMappingRedirectComponent } from './mapping/legacy-mapping-redirect/legacy-mapping-redirect.component';
+import { UserViewComponent } from './mapping/user-view/user-view.component';
 
 const routes : Routes = [
   {
@@ -60,6 +61,11 @@ const routes : Routes = [
     canActivate: [AuthGuard],
     canDeactivate: [PendingChangesGuard],
     component: MappingViewComponent,
+  },
+  {
+    path: "user",
+    canActivate: [AuthGuard],
+    component: UserViewComponent,
   },
   {
     path: "project/:projectName/event/:mappingName",

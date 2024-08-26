@@ -76,11 +76,11 @@ public class AuthentificationResource {
   @Path("change-password")
   @Produces(MediaType.APPLICATION_JSON)
   public ChangePasswordResult changePassword(
-      @Context HttpServletRequest request,
       @FormParam("oldPassword") String oldPassword,
-      @FormParam("newPassword") String newPassword) {
+      @FormParam("newPassword") String newPassword,
+      @Context User user) {
     try {
-      return api.changePassword(getUser(request), oldPassword, newPassword);
+      return api.changePassword(user.getUsername(), oldPassword, newPassword);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

@@ -27,14 +27,16 @@ public class User implements Serializable {
   private static final long serialVersionUID = 457068490529031472L;
   private String username;
   private Map<String, ProjectPermission> projectPermissions;
+  private boolean isAdmin;
 
   public User() {
-    this(null, null);
+    this(null, null, false);
   }
 
-  public User(String username, Map<String, ProjectPermission> projectPermissions) {
+  public User(String username, Map<String, ProjectPermission> projectPermissions, boolean isAdmin) {
     this.username = username;
     this.projectPermissions = projectPermissions;
+    this.isAdmin = isAdmin;
   }
 
   @Override
@@ -56,5 +58,13 @@ public class User implements Serializable {
 
   public void setProjectPermissions(Map<String, ProjectPermission> projectPermissions) {
     this.projectPermissions = projectPermissions;
+  }
+
+  public boolean isAdmin() {
+    return isAdmin;
+  }
+
+  public void setAdmin(boolean isAdmin) {
+    this.isAdmin = isAdmin;
   }
 }

@@ -26,7 +26,8 @@ import { PersistencyService, ProjectInfo, ProjectPermission } from './persistenc
 
 export interface User {
   username : string,
-  projectPermissions : { [key : string] : ProjectPermission }
+  projectPermissions : { [key : string] : ProjectPermission },
+  admin : boolean
 }
 
 export interface LoginResult {
@@ -42,7 +43,6 @@ type ProjectsFunction = (projects : ProjectInfo[] | PromiseLike<ProjectInfo[]>) 
   providedIn: 'root'
 })
 export class AuthService {
-
   private url : string = environment.apiUrl + '/authentification'
   private resolveUser! : UserFunction;
   private rejectUser! : UserFunction;
@@ -118,5 +118,11 @@ export class AuthService {
 
   projectRole(projectName : string) : ProjectPermission | undefined {
     return this.userSubject.value?.projectPermissions[projectName];
+  }
+  changePassword(oldPassword : string, newPassword : string) {
+    let body = new URLSearchParams();
+    body.set('oldPassword', oldPassword);
+    body.set('newPassword', newPassword);
+    return this.http.post<void>(this.url + '/change-password', body, urlEncodedOptions)
   }
 }

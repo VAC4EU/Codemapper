@@ -53,7 +53,6 @@ export class CodesComponent {
 
   constructor(
     public dialog : MatDialog,
-    private auth : AuthService,
     private api : ApiService,
   ) { }
 
