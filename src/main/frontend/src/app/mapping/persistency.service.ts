@@ -117,4 +117,10 @@ export class PersistencyService {
     let url = this.url + `/mapping/${shortkey}/name`;
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
+  projectUsers(projectName : string) {
+    let url = this.url + `/projects/${projectName}/users`;
+    return this.http.get<ProjectUsers>(url)
+  }
 }
+
+export type ProjectUsers = { [key : string] : string[] }

@@ -1,0 +1,19 @@
+ul.comma-separated, ul.bullet-separated {
+	padding-left: 0;
+}
+ul.comma-separated li, ul.bullet-separated li {
+	display: inline;
+}
+ul.comma-separated li:before {
+	content: ", ";
+}
+ul.bullet-separated li:before {
+    content: " \002022  ";
+}
+ul.comma-separated li:first-child:before, ul.bullet-separated li:first-child:before {
+  content: "";
+}
+mat-card {
+    padding: 1em;
+    margin-top: 1em;
+}

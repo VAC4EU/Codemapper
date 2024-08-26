@@ -66,7 +66,7 @@
     </div>
   </mat-tab>
 
-  <mat-tab label="Concepts">
+  <mat-tab label="Concepts" [disabled]="mapping.start == null">
     <concepts
       *ngIf="!mapping.isEmpty()"
       [mapping]="mapping"
@@ -76,7 +76,7 @@
       (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
 
-  <mat-tab label="Codes">
+  <mat-tab label="Codes" [disabled]="mapping.start == null">
     <codes
       *ngIf="!mapping.isEmpty() && mapping.numVocabularies() > 0"
       [mapping]="mapping"
@@ -85,7 +85,7 @@
       (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
 
-  <mat-tab label="Vocabularies">
+  <mat-tab label="Vocabularies" [disabled]="mapping.start == null">
     <vocabularies
       *ngIf="!mapping.isEmpty()"
       [mapping]="mapping"
@@ -100,7 +100,7 @@
   <!--     [concepts]="mapping.concepts" -->
   <!--     (run)="reviewRun($event)"></reviews> -->
   <!-- </mat-tab> -->
-  <mat-tab label="Versions">
+  <mat-tab label="Versions" [disabled]="mapping.start == null">
     <history
       *ngIf="mappingShortkey && mapping && !mapping.isEmpty()"
       [mappingShortkey]="mappingShortkey"

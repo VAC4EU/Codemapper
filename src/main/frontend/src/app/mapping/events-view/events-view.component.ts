@@ -41,6 +41,7 @@ export class EventsViewComponent {
   mappings : MappingInfo[] = [];
   projectPerm : ProjectPermission | undefined = undefined;
   selected = new SelectionModel<MappingInfo>(true, []);
+  users : { [key : string] : string[] } = {};
   constructor(
     private api : ApiService,
     private persistency : PersistencyService,
@@ -58,6 +59,7 @@ export class EventsViewComponent {
       this.projectPerm = this.auth.projectRole(this.projectName);
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
+      this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
     });
   }
   isAllSelected() {

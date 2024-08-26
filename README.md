@@ -102,34 +102,6 @@ CodeMapper requires a database for storing the mappings, workspaces and users. T
 databases can be created using the script
 [src/main/resources/user-tables.sql](src/main/resources/user-tables.sql).
 
-##### Database UMLS-ext (optional)
-
-The database `UMLS-ext` contains data complementary to the UMLS, such as the mapping from
-Read CTv3 (`RCD`) to Read-v2 (`RCD2`). The original mapping files
-(`nhs_datamigration_22.0.0_20161001000001`) are distributed by the Health and Social Care
-Information Centre at [Digital NHS TRUD](https://isd.digital.nhs.uk/).
-
-- Table `ctv3rctmap_uk` for mapping Read-CTv3 to Read-v2 from file
-  `nhs_datamigration_22.0.0_20161001000001/Mapping Tables/Updated/Clinically Assured`
-
-      CREATE TABLE `ctv3rctmap_uk_YYYMMDD` (`MAPID` varchar(38), `V2_CONCEPTID` varchar(5), `V2_TERMID` varchar(5), `CTV3_TERMID` varchar(5), `CTV3_TERMTYP` varchar(1), `CTV3_CONCEPTID` varchar(5), `USE_CTV3_TERMID` varchar(5), `STAT` varchar(1), `MAPTYP` varchar(3), `MAPSTATUS` int(11), `EFFECTIVEDATE` int(11), `ISASSURED` int(11)) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-      database=umls_ext
-      file=ctv3rctmap_uk_YYYMMDD.txt
-      mysqlimport --delete \
-          --columns=$(head -n1 "$file"|sed "s/$(printf '\t')/,/g") \
-          --ignore-lines=1 --lines-terminated-by='\r\n' \
-          --local "$database" "$file"
-
-- Table `Corev2` for Read-v2 labels from file `NHS-READv2-20.0.0/V2/Unified/Corev2.all`
-
-      CREATE TABLE `Corev2` (`CODE` VARCHAR(5), `DESCRIPTION` VARCHAR(100), `C3` VARCHAR(100), `C4` VARCHAR(250), `C5` VARCHAR(20), `C6` INTEGER, `C7` VARCHAR(20), `C8` VARCHAR(2), `C9` VARCHAR(20), `C10` VARCHAR(2), `C11` VARCHAR(10), `C12` VARCHAR(2), `C13` VARCHAR(2));
-
-  	  mysqlimport --delete \
-          --columns=CODE,DESCRIPTION,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12,C13 \
-          --fields-enclosed-by='"' --fields-terminated-by=',' --lines-terminated-by='\r\n' \
-          --local "$database" Corev2.all
-
 ## External services
 
 Access to the external service Snowstorm and UTS are configured through the
@@ -151,17 +123,3 @@ Use `./manage.py --help` for a full description of functionality and options.
 
 Several other scripts are available for post-processing mappings. Please refer to the
 [src/main/tools/README.md](src/main/tools/README.md) for details.
-
-
-## Debug web API
-
-Using `httpie`:
-
-```
-NAME="..."
-PASSWORD="..."
-POST="--session /tmp/session --form POST"
-HEADER="Content-Type:application/x-www-form-urlencoded"
-eval http $POST http://advance/CodeMapper/rest/authentification/login $HEADER username==$NAME password==$PASSWORD
-eval http $POST http://advance/CodeMapper/rest/code-mapper/related-concepts $HEADER cuis==C0087031 codingSystems==ICD9CM relations==CHD relations==RN
-```
