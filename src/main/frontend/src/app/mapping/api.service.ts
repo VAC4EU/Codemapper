@@ -122,13 +122,28 @@ export class ApiService {
       .pipe(map(cs => compat.importConcepts(cs, vocIds, info)))
   }
 
-  async remapData(mapping : Mapping, vocabularies : Vocabularies, info : TypesInfo) : Promise<{ conceptsCodes : ConceptsCodes, vocabularies : Vocabularies }> {
+  async remapData(mapping : Mapping, vocabularies : Vocabularies, info : TypesInfo) : Promise<{ conceptsCodes : ConceptsCodes, vocabularies : Vocabularies, messages : string[] }> {
     let cuis = Object.keys(mapping.concepts);
     let vocIds = Object.keys(mapping.vocabularies);
-    let vocs = Object.fromEntries(vocIds.map(id => [id, vocabularies[id]]));
+    let vocs : Vocabularies = {}, lostVocs = [];
+    for (let vocId of vocIds) {
+      let voc = vocabularies[vocId];
+      if (voc === undefined) {
+        lostVocs.push(vocId);
+      } else {
+        vocs[vocId] = voc;
+      }
+    }
+    let messages = [];
+    if (lostVocs.length) {
+      messages.push("The following vocabularies aren't supported anymore and were removed: " + lostVocs.join(", ") + ".");
+      if (lostVocs.includes("ICD10/CM")) {
+        messages.push("Instead of ICD10/CM please select vocabularies ICD10 and ICD10-CM.");
+      }
+    }
     let conceptsCodes = await firstValueFrom(
       this.concepts(cuis, vocIds, info));
-    return { conceptsCodes, vocabularies: vocs }
+    return { conceptsCodes, vocabularies: vocs, messages }
   }
 
   concept(cui : ConceptId, vocIds : VocabularyId[]) :

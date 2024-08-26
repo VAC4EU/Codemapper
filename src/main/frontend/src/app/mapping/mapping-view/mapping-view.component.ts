@@ -130,11 +130,12 @@ export class MappingViewComponent implements HasPendingChanges {
           if ((err as HttpErrorResponse).status == 404) {
             [version, mapping] = await firstValueFrom(
               this.persistency.legacyMapping(this.mappingShortkey, this.serverInfo));
-            let { conceptsCodes, vocabularies } =
+            let { conceptsCodes, vocabularies, messages } =
               await this.apiService.remapData(mapping, this.vocabularies, this.mapping.meta);
             let umlsVersion = this.serverInfo.umlsVersion;
             postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
-            this.snackBar.open("Imported mapping from the old version of CodeMapper and remapped, please save.", "Close");
+            messages.unshift("The mapping was automatically imported from the old version of CodeMapper and remapped. Please save.");
+            this.snackBar.open(messages.join("\n\n"), "Ok", { panelClass: 'remap-snackbar' });
           } else {
             throw err;
           }
