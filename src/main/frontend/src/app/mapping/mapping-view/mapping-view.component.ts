@@ -24,7 +24,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { map } from 'rxjs';
-import { Start, StartType, Indexing, CsvImport, Vocabularies, Mapping, Revision, VersionInfo } from '../data';
+import { Start, StartType, Indexing, CsvImport, Vocabularies, Mapping, Revision, VersionInfo, MappingMeta, MappingFormat } from '../data';
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService } from '../api.service';
@@ -43,6 +43,12 @@ enum Tabs {
   History = 6,
 }
 
+const EMPTY_MAPPING_INFO: MappingMeta = {
+  formatVersion: MappingFormat.version,
+  umlsVersion: null,
+  allowedTags: null
+};
+
 @Component({
   selector: 'app-mapping-view',
   templateUrl: './mapping-view.component.html',
@@ -53,7 +59,7 @@ export class MappingViewComponent implements HasPendingChanges {
   mappingName : string = "??";
   projectName : string = "??";
   viewName! : string;
-  mapping : Mapping = new Mapping(null, {}, {}, {}, null); // initial value needed to avoid Expression has changed after it was checked
+  mapping : Mapping = new Mapping(EMPTY_MAPPING_INFO, null, {}, {}, {}); // initial value needed to avoid Expression has changed after it was checked
   versionInfo! : VersionInfo;
   version : number = -1;
   revisions : Revision[] = [];

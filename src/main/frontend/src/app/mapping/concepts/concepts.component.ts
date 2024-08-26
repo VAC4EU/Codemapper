@@ -177,13 +177,14 @@ export class ConceptsComponent implements OnInit {
   }
 
   showTagsDialog(concepts : Concept[]) {
-    let tag = null;
-    if (concepts.length == 1) {
-      tag = concepts[0].tag;
-    }
-    let availableTags = this.mapping.allTags();
+    let tags = new Set(concepts.filter(c => c.tag != null).map(c => c.tag));
+    let tag = tags.size == 1 ? tags.values().next().value : null;
     let codeConcepts = {
-      data: { availableTags, tag },
+      data: {
+        tag: tag,
+        heading: `concept${concepts.length == 1 ? '' : 's'} ${concepts.map(c => c.name).join(', ')}`,
+        allowedTags: this.mapping.meta.allowedTags
+       },
       width: '40em',
     };
     this.dialog

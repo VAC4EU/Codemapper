@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { firstValueFrom } from 'rxjs';
-import { Component, TemplateRef } from '@angular/core';
+import { Component, Input, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
@@ -26,7 +26,7 @@ import { environment } from '../../../environments/environment';
 import { PersistencyService, MappingInfo, ProjectPermission } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
-import { Mapping, Start, StartType } from '../data';
+import { DEFAULT_ALLOWED_TAGS, Mapping, MappingFormat, Start, StartType, VersionInfo } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 
@@ -36,6 +36,7 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
   styleUrls: ['./events-view.component.scss']
 })
 export class EventsViewComponent {
+  @Input({ required: true }) versionInfo! : VersionInfo;
   projectName! : string;
   newEventName : string = "";
   mappings : MappingInfo[] = [];
@@ -71,7 +72,7 @@ export class EventsViewComponent {
       this.mappings.forEach(row => this.selected.select(row));
     }
   }
-  async newMapping(projectName : string, mappingName : string) {
+  async newMapping(projectName : string, mappingName : string, umlsVersion : string) {
     if (!projectName || !mappingName) {
       return;
     }
@@ -81,7 +82,12 @@ export class EventsViewComponent {
       vocs0
         .filter(v => environment.defaultVocabularies.includes(v.id))
         .map(v => [v.id, v]));
-    let mapping = new Mapping(null, vocabularies, {}, {}, vers.umlsVersion);
+    let info = {
+      formatVersion: MappingFormat.version,
+      umlsVersion,
+      allowedTags: DEFAULT_ALLOWED_TAGS,
+    };
+    let mapping = new Mapping(info, null, vocabularies, {}, {});
     let initial = { mappingName, projectName, mapping };
     this.router.navigate(["/mapping"], { state: { initial } });
   }
@@ -98,7 +104,12 @@ export class EventsViewComponent {
             csvContent: imported.csvContent
           };
           let { mappingName, mapping: { vocabularies, concepts, codes, umlsVersion } } = imported;
-          let mapping = new Mapping(start, vocabularies, concepts, codes, umlsVersion);
+          let info = {
+            formatVersion: MappingFormat.version,
+            umlsVersion,
+            allowedTags: DEFAULT_ALLOWED_TAGS,
+          };
+          let mapping = new Mapping(info, start, vocabularies, concepts, codes);
           let allTopics = AllTopics.fromRaw(imported.allTopics, null, Object.keys(concepts));
           let initial = { mappingName, projectName, mapping, allTopics };
           this.router.navigate(["/mapping"], { state: { initial } });

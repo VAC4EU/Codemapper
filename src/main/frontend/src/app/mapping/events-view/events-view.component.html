@@ -96,7 +96,7 @@
     <button
       mat-raised-button
       [disabled]="!mappingName.value"
-      (click)="newMapping(projectName, mappingName.value)"
+      (click)="newMapping(projectName, mappingName.value, versionInfo.umlsVersion)"
       matDialogClose
       color="primary">Ok</button>
   </mat-dialog-actions>

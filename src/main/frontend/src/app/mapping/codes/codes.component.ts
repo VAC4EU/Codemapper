@@ -113,13 +113,14 @@ export class CodesComponent {
   }
 
   editTags(codes : Code[]) {
-    let tag = null;
-    if (codes.length == 1) {
-      tag = codes[0].tag;
-    }
-    let availableTags = this.mapping.allTags();
+    let tags = new Set(codes.filter(c => c.tag != null).map(c => c.tag));
+    let tag = tags.size == 1 ? tags.values().next().value : null;
     let options = {
-      data: { availableTags, tag },
+      data: {
+        tag,
+        heading: `code${codes.length == 1 ? '' : 's'} ${codes.map(c => c.term).join(', ')}`,
+        allowedTags: this.mapping.meta.allowedTags,
+      },
       width: '40em',
     };
     this.dialog.open(TagsDialogComponent, options)

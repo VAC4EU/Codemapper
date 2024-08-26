@@ -477,7 +477,7 @@ export class Remap extends Operation {
     let customConcept = mapping.concepts[CUSTOM_CUI];
     let lost = mapping.getLost(this.conceptsCodes.concepts, this.conceptsCodes.codes);
     console.log("Lost in remap", lost);
-    mapping.umlsVersion = this.umlsVersion;
+    mapping.meta.umlsVersion = this.umlsVersion;
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
     mapping.vocabularies = this.vocabularies;
@@ -508,7 +508,7 @@ export class ImportMapping extends Operation {
     mapping.vocabularies = this.mapping.vocabularies;
     mapping.concepts = this.mapping.concepts;
     mapping.codes = this.mapping.codes;
-    mapping.umlsVersion = this.mapping.umlsVersion;
+    mapping.meta = this.mapping.meta;
     return;
   }
 }

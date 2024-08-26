@@ -34,6 +34,8 @@ export type Concepts = { [key : ConceptId] : Concept }
 
 export type Codes = { [key : VocabularyId] : { [key : CodeId] : Code } }
 
+export const DEFAULT_ALLOWED_TAGS = ['narrow', 'possible', 'exclude', 'ignore']
+
 export interface Tags {
   concepts : { [key : ConceptId] : Tag },
   codes : { [key : VocabularyId] : { [key : CodeId] : Tag } }
@@ -52,13 +54,6 @@ export interface CustomCodes {
 }
 
 export class RemapError {
-}
-
-export interface MappingData {
-  vocabularies : Vocabularies,
-  concepts : Concepts,
-  codes : Codes,
-  umlsVersion : string,
 }
 
 export interface Span {
@@ -98,16 +93,34 @@ export function emptyIndexing(text : string = "") : Indexing {
   }
 }
 
+export enum MappingFormat {
+  version = 1
+}
+
+export interface MappingMeta {
+  formatVersion : MappingFormat;
+  umlsVersion : string | null; // null indicates import from old CodeMapper format
+  allowedTags : string[] | null;
+}
+
+export interface MappingData {
+  meta : MappingMeta,
+  vocabularies : Vocabularies,
+  concepts : Concepts,
+  codes : Codes,
+  umlsVersion : string,
+}
+
 export class Mapping {
   conceptsByCode : { [key : VocabularyId] : { [key : CodeId] : Set<ConceptId> } } = {};
   undoStack : [String, Operation][] = [];
   redoStack : [String, Operation][] = [];
   constructor(
+    public meta: MappingMeta,
     public start : Start,
     public vocabularies : Vocabularies,
     public concepts : Concepts,
     public codes : Codes,
-    public umlsVersion : string | null, // null indicates import from v1
   ) {
     this.cleanupRecacheCheck();
   }
@@ -145,7 +158,7 @@ export class Mapping {
     return value;
   }
   public clone() {
-    let res = new Mapping(this.start, this.vocabularies, this.concepts, this.codes, this.umlsVersion);
+    let res = new Mapping(this.meta, this.start, this.vocabularies, this.concepts, this.codes);
     res.undoStack = this.undoStack;
     res.redoStack = this.redoStack;
     return res;
@@ -425,11 +438,24 @@ export class Mapping {
         codes[vocId][code.id] = code;
       }
     }
-    let umlsVersion = json["umlsVersion"] as string;
-    if (umlsVersion === undefined) {
-      throw new Error("umls version missing in mapping JSON, assume current");
+    let info;
+    if (json['info']) {
+      info = json['info'] as unknown as MappingMeta;
+      if (info.formatVersion !== MappingFormat.version) {
+
+      }
+    } else {
+      let umlsVersion = json["umlsVersion"] as string;
+      if (umlsVersion === undefined) {
+        throw new Error("umls version missing in mapping JSON, assume current");
+      }
+      info = {
+        formatVersion: MappingFormat.version,
+        umlsVersion,
+        allowedTags: DEFAULT_ALLOWED_TAGS,
+      };
     }
-    return new Mapping(start, vocabularies, concepts, codes, umlsVersion);
+    return new Mapping(info, start, vocabularies, concepts, codes);
   }
   static importV1(v0 : JSONValue) : Mapping {
     let v = v0 as JSONObject;
@@ -489,7 +515,12 @@ export class Mapping {
         return new Concept(id, name, "");
       });
     let start : Start = { type: StartType.Indexing, text, spans, concepts: startConcepts, selected };
-    return new Mapping(start, vocabularies, concepts, codes, null);
+    let info = {
+      formatVersion: MappingFormat.version,
+      umlsVersion: null,
+      allowedTags: DEFAULT_ALLOWED_TAGS,
+    };
+    return new Mapping(info, start, vocabularies, concepts, codes);
   }
 
   addConceptsCodes(concepts : Concepts, codes : Codes) {

@@ -1,6 +1,6 @@
 <div class="toolbox">
 
-  <mat-card>
+  <mat-card appearance="outlined">
     <mat-card-header matTooltip="Filter the displayed concepts">
       Filter displayed concepts
     </mat-card-header>
@@ -14,7 +14,7 @@
     </mat-card-actions>
   </mat-card>
 
-  <mat-card>
+  <mat-card appearance="outlined">
     <mat-card-header>
       Vocabulary
     </mat-card-header>
@@ -32,19 +32,19 @@
     </mat-card-actions>
   </mat-card>
 
-  <mat-card>
+  <mat-card appearance="outlined">
     <mat-card-header>
       {{selected.length}} selected code{{selected.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
+      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0">Tag</button>
       <button mat-stroked-button (click)="enableCodes(selected)" [disabled]="selected.length == 0">Enable</button>
       <button mat-stroked-button (click)="disableCodes(selected)" [disabled]="selected.length == 0">Disable</button>
-      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0">Tag</button>
       <button mat-stroked-button (click)="showDescendants(selected)" [disabled]="selected.length == 0">Descendants</button>
     </mat-card-actions>
   </mat-card>
 
-  <mat-card class="custom-codes-operations">
+  <mat-card appearance="outlined" class="custom-codes-operations">
     <mat-card-header>
       Custom codes
     </mat-card-header>

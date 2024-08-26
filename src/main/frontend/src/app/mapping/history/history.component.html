@@ -1,37 +1,38 @@
 <div class="center-content spaced">
 
-<mat-card>
-  <mat-card-content>
-    <p>
-    The following versions of the mapping exist, use the button on the right to download them.
-    <span *ngIf="revisions.length == 0">
-      (The mapping must be saved first.)
-    </span>
-    </p>
-    <table id="versions-table">
-      <thead>
-        <tr>
-          <th>Version</th>
-          <th>Author</th>
-          <th>Timestamp</th>
-          <th>Summary</th>
-          <th class="column-download"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let rev of revisions">
-          <td>{{rev.version}}<span *ngIf="rev.version == version"> (current)</span></td>
-          <td><span class="author">{{rev.author}}</span></td>
-          <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
-          <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
-          <td class="column-download">
-            <a href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
-              <mat-icon>download</mat-icon>
-            </a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </mat-card-content>
-</mat-card>
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <p>
+      The following versions of the mapping exist, use the button on the right to download them.
+      <span *ngIf="revisions.length == 0">
+        (The mapping must be saved first.)
+      </span>
+      </p>
+      <table id="versions-table">
+        <thead>
+          <tr>
+            <th>Version</th>
+            <th>Author</th>
+            <th>Timestamp</th>
+            <th>Summary</th>
+            <th class="column-download"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rev of revisions">
+            <td>{{rev.version}}<span *ngIf="rev.version == version"> (current)</span></td>
+            <td><span class="author">{{rev.author}}</span></td>
+            <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
+            <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
+            <td class="column-download">
+              <a href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
+                <mat-icon>download</mat-icon>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
 </div>

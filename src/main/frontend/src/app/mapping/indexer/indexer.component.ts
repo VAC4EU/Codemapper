@@ -64,14 +64,8 @@ export class IndexerComponent implements OnChanges {
       this.selected = this.initialIndexing.concepts
         .filter(c => this.initialIndexing!.selected.includes(c.id));
       this.setRendering(this.text, this.spans, this.concepts, this.selected);
-      if (this.table) {
-        this.table.setSelected(this.selected);
-      }
+      setTimeout(() => this.table.setSelected(this.selected), 0);
     }
-  }
-
-  ngAfterViewInit() {
-    this.table.setSelected(this.selected);
   }
 
   setSelected(concepts : Concept[]) {
