@@ -64,26 +64,26 @@ public class ReviewEndpoint {
 
   private Session session;
   User user;
-  String mappingUUID;
+  String mappingShortkey;
 
   @OnOpen
   public void onOpen(
-      Session session, EndpointConfig config, @PathParam("mappingUUID") String mappingUUID)
+      Session session, EndpointConfig config, @PathParam("mappingShortkey") String mappingShortkey)
       throws IOException {
 
     this.user = (User) config.getUserProperties().get("user");
     if (this.user == null) {
       throw new IOException("user not logged in");
     }
-    System.out.println("ReviewEndpoint user: " + user + " " + mappingUUID);
+    System.out.println("ReviewEndpoint user: " + user + " " + mappingShortkey);
 
     this.session = session;
-    this.mappingUUID = mappingUUID;
-    endpoints.getOrDefault(mappingUUID, new HashSet<>()).add(this);
+    this.mappingShortkey = mappingShortkey;
+    endpoints.getOrDefault(mappingShortkey, new HashSet<>()).add(this);
 
     try {
       AllTopics allTopics =
-          CodeMapperApplication.getReviewApi().getAll(mappingUUID, this.user.getUsername());
+          CodeMapperApplication.getReviewApi().getAll(mappingShortkey, this.user.getUsername());
       ObjectMapper mapper = new ObjectMapper();
       mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
       this.session.getBasicRemote().sendObject(new ServerMessage.CurrentThreads(allTopics));
@@ -94,7 +94,7 @@ public class ReviewEndpoint {
 
   static void broadcast(ServerMessage message) throws IOException {
     endpoints.forEach(
-        (mappingUUID, forMapping) -> {
+        (mappingShortkey, forMapping) -> {
           forMapping.forEach(
               endpoint -> {
                 try {

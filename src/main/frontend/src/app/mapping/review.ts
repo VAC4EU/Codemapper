@@ -192,11 +192,11 @@ export type AllTopics0 = {
 }
 
 export interface ReviewOperation {
-  run(api : ApiService, mappingUUID : string) : Observable<Object>;
+  run(api : ApiService, mappingShortkey : string) : Observable<Object>;
 }
 
 export class Refresh implements ReviewOperation {
-  run(api : ApiService, mappingUUID : string) : Observable<Object> {
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
     return of({});
   }
 }
@@ -209,8 +209,8 @@ export class NewTopic implements ReviewOperation {
     private content : string,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, mappingUUID : string) : Observable<Object> {
-    return api.newTopic(mappingUUID, this.cui, this.sab, this.code, this.content)
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
+    return api.newTopic(mappingShortkey, this.cui, this.sab, this.code, this.content)
       .pipe(map(id => this.data.topicShowMessages[id] = true));
   }
 }
@@ -221,16 +221,16 @@ export class NewMessage implements ReviewOperation {
     private content : string,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, mappingUUID : string) : Observable<Object> {
-    return api.newMessage(mappingUUID, this.topicId, this.content)
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
+    return api.newMessage(mappingShortkey, this.topicId, this.content)
       .pipe(map(_ => this.data.newMessageText[this.topicId] = ""))
   }
 }
 
 export class MarkAsRead implements ReviewOperation {
   constructor(private topicId : number) { }
-  run(api : ApiService, mappingUUID : string) : Observable<Object> {
-    return api.markAsRead(mappingUUID, this.topicId)
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
+    return api.markAsRead(mappingShortkey, this.topicId)
   }
 }
 
@@ -239,10 +239,10 @@ export class ResolveTopic implements ReviewOperation {
     private topicId : number,
     private data : ReviewData,
   ) { }
-  run(api : ApiService, mappingUUID : string) : Observable<Object> {
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
     return merge(
-      api.markAsRead(mappingUUID, this.topicId),
-      api.resolveTopic(mappingUUID, this.topicId)
+      api.markAsRead(mappingShortkey, this.topicId),
+      api.resolveTopic(mappingShortkey, this.topicId)
     ).pipe(map(_ => this.data.topicShowMessages[this.topicId] = false))
   }
 }

@@ -148,30 +148,29 @@ public class PersistencyApi {
     }
   }
 
-  public String getCaseDefinition(String mappingUUID) throws CodeMapperException {
-    String query = "SELECT cd.state FROM case_definitions cd WHERE cd.uuid = ?::UUID";
+  public String getCaseDefinition(String shortkey) throws CodeMapperException {
+    String query = "SELECT cd.state FROM case_definitions cd WHERE cd.shortkey = ?";
     try {
-      return parameterizedStringQuery(query, mappingUUID);
+      return parameterizedStringQuery(query, shortkey);
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get case definition", e);
     }
   }
 
-  public MappingRevision getRevision(String mappingUUID, Integer version)
-      throws CodeMapperException {
+  public MappingRevision getRevision(String shortkey, Integer version) throws CodeMapperException {
     String query =
         "SELECT r.mapping, r.timestamp, r.summary, u.username as user "
             + "FROM case_definitions cd "
             + "INNER JOIN case_definition_revisions r ON r.case_definition_id = cd.id "
             + "INNER JOIN users u ON u.id = r.user_id "
-            + "WHERE cd.uuid = ?::UUID "
+            + "WHERE cd.shortkey = ? "
             + "AND r.version = ? "
             + "ORDER BY r.timestamp DESC "
             + "LIMIT 1";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, shortkey);
       statement.setInt(2, version);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
@@ -189,19 +188,19 @@ public class PersistencyApi {
   }
 
   /** Return the latest revision of a mapping, if it has one, or null otherwise. */
-  public MappingRevision getLatestRevision(String mappingUUID) throws CodeMapperException {
+  public MappingRevision getLatestRevision(String shortkey) throws CodeMapperException {
     String query =
         "SELECT r.version, r.mapping, r.timestamp, r.summary, u.username as user "
             + "FROM case_definitions cd "
             + "INNER JOIN case_definition_revisions r ON r.case_definition_id = cd.id "
             + "INNER JOIN users u ON u.id = r.user_id "
-            + "WHERE cd.uuid = ?::UUID "
+            + "WHERE cd.shortkey = ? "
             + "ORDER BY r.timestamp DESC "
             + "LIMIT 1";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, shortkey);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
         int version = result.getInt("version");
@@ -218,7 +217,7 @@ public class PersistencyApi {
     }
   }
 
-  public List<MappingRevision> getRevisions(String mappingUUID) throws CodeMapperException {
+  public List<MappingRevision> getRevisions(String shortkey) throws CodeMapperException {
     String query =
         "SELECT r.version, u.username AS user, r.timestamp, r.summary "
             + "FROM case_definition_revisions r "
@@ -226,12 +225,12 @@ public class PersistencyApi {
             + "ON r.case_definition_id = cd.id "
             + "INNER JOIN users u "
             + "ON u.id = r.user_id "
-            + "WHERE cd.uuid = ?::UUID "
+            + "WHERE cd.shortkey = ? "
             + "ORDER BY r.timestamp DESC";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, shortkey);
       ResultSet result = statement.executeQuery();
       List<MappingRevision> res = new LinkedList<>();
       while (result.next()) {
@@ -247,13 +246,13 @@ public class PersistencyApi {
     }
   }
 
-  public int saveRevision(String mappingUUID, String username, String summary, String mappingJson)
+  public int saveRevision(String shortkey, String username, String summary, String mappingJson)
       throws CodeMapperException {
     String query =
         "INSERT INTO case_definition_revisions (case_definition_id, user_id, mapping, summary) "
             + "SELECT cd.id, u.id, ?::jsonb, ? "
             + "FROM case_definitions cd, users u "
-            + "WHERE u.username = ? AND cd.uuid = ?::UUID "
+            + "WHERE u.username = ? AND cd.shortkey = ? "
             + "RETURNING version";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -261,7 +260,7 @@ public class PersistencyApi {
       statement.setString(ix++, mappingJson);
       statement.setString(ix++, summary);
       statement.setString(ix++, username);
-      statement.setString(ix++, mappingUUID);
+      statement.setString(ix++, shortkey);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
         return result.getInt("version");
@@ -273,17 +272,17 @@ public class PersistencyApi {
     }
   }
 
-  public List<Comment> getComments(String mappingUUID) throws CodeMapperException {
+  public List<Comment> getComments(String shortkey) throws CodeMapperException {
     String query =
         "SELECT users.username AS author, DATE_TRUNC ('second', timestamp) as timestamp, cui, content, timestamp as full_timestamp "
             + "FROM comments "
             + "INNER JOIN users ON comments.author = users.id "
             + "INNER JOIN case_definitions on comments.case_definition_id = case_definitions.id "
-            + "WHERE case_definitions.uuid = ?::UUID "
+            + "WHERE case_definitions.shortkey = ? "
             + "ORDER BY full_timestamp";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, shortkey);
       ResultSet result = statement.executeQuery();
       List<Comment> comments = new LinkedList<>();
       while (result.next()) {
@@ -307,18 +306,18 @@ public class PersistencyApi {
     return DatatypeConverter.printDateTime(calendar);
   }
 
-  public void createComment(String mappingUUID, User user, String cui, String content)
+  public void createComment(String shortkey, User user, String cui, String content)
       throws CodeMapperException {
     String query =
         "INSERT INTO comments (case_definition_id, cui, author, content) "
             + "SELECT cd.id, ?, u.id, ? "
             + "FROM users u, case_definitions cd "
-            + "WHERE cd.uuid = ? AND users.username = ?";
+            + "WHERE cd.shortkey = ? AND users.username = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, cui);
       statement.setString(2, content);
-      statement.setString(3, mappingUUID);
+      statement.setString(3, shortkey);
       statement.setString(4, user.getUsername());
       statement.executeUpdate();
     } catch (SQLException e) {
@@ -365,24 +364,24 @@ public class PersistencyApi {
   @XmlRootElement
   public static class MappingInfo {
     public String mappingName;
-    public String mappingUUID;
+    public String mappingShortkey;
     public String projectName;
   }
 
-  public MappingInfo getMappingInfo(String mappingUUID) throws CodeMapperException {
+  public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
         "SELECT mapping_name, project_name "
-            + "FROM projects_mappings_uuid "
-            + "WHERE mapping_uuid = ?::UUID";
+            + "FROM projects_mappings_shortkey "
+            + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, shortkey);
       ResultSet res = statement.executeQuery();
       if (!res.next()) {
-        throw CodeMapperException.user("Invalid mapping UUID " + mappingUUID);
+        throw CodeMapperException.user("Invalid mapping shortkey " + shortkey);
       }
       MappingInfo mapping = new MappingInfo();
-      mapping.mappingUUID = mappingUUID;
+      mapping.mappingShortkey = shortkey;
       mapping.mappingName = res.getString(1);
       mapping.projectName = res.getString(2);
       return mapping;
@@ -394,8 +393,8 @@ public class PersistencyApi {
   public MappingInfo getMappingInfoByOldName(String projectName, String mappingName)
       throws CodeMapperException {
     String query =
-        "SELECT mapping_uuid, mapping_name, project_name "
-            + "FROM projects_mappings_uuid "
+        "SELECT mapping_shortkey, mapping_name, project_name "
+            + "FROM projects_mappings_shortkey "
             + "WHERE project_name = ? AND mapping_old_name = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -403,10 +402,11 @@ public class PersistencyApi {
       statement.setString(2, mappingName);
       ResultSet res = statement.executeQuery();
       if (!res.next()) {
-        throw CodeMapperException.user("Invalid mapping UUID " + projectName + "/" + mappingName);
+        throw CodeMapperException.user(
+            "Invalid mapping shortkey " + projectName + "/" + mappingName);
       }
       MappingInfo mapping = new MappingInfo();
-      mapping.mappingUUID = res.getString(1);
+      mapping.mappingShortkey = res.getString(1);
       mapping.mappingName = res.getString(2);
       mapping.projectName = res.getString(3);
       return mapping;
@@ -456,9 +456,10 @@ public class PersistencyApi {
 
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.uuid, cd.name "
+        "SELECT cd.shortkey, cd.name "
             + "FROM projects p "
-            + "INNER JOIN case_definitions cd ON cd.project_id = p.id "
+            + "INNER JOIN case_definitions cd "
+            + "ON cd.project_id = p.id "
             + "WHERE p.name = ?";
 
     try (Connection connection = connectionPool.getConnection();
@@ -469,7 +470,7 @@ public class PersistencyApi {
       List<MappingInfo> mappings = new LinkedList<>();
       while (set.next()) {
         MappingInfo mapping = new MappingInfo();
-        mapping.mappingUUID = set.getString(1);
+        mapping.mappingShortkey = set.getString(1);
         mapping.mappingName = set.getString(2);
         mapping.projectName = project;
         mappings.add(mapping);
@@ -486,7 +487,7 @@ public class PersistencyApi {
     String query =
         "INSERT INTO case_definitions (project_id, name) "
             + "SELECT p.id, ? FROM projects p WHERE p.name = ? "
-            + "RETURNING uuid";
+            + "RETURNING shortkey";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -494,12 +495,12 @@ public class PersistencyApi {
       statement.setString(2, projectName);
       ResultSet set = statement.executeQuery();
       if (!set.next()) {
-        throw CodeMapperException.server("no uuid when creating a mapping");
+        throw CodeMapperException.server("no shortkey when creating a mapping");
       }
       MappingInfo mapping = new MappingInfo();
       mapping.mappingName = mappingName;
       mapping.projectName = projectName;
-      mapping.mappingUUID = set.getString(1);
+      mapping.mappingShortkey = set.getString(1);
       return mapping;
     } catch (SQLException e) {
       e.printStackTrace();
@@ -507,13 +508,13 @@ public class PersistencyApi {
     }
   }
 
-  public void setName(String mappingUUID, String name) throws CodeMapperException {
-    String query = "UPDATE case_definitions SET name = ? WHERE uuid = ?::UUID";
+  public void setName(String mappingShortkey, String name) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET name = ? WHERE shortkey = ?";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, name);
-      statement.setString(2, mappingUUID);
+      statement.setString(2, mappingShortkey);
       statement.execute();
     } catch (SQLException e) {
       e.printStackTrace();

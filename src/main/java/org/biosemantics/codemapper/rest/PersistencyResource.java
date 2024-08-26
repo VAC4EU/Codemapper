@@ -102,14 +102,14 @@ public class PersistencyResource {
   }
 
   @GET
-  @Path("mapping/{mappingUUID}/legacy")
+  @Path("mapping/{mappingShortkey}/legacy")
   @Produces(MediaType.APPLICATION_JSON)
   public String getCaseDefinition(
-      @PathParam("mappingUUID") String mappingUUID, @Context User user) {
+      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
-      String stateJson = api.getCaseDefinition(mappingUUID);
+          user, mappingShortkey, ProjectPermission.Editor);
+      String stateJson = api.getCaseDefinition(mappingShortkey);
       if (stateJson != null) return stateJson;
       else throw new NotFoundException();
     } catch (CodeMapperException e) {
@@ -120,13 +120,13 @@ public class PersistencyResource {
   }
 
   @GET
-  @Path("mapping/{mappingUUID}/info")
+  @Path("mapping/{mappingShortkey}/info")
   @Produces(MediaType.APPLICATION_JSON)
   public MappingInfo getMappingInfo(
-      @PathParam("mappingUUID") String mappingUUID, @Context User user) {
+      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       return AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -149,15 +149,15 @@ public class PersistencyResource {
   }
 
   @GET
-  @Path("mapping/{mappingUUID}/latest-revision")
+  @Path("mapping/{mappingShortkey}/latest-revision")
   @Produces(MediaType.APPLICATION_JSON)
   public MappingRevision getLatestRevision(
-      @PathParam("mappingUUID") String mappingUUID, @Context User user) {
-    logger.info(String.format("Get latest revision %s (%s)", mappingUUID, user));
+      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
+    logger.info(String.format("Get latest revision %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
-      MappingRevision mappingJson = api.getLatestRevision(mappingUUID);
+          user, mappingShortkey, ProjectPermission.Editor);
+      MappingRevision mappingJson = api.getLatestRevision(mappingShortkey);
       if (mappingJson != null) return mappingJson;
       else throw new NotFoundException();
     } catch (CodeMapperException e) {
@@ -168,16 +168,16 @@ public class PersistencyResource {
   }
 
   @GET
-  @Path("mapping/{mappingUUID}/revisions")
+  @Path("mapping/{mappingShortkey}/revisions")
   @Produces(MediaType.APPLICATION_JSON)
   public List<MappingRevision> getRevisions(
-      @PathParam("mappingUUID") String mappingUUID, @Context User user) {
-    logger.info(String.format("Get revisions %s (%s)", mappingUUID, user));
+      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
+    logger.info(String.format("Get revisions %s (%s)", mappingShortkey, user));
 
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
-      return api.getRevisions(mappingUUID);
+          user, mappingShortkey, ProjectPermission.Editor);
+      return api.getRevisions(mappingShortkey);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition revisions");
       e.printStackTrace();
@@ -203,18 +203,18 @@ public class PersistencyResource {
   }
 
   @POST
-  @Path("mapping/{mappingUUID}/save-revision")
+  @Path("mapping/{mappingShortkey}/save-revision")
   @Produces(MediaType.APPLICATION_JSON)
   public int saveCaseDefinitionRevision(
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @FormParam("mapping") String mappingJson,
       @FormParam("summary") String summary,
       @Context User user) {
-    logger.info(String.format("Save case definition revision %s (%s)", mappingUUID, user));
+    logger.info(String.format("Save case definition revision %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
-      return api.saveRevision(mappingUUID, user.getUsername(), summary, mappingJson);
+          user, mappingShortkey, ProjectPermission.Editor);
+      return api.saveRevision(mappingShortkey, user.getUsername(), summary, mappingJson);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't save case definition revision");
       e.printStackTrace();
@@ -223,17 +223,17 @@ public class PersistencyResource {
   }
 
   @POST
-  @Path("mapping/{mappingUUID}/name")
+  @Path("mapping/{mappingShortkey}/name")
   @Produces(MediaType.APPLICATION_JSON)
   public void setMappingName(
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @FormParam("name") String name,
       @Context User user) {
-    logger.info(String.format("Set mapping name %s (%s)", mappingUUID, user));
+    logger.info(String.format("Set mapping name %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Admin);
-      api.setName(mappingUUID, name);
+          user, mappingShortkey, ProjectPermission.Admin);
+      api.setName(mappingShortkey, name);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't save case definition revision");
       e.printStackTrace();

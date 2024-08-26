@@ -220,8 +220,8 @@ public class AuthentificationApi {
   }
 
   public static MappingInfo assertMappingProjectRolesImplies(
-      User user, String mappingUUID, ProjectPermission perm) throws CodeMapperException {
-    MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingUUID);
+      User user, String mappingShortkey, ProjectPermission perm) throws CodeMapperException {
+    MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
     assertProjectRolesImplies(user, mapping.projectName, perm);
     return mapping;
   }

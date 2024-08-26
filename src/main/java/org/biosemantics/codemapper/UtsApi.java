@@ -177,7 +177,6 @@ public class UtsApi {
                 + response.getStatusInfo()
                 + ")");
       }
-      ;
       SearchResults results = response.readEntity(SearchResults.class);
       if (results.result.results.isEmpty()
           || (results.result.results.size() == 1

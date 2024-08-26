@@ -50,7 +50,7 @@ export class ConceptsComponent implements OnInit {
   constructor(
     private dialog : MatDialog,
     private api : ApiService,
-  ) {  }
+  ) { }
 
   openDialog(templateRef : TemplateRef<any>) {
     this.dialogRef = this.dialog.open(templateRef, {
@@ -184,7 +184,7 @@ export class ConceptsComponent implements OnInit {
         tag: tag,
         heading: `concept${concepts.length == 1 ? '' : 's'} ${concepts.map(c => c.name).join(', ')}`,
         allowedTags: this.mapping.meta.allowedTags
-       },
+      },
       width: '40em',
     };
     this.dialog

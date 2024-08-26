@@ -44,7 +44,7 @@ public abstract class ClientMessage {
     public void process(ReviewEndpoint endpoint, String user) throws IOException {
       try {
         CodeMapperApplication.getReviewApi()
-            .newMessage(endpoint.mappingUUID, topicId, message.content, user, null);
+            .newMessage(endpoint.mappingShortkey, topicId, message.content, user, null);
       } catch (CodeMapperException e) {
         throw new IOException(e);
       }
@@ -63,7 +63,7 @@ public abstract class ClientMessage {
     public void process(ReviewEndpoint endpoint, String user) throws IOException {
       try {
         CodeMapperApplication.getReviewApi()
-            .newTopic(endpoint.mappingUUID, cui, sab, code, message.content, user, null);
+            .newTopic(endpoint.mappingShortkey, cui, sab, code, message.content, user, null);
       } catch (CodeMapperException e) {
         throw new IOException(e);
       }

@@ -32,7 +32,7 @@ export class TagsDialogComponent {
 
   constructor(
     public dialogRef : MatDialogRef<TagsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data : { heading: string, allowedTags : string[], tag : string | null }
+    @Inject(MAT_DIALOG_DATA) public data : { heading : string, allowedTags : string[], tag : string | null }
   ) {
     this.tag = data.tag ?? '';
     this.heading = data.heading ?? '';

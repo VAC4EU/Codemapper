@@ -61,12 +61,13 @@ public class ReviewApi {
   }
 
   public void newMessage(
-      String mappingUUID, int topicId, String content, String user, String timestamp)
+      String mappingShortkey, int topicId, String content, String user, String timestamp)
       throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
-    logger.info(String.format("new message %s %d %s %s", mappingUUID, topicId, content, timestamp));
+    logger.info(
+        String.format("new message %s %d %s %s", mappingShortkey, topicId, content, timestamp));
     String query = "SELECT * FROM review_new_message(?, ?, ?, ?::TIMESTAMP)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -82,7 +83,7 @@ public class ReviewApi {
   }
 
   public int newTopic(
-      String mappingUUID,
+      String mappingShortkey,
       String cui,
       String sab,
       String code,
@@ -94,12 +95,12 @@ public class ReviewApi {
       timestamp = now();
     }
     logger.info(
-        String.format("new topic %s %s %s %s %s", mappingUUID, cui, heading, user, timestamp));
-    String query = "SELECT * FROM review_new_topic_uuid(?::UUID, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
+        String.format("new topic %s %s %s %s %s", mappingShortkey, cui, heading, user, timestamp));
+    String query = "SELECT * FROM review_new_topic_shortkey(?, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
-      statement.setString(ix++, mappingUUID);
+      statement.setString(ix++, mappingShortkey);
       statement.setString(ix++, cui);
       statement.setString(ix++, sab);
       statement.setString(ix++, code);
@@ -162,11 +163,11 @@ public class ReviewApi {
     }
   }
 
-  public AllTopics getAll(String mappingUUID, String user) throws CodeMapperException {
-    String query = "SELECT * FROM review_all_messages_uuid(?::UUID, ?::TEXT)";
+  public AllTopics getAll(String mappingShortkey, String user) throws CodeMapperException {
+    String query = "SELECT * FROM review_all_messages_shortkey(?, ?::TEXT)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, mappingUUID);
+      statement.setString(1, mappingShortkey);
       statement.setString(2, user);
       AllTopics allTopics = new AllTopics();
       ResultSet result = statement.executeQuery();
@@ -276,13 +277,13 @@ public class ReviewApi {
   }
 
   public static class TopicInfo {
-    public String mappingUUID;
+    public String mappingShortkey;
     public boolean isResolved;
   }
 
   public TopicInfo getTopicInfo(int topicId) throws CodeMapperException {
     String query =
-        "SELECT cd.uuid, t.resolved FROM review_topic t "
+        "SELECT cd.shortkey, t.resolved FROM review_topic t "
             + "INNER JOIN case_definitions cd ON cd.id = t.case_definition_id "
             + "WHERE t.id = ?";
     try (Connection connection = connectionPool.getConnection();
@@ -293,7 +294,7 @@ public class ReviewApi {
         throw CodeMapperException.user("No such topic: " + topicId);
       }
       TopicInfo info = new TopicInfo();
-      info.mappingUUID = set.getString(1);
+      info.mappingShortkey = set.getString(1);
       info.isResolved = set.getBoolean(2);
       return info;
     } catch (SQLException e) {
@@ -318,34 +319,34 @@ public class ReviewApi {
     }
   }
 
-  public void saveReviews(String mappingUUID, AllTopics allTopics) throws CodeMapperException {
+  public void saveReviews(String mappingShortkey, AllTopics allTopics) throws CodeMapperException {
     for (String cui : allTopics.byConcept.keySet()) {
       for (Topic top : allTopics.byConcept.get(cui).values()) {
-        saveTopic(mappingUUID, cui, null, null, top);
+        saveTopic(mappingShortkey, cui, null, null, top);
       }
     }
     for (String sab : allTopics.byCode.keySet()) {
       for (String code : allTopics.byCode.get(sab).keySet()) {
         for (Topic top : allTopics.byCode.get(sab).get(code).values()) {
-          saveTopic(mappingUUID, null, sab, code, top);
+          saveTopic(mappingShortkey, null, sab, code, top);
         }
       }
     }
     for (Topic top : allTopics.general.values()) {
-      saveTopic(mappingUUID, null, null, null, top);
+      saveTopic(mappingShortkey, null, null, null, top);
     }
   }
 
-  private void saveTopic(String mappingUUID, String cui, String sab, String code, Topic top)
+  private void saveTopic(String mappingShortkey, String cui, String sab, String code, Topic top)
       throws CodeMapperException {
 
     String timestamp = top.created.timestamp;
     if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-    int id = newTopic(mappingUUID, cui, sab, code, top.heading, top.created.user, timestamp);
+    int id = newTopic(mappingShortkey, cui, sab, code, top.heading, top.created.user, timestamp);
     for (Message msg : top.messages) {
       timestamp = msg.timestamp;
       if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-      newMessage(mappingUUID, id, msg.content, msg.username, timestamp);
+      newMessage(mappingShortkey, id, msg.content, msg.username, timestamp);
     }
     if (top.resolved != null) {
       resolveTopic(id, top.resolved.user, top.resolved.timestamp);

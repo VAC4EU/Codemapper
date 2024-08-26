@@ -43,16 +43,16 @@ import org.biosemantics.codemapper.review.ReviewApi.TopicInfo;
 @Path("review")
 public class ReviewResource {
   @GET
-  @Path("topics/{mappingUUID}")
+  @Path("topics/{mappingShortkey}")
   @Produces(MediaType.APPLICATION_JSON)
   public AllTopics getTopicsByCui(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID) {
+      @PathParam("mappingShortkey") String mappingShortkey) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
-      return CodeMapperApplication.getReviewApi().getAll(mappingUUID, user.getUsername());
+          user, mappingShortkey, ProjectPermission.Editor);
+      return CodeMapperApplication.getReviewApi().getAll(mappingShortkey, user.getUsername());
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -60,21 +60,21 @@ public class ReviewResource {
   }
 
   @POST
-  @Path("topic/{mappingUUID}")
+  @Path("topic/{mappingShortkey}")
   @Produces(MediaType.APPLICATION_JSON)
   public int postNewTopic(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @QueryParam("cui") String cui,
       @QueryParam("sab") String sab,
       @QueryParam("code") String code,
       @FormParam("heading") String heading) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor);
       return CodeMapperApplication.getReviewApi()
-          .newTopic(mappingUUID, cui, sab, code, heading, user.getUsername(), null);
+          .newTopic(mappingShortkey, cui, sab, code, heading, user.getUsername(), null);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -82,26 +82,26 @@ public class ReviewResource {
   }
 
   @POST
-  @Path("message/{mappingUUID}/{topicId}")
+  @Path("message/{mappingShortkey}/{topicId}")
   @Produces(MediaType.APPLICATION_JSON)
   public void newMessage(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId,
       @FormParam("content") String content) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor);
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
-      if (!topic.mappingUUID.equals(mappingUUID)) {
+      if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
       if (topic.isResolved) {
         throw CodeMapperException.user("cannot create message on resolved topic");
       }
       CodeMapperApplication.getReviewApi()
-          .newMessage(mappingUUID, topicId, content, user.getUsername(), null);
+          .newMessage(mappingShortkey, topicId, content, user.getUsername(), null);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -109,19 +109,20 @@ public class ReviewResource {
   }
 
   @POST
-  @Path("topic-resolve/{mappingUUID}/{topicId}")
+  @Path("topic-resolve/{mappingShortkey}/{topicId}")
   @Produces(MediaType.APPLICATION_JSON)
   public void resolveTopic(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId) {
     try {
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
-      if (!topic.mappingUUID.equals(mappingUUID)) {
+      if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
-      MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingUUID);
+      MappingInfo mapping =
+          CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
       ProjectPermission perm = user.getProjectPermissions().get(mapping.projectName);
       String createdBy = CodeMapperApplication.getReviewApi().getTopicCreatedBy(topicId);
       if (!perm.implies(ProjectPermission.Editor)
@@ -138,18 +139,18 @@ public class ReviewResource {
   }
 
   @POST
-  @Path("topic-mark-read/{mappingUUID}/{topicId}")
+  @Path("topic-mark-read/{mappingShortkey}/{topicId}")
   @Produces(MediaType.APPLICATION_JSON)
   public void markRead(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor);
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
-      if (!topic.mappingUUID.equals(mappingUUID)) {
+      if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
       CodeMapperApplication.getReviewApi().markRead(topicId, user.getUsername());
@@ -160,22 +161,22 @@ public class ReviewResource {
   }
 
   @POST
-  @Path("topics/{mappingUUID}")
+  @Path("topics/{mappingShortkey}")
   @Produces(MediaType.APPLICATION_JSON)
   public void saveReviews(
       @Context HttpServletRequest request,
       @Context User user,
-      @PathParam("mappingUUID") String mappingUUID,
+      @PathParam("mappingShortkey") String mappingShortkey,
       @FormParam("allTopics") String allTopicsJson) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingUUID, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor);
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       AllTopics allTopics = mapper.readValue(allTopicsJson, AllTopics.class);
       // logger.info("Save reviews with messages " + allTopics.numMessages());
       CodeMapperApplication.getPersistencyApi().ensureUsers(allTopics.allUsers());
-      CodeMapperApplication.getReviewApi().saveReviews(mappingUUID, allTopics);
+      CodeMapperApplication.getReviewApi().saveReviews(mappingShortkey, allTopics);
     } catch (CodeMapperException | JsonProcessingException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

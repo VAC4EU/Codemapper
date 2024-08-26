@@ -116,7 +116,7 @@ export class Mapping {
   undoStack : [String, Operation][] = [];
   redoStack : [String, Operation][] = [];
   constructor(
-    public meta: MappingMeta,
+    public meta : MappingMeta,
     public start : Start,
     public vocabularies : Vocabularies,
     public concepts : Concepts,
@@ -438,10 +438,10 @@ export class Mapping {
         codes[vocId][code.id] = code;
       }
     }
-    let info;
-    if (json['info']) {
-      info = json['info'] as unknown as MappingMeta;
-      if (info.formatVersion !== MappingFormat.version) {
+    let meta;
+    if (json['meta']) {
+      meta = json['meta'] as unknown as MappingMeta;
+      if (meta.formatVersion !== MappingFormat.version) {
 
       }
     } else {
@@ -449,13 +449,13 @@ export class Mapping {
       if (umlsVersion === undefined) {
         throw new Error("umls version missing in mapping JSON, assume current");
       }
-      info = {
+      meta = {
         formatVersion: MappingFormat.version,
         umlsVersion,
         allowedTags: DEFAULT_ALLOWED_TAGS,
       };
     }
-    return new Mapping(info, start, vocabularies, concepts, codes);
+    return new Mapping(meta, start, vocabularies, concepts, codes);
   }
   static importV1(v0 : JSONValue) : Mapping {
     let v = v0 as JSONObject;
@@ -574,8 +574,8 @@ export class Concept {
   ) { }
 }
 
-export function filterConcepts(concepts : { [key : ConceptId] : Concept }, removeCuis : ConceptId[]) : { [key : ConceptId] : Concept } {
-  let res : { [key : ConceptId] : Concept } = {};
+export function filterConcepts(concepts : Concepts, removeCuis : ConceptId[]) : Concepts {
+  let res : Concepts = {};
   for (let cui in concepts) {
     if (!removeCuis.includes(cui)) {
       res[cui] = concepts[cui];

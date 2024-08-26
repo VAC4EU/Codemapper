@@ -23,10 +23,10 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
 import { environment } from '../../../environments/environment';
-import { PersistencyService, MappingInfo, ProjectPermission } from '../persistency.service';
+import { PersistencyService, MappingInfo, ProjectPermission, mappingInfoLink } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
-import { DEFAULT_ALLOWED_TAGS, Mapping, MappingFormat, Start, StartType, VersionInfo } from '../data';
+import { DEFAULT_ALLOWED_TAGS, EMPTY_VERSION_INFO, Mapping, MappingFormat, Start, StartType, VersionInfo } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 
@@ -36,7 +36,7 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
   styleUrls: ['./events-view.component.scss']
 })
 export class EventsViewComponent {
-  @Input({ required: true }) versionInfo! : VersionInfo;
+  versionInfo : VersionInfo = EMPTY_VERSION_INFO;
   projectName! : string;
   newEventName : string = "";
   mappings : MappingInfo[] = [];
@@ -52,6 +52,7 @@ export class EventsViewComponent {
     public auth : AuthService,
   ) { }
   ngOnInit() {
+    this.api.versionInfo().subscribe(info => this.versionInfo = info);
     this.route.params.subscribe(params => {
       this.projectName = params['project'];
       this.title.setTitle(`CodeMapper: Project ${this.projectName}`);
@@ -119,8 +120,11 @@ export class EventsViewComponent {
   openDialog(templateRef : TemplateRef<any>) {
     this.dialog.open(templateRef, { width: '700px' });
   }
+  mappingLink(mapping : MappingInfo) {
+    return mappingInfoLink(mapping)
+  }
   async renameMapping(mapping : MappingInfo, newName : string) {
-    await this.persistency.mappingSetName(mapping.mappingUUID, newName).toPromise();
+    await this.persistency.mappingSetName(mapping.mappingShortkey, newName).toPromise();
     mapping.mappingName = newName;
     console.log("renamed");
   }

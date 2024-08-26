@@ -2,7 +2,7 @@
 <div class="center-content">
   <mat-toolbar>
     <app-navigation [projectName]="projectName"></app-navigation>
-    <span>CodeMapper project: {{projectName}}</span>
+    <span>Project: {{projectName}}</span>
     <span class="menu-spacer"></span>
     <span matTooltip="Download all mappings of the project">
       <button
@@ -76,7 +76,7 @@
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef>Mapping name</th>
       <td mat-cell *matCellDef="let mapping">
-        <a [routerLink]="['/mapping', mapping.mappingUUID]" mat-menu-item>
+        <a [routerLink]="mappingLink(mapping)" mat-menu-item>
           {{mapping.mappingName}}
         </a>
       </td>

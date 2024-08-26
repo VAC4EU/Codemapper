@@ -251,20 +251,20 @@ public class CodeMapperResource {
   public Response getMappingCSV(
       @Context HttpServletRequest request,
       @Context User user,
-      @QueryParam("mappingUUID") final String mappingUUID,
+      @QueryParam("mappingShortkey") final String mappingShortkey,
       @DefaultValue("-1") @QueryParam("version") Integer version,
       @QueryParam("url") final String url,
       @QueryParam("includeDescendants") final boolean includeDescendants) {
     try {
       MappingInfo info =
           AuthentificationApi.assertMappingProjectRolesImplies(
-              user, mappingUUID, ProjectPermission.Editor);
-      logger.debug(String.format("Download mapping as CSV %s (%s)", mappingUUID, user));
+              user, mappingShortkey, ProjectPermission.Editor);
+      logger.debug(String.format("Download mapping as CSV %s (%s)", mappingShortkey, user));
       PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
       final MappingRevision revision =
           version == -1
-              ? persistencyApi.getLatestRevision(info.mappingUUID)
-              : persistencyApi.getRevision(info.mappingUUID, version);
+              ? persistencyApi.getLatestRevision(info.mappingShortkey)
+              : persistencyApi.getRevision(info.mappingShortkey, version);
       String filename =
           String.format(
               "%s - %s v%d.%s",
@@ -335,7 +335,7 @@ public class CodeMapperResource {
       for (MappingInfo info : persistencyApi.getMappingInfos(project)) {
         Mapping mapping = new Mapping();
         mapping.info = info;
-        mapping.revision = persistencyApi.getLatestRevision(mapping.info.mappingUUID);
+        mapping.revision = persistencyApi.getLatestRevision(mapping.info.mappingShortkey);
         if (mapping.revision == null) {
           String msg =
               "Please save mapping \""

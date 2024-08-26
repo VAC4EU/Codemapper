@@ -135,20 +135,20 @@ export class ApiService {
       .pipe(map(concepts => compat.importConcept(concepts[0])))
   }
 
-  allTopics(mappingUUID : string) : Observable<AllTopics0> {
-    let url = `${this.reviewUrl}/topics/${mappingUUID}`;
+  allTopics(mappingShortkey : string) : Observable<AllTopics0> {
+    let url = `${this.reviewUrl}/topics/${mappingShortkey}`;
     return this.http.get<AllTopics0>(url);
   }
 
-  saveAllTopics(mappingUUID : string, allTopics : AllTopics0) : Observable<any> {
+  saveAllTopics(mappingShortkey : string, allTopics : AllTopics0) : Observable<any> {
     let body = new URLSearchParams();
     body.append("allTopics", JSON.stringify(allTopics));
-    let url = `${this.reviewUrl}/topics/${mappingUUID}`;
+    let url = `${this.reviewUrl}/topics/${mappingShortkey}`;
     return this.http.post(url, body, urlEncodedOptions);
   }
 
-  newTopic(mappingUUID : string, cui : ConceptId | null, voc : VocabularyId | null, code : CodeId | null, heading : string) : Observable<number> {
-    let url = new URL(`${this.reviewUrl}/topic/${mappingUUID}`);
+  newTopic(mappingShortkey : string, cui : ConceptId | null, voc : VocabularyId | null, code : CodeId | null, heading : string) : Observable<number> {
+    let url = new URL(`${this.reviewUrl}/topic/${mappingShortkey}`);
     if (cui) {
       url.searchParams.set("cui", cui);
     }
@@ -163,20 +163,20 @@ export class ApiService {
     return this.http.post<number>(url.toString(), body, urlEncodedOptions);
   }
 
-  newMessage(mappingUUID : string, topicId : number, content : string) : Observable<Object> {
-    let url = `${this.reviewUrl}/message/${mappingUUID}/${topicId}`;
+  newMessage(mappingShortkey : string, topicId : number, content : string) : Observable<Object> {
+    let url = `${this.reviewUrl}/message/${mappingShortkey}/${topicId}`;
     let body = new URLSearchParams();
     body.append('content', content);
     return this.http.post(url, body, urlEncodedOptions);
   }
 
-  markAsRead(mappingUUID : string, topicId : number) : Observable<Object> {
-    let url = `${this.reviewUrl}/topic-mark-read/${mappingUUID}/${topicId}`;
+  markAsRead(mappingShortkey : string, topicId : number) : Observable<Object> {
+    let url = `${this.reviewUrl}/topic-mark-read/${mappingShortkey}/${topicId}`;
     return this.http.post(url, null, {});
   }
 
-  resolveTopic(mappingUUID : string, topicId : number) : Observable<Object> {
-    let url = `${this.reviewUrl}/topic-resolve/${mappingUUID}/${topicId}`;
+  resolveTopic(mappingShortkey : string, topicId : number) : Observable<Object> {
+    let url = `${this.reviewUrl}/topic-resolve/${mappingShortkey}/${topicId}`;
     return this.http.post(url, null, {});
   }
 

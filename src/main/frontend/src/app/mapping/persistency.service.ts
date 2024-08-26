@@ -33,7 +33,20 @@ export interface ProjectInfo {
 export interface MappingInfo {
   projectName : string;
   mappingName : string;
-  mappingUUID : string;
+  mappingShortkey : string;
+}
+
+export function slugify(str : string) {
+  return str
+    .toLowerCase()
+    .replace(/^\s+|\s+$/g, '')
+    .replace(/[_ ]/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-');
+}
+
+export function mappingInfoLink(mapping : MappingInfo) : string[] {
+  return ["/mapping", mapping.mappingShortkey, slugify(mapping.projectName), slugify(mapping.mappingName)]
 }
 
 @Injectable({
@@ -56,8 +69,8 @@ export class PersistencyService {
       }));
   }
 
-  mappingInfo(mappingUUID : string) {
-    return this.http.get<MappingInfo>(this.url + `/mapping/${mappingUUID}/info`);
+  mappingInfo(shortkey : string) {
+    return this.http.get<MappingInfo>(this.url + `/mapping/${shortkey}/info`);
   }
 
   mappingInfoByOldName(projectName : string, mappingName : string) {
@@ -72,36 +85,36 @@ export class PersistencyService {
     return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
   }
 
-  legacyMapping(mappingUUID : string) : Observable<[number, Mapping]> {
-    return this.http.get<JSONObject>(this.url + `/mapping/${mappingUUID}/legacy`)
+  legacyMapping(shortkey : string) : Observable<[number, Mapping]> {
+    return this.http.get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
       .pipe(map((json) => [-1, Mapping.importV1(json)]));
   }
 
-  latestRevisionMapping(mappingUUID : string) : Observable<[number, Mapping]> {
-    return this.http.get<Revision>(this.url + `/mapping/${mappingUUID}/latest-revision`)
+  latestRevisionMapping(shortkey : string) : Observable<[number, Mapping]> {
+    return this.http.get<Revision>(this.url + `/mapping/${shortkey}/latest-revision`)
       .pipe(map(rev => {
         let mapping = Mapping.importJSON(JSON.parse(rev.mapping));
         return [rev.version, mapping];
       }))
   }
 
-  getRevisions(mappingUUID : string) {
-    return this.http.get<Revision[]>(this.url + `/mapping/${mappingUUID}/revisions`);
+  getRevisions(shortkey : string) {
+    return this.http.get<Revision[]>(this.url + `/mapping/${shortkey}/revisions`);
   }
 
-  saveRevision(mappingUUID : string, mapping : Mapping, summary : string) {
+  saveRevision(shortkey : string, mapping : Mapping, summary : string) {
     let body = new URLSearchParams();
     let mappingJson = JSON.stringify(mapping, Mapping.jsonifyReplacer);
     body.append("mapping", mappingJson);
     body.append("summary", summary);
-    let url = this.url + `/mapping/${mappingUUID}/save-revision`;
+    let url = this.url + `/mapping/${shortkey}/save-revision`;
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
 
-  mappingSetName(mappingUUID : string, newName : string) {
+  mappingSetName(shortkey : string, newName : string) {
     let body = new URLSearchParams();
     body.append("name", newName);
-    let url = this.url + `/mapping/${mappingUUID}/name`;
+    let url = this.url + `/mapping/${shortkey}/name`;
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
 }

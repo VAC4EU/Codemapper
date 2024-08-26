@@ -47,24 +47,29 @@ insert into users_projects (user_id, project_id, role) values
 (3, 1, 'E'),
 (4, 2, 'C');
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 drop table if exists case_definitions;
 create table case_definitions (
   id int not null auto_increment,
-  uuid uuid not null default uuid_generate_v1(), -- public identifier
-  name char(255),                                -- variable name
-  old_name char(255)                             -- fixed old name
+  shortkey SHORTKEY NOT NULL, -- public identifier
+  name char(255), -- variable name
+  old_name char(255) -- fixed old name
   project_id int not null references projects(id),
   state mediumtext,
   primary key (id)
-  unique (uuid)
+  unique (shortkey)
 );
 -- -- MIGRATION
 -- alter table case_definitions add column old_name char(255);
 -- update case_definitions set old_name = name;
--- alter table case_definitions add column uuid UUID NOT NULL DEFAULT uuid_generate_v1()
 -- drop index idx_20337_project_id;
+
+-- ALTER TABLE case_definitions ADD COLUMN shortkey SHORTKEY;
+-- UPDATE case_definitions SET shortkey = shortkey_generate();
+-- ALTER TABLE case_definitions ALTER COLUMN shortkey SET NOT NULL;
+-- CREATE TRIGGER case_definitions_shortkey_trigger
+-- BEFORE INSERT ON case_definitions
+-- FOR EACH ROW EXECUTE PROCEDURE shortkey_trigger();
+-- CREATE INDEX case_definitions_shortkey_index ON case_definitions(shortkey);
 
 drop view if exists users_and_projects;
 create view users_and_projects
@@ -93,14 +98,15 @@ as
   order by project_name, case_definition_name;
 
 drop view if exists projects_mappings_uuid;
-create view projects_mappings_uuid
+drop view if exists projects_mappings_shortkey;
+create view projects_mappings_shortkey
 as
   select
     p.id project_id,
     p.name project_name,
     cd.id mapping_id,
     cd.name mapping_name,
-    cd.uuid mapping_uuid,
+    cd.shortkey mapping_shortkey,
     cd.old_name mapping_old_name
   from projects p
   join case_definitions cd

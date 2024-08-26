@@ -27,7 +27,7 @@ import { ApiService } from '../api.service';
   styleUrls: ['./history.component.scss']
 })
 export class HistoryComponent {
-  @Input() mappingUUID! : string;
+  @Input() mappingShortkey! : string;
   @Input() mapping! : Mapping;
   @Input() revisions! : Revision[];
   @Input() version! : number;
@@ -42,7 +42,7 @@ export class HistoryComponent {
 
   downloadUrl(version : number) {
     let url = new URL(this.apiService.downloadMappingUrl);
-    url.searchParams.set('mappingUUID', this.mappingUUID);
+    url.searchParams.set('mappingShortkey', this.mappingShortkey);
     url.searchParams.set('version', "" + version);
     url.searchParams.set('includeDescendants', "true");
     url.searchParams.set('url', window.location.href);

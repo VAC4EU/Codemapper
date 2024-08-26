@@ -36,7 +36,7 @@ export class LegacyMappingRedirectComponent {
       let projectName = params['projectName'];
       let mappingName = params['mappingName'];
       let info = (await this.persistency.mappingInfoByOldName(projectName, mappingName).toPromise())!;
-      this.router.navigate(["/mapping", info.mappingUUID]);
+      this.router.navigate(["/mapping", info.mappingShortkey]);
     });
   }
 }

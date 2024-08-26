@@ -25,7 +25,7 @@
     </span>
   </ng-container>
   <span matTooltip="{{titleTooltip()}}">
-    CodeMapper mapping:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+    Mapping:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
   </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <span class="menu-spacer"></span>
   <app-loggedin></app-loggedin>
@@ -37,10 +37,10 @@
     <div *ngIf="mapping.start != null">
       <mapping-tab
         [mapping]="mapping"
-        [mappingUUID]="mappingUUID"
+        [mappingShortkey]="mappingShortkey"
         [versionInfo]="versionInfo"
         [vocabularies]="vocabularies"
-        [canDownload]="!!(mappingUUID && !saveRequired && mapping.undoStack.length == 0)"
+        [canDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
         (run)="run($event)"></mapping-tab>
     </div>
 
@@ -100,8 +100,8 @@
   <!-- </mat-tab> -->
   <mat-tab label="Versions">
     <history
-      *ngIf="mappingUUID && mapping && !mapping.isEmpty()"
-      [mappingUUID]="mappingUUID"
+      *ngIf="mappingShortkey && mapping && !mapping.isEmpty()"
+      [mappingShortkey]="mappingShortkey"
       [mapping]="mapping"
       [revisions]="revisions"
       [version]="version">

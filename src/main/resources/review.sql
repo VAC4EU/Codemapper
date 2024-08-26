@@ -96,14 +96,15 @@ as $$
 $$ language sql;
 
 drop function if exists review_new_topic_uuid;
-create function review_new_topic_uuid(mapping_uuid UUID, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
+drop function if exists review_new_topic_shortkey;
+create function review_new_topic_shortkey(mapping_shortkey SHORTKEY, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
 returns table (topic_id int)
 as $$
   insert into review_topic (case_definition_id, cui, sab, code, heading, created_by, created_at)
-  select cd.id, review_new_topic_uuid.cui, review_new_topic_uuid.sab, review_new_topic_uuid.code, review_new_topic_uuid.heading, u.id, review_new_topic_uuid.t
+  select cd.id, review_new_topic_shortkey.cui, review_new_topic_shortkey.sab, review_new_topic_shortkey.code, review_new_topic_shortkey.heading, u.id, review_new_topic_shortkey.t
   from case_definitions cd, users u
-  where cd.uuid = review_new_topic_uuid.mapping_uuid
-  and u.username = review_new_topic_uuid.username
+  where cd.shortkey = review_new_topic_shortkey.mapping_shortkey
+  and u.username = review_new_topic_shortkey.username
   returning id
 $$ language sql;
 
@@ -151,7 +152,8 @@ create function review_all_messages(project text, casedef text, username text)
 $$ language sql;
 
 drop function if exists review_all_messages_uuid;
-create function review_all_messages_uuid(mapping_uuid UUID, username text)
+drop function if exists review_all_messages_shortkey;
+create function review_all_messages_shortkey(mapping_shortkey SHORTKEY, username text)
   returns table (
     cui char(8), sab varchar(40), code text,
     topic_id int, topic_heading text,
@@ -171,9 +173,9 @@ create function review_all_messages_uuid(mapping_uuid UUID, username text)
     left join users cu on cu.id = t.created_by
     left join review_message m on m.topic_id = t.id
     left join users mu on mu.id = m.author_id
-    left join users ru on ru.username = review_all_messages_uuid.username
+    left join users ru on ru.username = review_all_messages_shortkey.username
     left join review_message_is_read r on (r.message_id = m.id and r.user_id = ru.id)
-    where cd.uuid = review_all_messages_uuid.mapping_uuid
+    where cd.shortkey = review_all_messages_shortkey.mapping_shortkey
     order by t.cui, t.sab, t.code, t.id, m.timestamp
 $$ language sql;
 
