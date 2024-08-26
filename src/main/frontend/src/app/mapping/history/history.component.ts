@@ -20,6 +20,7 @@ import { Input } from '@angular/core';
 import { Component } from '@angular/core';
 import { Mapping, Revision } from '../data';
 import { ApiService } from '../api.service';
+import { ProjectRole } from '../persistency.service';
 
 @Component({
   selector: 'history',
@@ -27,10 +28,11 @@ import { ApiService } from '../api.service';
   styleUrls: ['./history.component.scss']
 })
 export class HistoryComponent {
-  @Input() mappingShortkey! : string;
-  @Input() mapping! : Mapping;
-  @Input() revisions! : Revision[];
-  @Input() version! : number;
+  @Input({ required: true }) mappingShortkey! : string;
+  @Input({ required: true }) mapping! : Mapping;
+  @Input({ required: true }) revisions! : Revision[];
+  @Input({ required: true }) version! : number;
+  @Input({ required: true }) projectRole : ProjectRole | null = null;
 
   constructor(
     public apiService : ApiService,

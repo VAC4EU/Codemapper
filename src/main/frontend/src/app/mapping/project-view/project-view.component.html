@@ -86,8 +86,11 @@
   </mat-card>
 
   <mat-card appearance="outlined" *ngIf="projectName != 'Tests' || user?.admin">
-    <h3>Members</h3>
-    <div *ngIf="user?.admin || role == 'Owner'">
+    <h3>User roles</h3>
+
+    <mat-card *ngIf="user?.admin || role == 'Owner'">
+      <mat-card-header>Set user role</mat-card-header>
+      <mat-card-content>
       <mat-form-field>
         <mat-label>User</mat-label>
         <mat-select #addUserRoleName>
@@ -99,20 +102,25 @@
       <mat-form-field>
         <mat-label>Role</mat-label>
         <mat-select #addUserRoleRole >
-          <mat-option>Remove from project</mat-option>
+          <mat-option value="">Remove from project</mat-option>
           <mat-option *ngFor="let role of rolesDomain()" [value]="role">{{role}}</mat-option>
         </mat-select>
       </mat-form-field>
       <button
        mat-raised-button
        [disabled]="!addUserRoleName.value"
-       (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Change user role</button>
-    </div>
-    <ul class="bullet-separated">
-      <li *ngFor="let user of users | keyvalue">
-        {{user.key}} ({{user.value.join(", ").toLowerCase()}})
-      </li>
-    </ul>
+       (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Set</button>
+      </mat-card-content>
+    </mat-card>
+
+    <section>
+        <div *ngFor="let role of rolesDomain()">
+          <h5>{{role}}</h5>
+          <li *ngFor="let username of usersByRole[role]">
+            {{username}}
+          </li>
+        </div>
+    </section>
   </mat-card>
 </div>
 

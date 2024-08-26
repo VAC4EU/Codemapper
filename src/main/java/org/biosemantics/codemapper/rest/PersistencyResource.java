@@ -82,7 +82,7 @@ public class PersistencyResource {
       @Context HttpServletRequest request,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Commentator);
       return api.getUsersOfProject(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -97,7 +97,7 @@ public class PersistencyResource {
   public List<MappingInfo> getCaseDefinitionNames(
       @PathParam("project") String project, @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Commentator);
       return api.getMappingInfos(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -113,7 +113,7 @@ public class PersistencyResource {
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Commentator);
       String stateJson = api.getCaseDefinition(mappingShortkey);
       if (stateJson != null) return stateJson;
       else throw new NotFoundException();
@@ -131,7 +131,7 @@ public class PersistencyResource {
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       return AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Commentator);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -145,7 +145,7 @@ public class PersistencyResource {
       @PathParam("mappingName") String mappingName,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Editor);
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Commentator);
       return api.getMappingInfoByOldName(projectName, mappingName);
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -161,7 +161,7 @@ public class PersistencyResource {
     logger.info(String.format("Get latest revision %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Commentator);
       MappingRevision mappingJson = api.getLatestRevision(mappingShortkey);
       if (mappingJson != null) return mappingJson;
       else throw new NotFoundException();
@@ -181,7 +181,7 @@ public class PersistencyResource {
 
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Commentator);
       return api.getRevisions(mappingShortkey);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition revisions");
@@ -250,8 +250,11 @@ public class PersistencyResource {
   @Path("users")
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<User> getUsers(@Context User user) {
-    AuthentificationApi.assertAdmin(user);
     try {
+    	// Allowed for all project owners and admins
+		if (!api.isOwner(user.getUsername())) {
+			AuthentificationApi.assertAdmin(user);
+		}
       return api.getUsers();
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -283,6 +286,7 @@ public class PersistencyResource {
   @Path("user/project-permissions")
   @Produces(MediaType.APPLICATION_JSON)
   public Map<String, ProjectPermission> getProjectPermissions(@Context User user) {
+	AuthentificationApi.assertAuthentificated(user);
     try {
       return api.getProjectPermissions(user.getUsername());
     } catch (CodeMapperException e) {
@@ -296,6 +300,7 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public ProjectPermission getProjectPermissions(
       @PathParam("projectName") String projectName, @Context User user) {
+      AuthentificationApi.assertAuthentificated(user);
     try {
       return api.getProjectPermissions(user.getUsername()).get(projectName);
     } catch (CodeMapperException e) {
@@ -314,6 +319,22 @@ public class PersistencyResource {
     AuthentificationApi.assertAdmin(user);
     try {
       api.setUserPassword(username, password);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("user/admin")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void setUserAdmin(
+      @FormParam("username") String username,
+      @FormParam("isAdmin") boolean isAdmin,
+      @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try {
+      api.setUserAdmin(username, isAdmin);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -340,7 +361,12 @@ public class PersistencyResource {
       @FormParam("role") String roleString,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+    	// admins and project owners
+      try {
+    	  AuthentificationApi.assertAdmin(user);
+      } catch (UnauthorizedException e) {
+    	  AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+      }
       ProjectPermission role = null;
       if (roleString != null) {
         role = ProjectPermission.fromName(roleString);

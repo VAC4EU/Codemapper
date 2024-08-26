@@ -42,7 +42,8 @@ export class ProjectViewComponent {
   mappings : MappingInfo[] = [];
   role : ProjectRole | null = null;
   selected = new SelectionModel<MappingInfo>(true, []);
-  users : { [key : string] : string[] } = {};
+  users : { [key : string] : string[] } = {}; // { username: role[] }
+  usersByRole : { [key : string] : string[] } = {}; // { role: username[] }
   user : User | null = null;
   allUsers : User[] = [];
   constructor(
@@ -63,16 +64,27 @@ export class ProjectViewComponent {
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
       this.reloadUsers();
-      this.auth.userSubject.subscribe(user => this.user = user);
-      this.persistency.allUsers().subscribe(users => {
-        this.allUsers = users;
-        this.allUsers.sort((a, b) => a.username.localeCompare(b.username));
-      });
     });
   }
   reloadUsers() {
-    this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
+    this.persistency.projectUsers(this.projectName).subscribe(users => {
+      this.users = users;
+      this.usersByRole = Object.fromEntries(Object.keys(ProjectRole).map(role => [role, []]));
+      for (let [username, roles] of Object.entries(users)) {
+        for (let role of roles) {
+          this.usersByRole[role].push(username);
+        }
+      }
+    });
     this.persistency.getProjectRole(this.projectName).subscribe((role) => this.role = role);
+    this.auth.userSubject.subscribe(user => this.user = user);
+    this.persistency.allUsers().subscribe({
+      next: users => {
+        this.allUsers = users;
+        this.allUsers.sort((a, b) => a.username.localeCompare(b.username));
+      },
+      error: _ => null, // ok
+    });
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;

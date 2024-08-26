@@ -3,6 +3,7 @@ import { CsvImport, Indexing, Mapping, Start, StartType, ServerInfo, Vocabularie
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ProjectRole } from '../persistency.service';
 
 @Component({
   selector: 'mapping-tab',
@@ -16,6 +17,7 @@ export class MappingTabComponent {
   @Input() vocabularies! : Vocabularies;
   @Input() canDownload! : boolean;
   @Output() run = new EventEmitter<ops.Operation>();
+  @Input({ required: true }) projectRole : ProjectRole | null = null;
 
   constructor(
     private api : ApiService,

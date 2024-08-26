@@ -173,6 +173,13 @@ export class PersistencyService {
     body.set("password", password);
     return this.http.post<void>(url, body, urlEncodedOptions)
   }
+  setAdmin(username : string, isAdmin : boolean) {
+    let url = this.url + '/user/admin';
+    let body = new URLSearchParams();
+    body.set("username", username);
+    body.set("isAdmin", "" + isAdmin);
+    return this.http.post<void>(url, body, urlEncodedOptions)
+  }
 }
 
 export type ProjectUsers = { [key : string] : string[] }

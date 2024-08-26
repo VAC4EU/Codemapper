@@ -235,7 +235,7 @@ public class AuthentificationApi {
   }
 
   public static void assertAdmin(User user) {
-    if (!user.isAdmin()) {
+    if (user == null || !user.isAdmin()) {
       throw new UnauthorizedException();
     }
   }

@@ -25,7 +25,7 @@
             <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
             <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
             <td class="column-download">
-              <a href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
+              <a *ngIf="projectRole == 'Owner' || projectRole == 'Editor'" href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
                 <mat-icon>download</mat-icon>
               </a>
             </td>

@@ -1,6 +1,6 @@
 <div class="center-content spaced">
 
-  <mat-card appearance="outlined">
+  <mat-card appearance="outlined" *ngIf="projectRole != 'Commentator'">
     <mat-card-header>
       <h3>Download</h3>
     </mat-card-header>
@@ -35,7 +35,7 @@
         remap the mapping to update the concept codes using the latest version of the UMLS.
       </p>
     </mat-card-content>
-    <mat-card-actions>
+    <mat-card-actions *ngIf="projectRole == 'Editor' || projectRole == 'Owner'">
       <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack" (click)="remap()"
         mat-raised-button color="primary">
         Remap

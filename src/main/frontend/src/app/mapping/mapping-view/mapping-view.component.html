@@ -41,6 +41,7 @@
         [serverInfo]="serverInfo"
         [vocabularies]="vocabularies"
         [canDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
+        [projectRole]="projectRole"
         (run)="run($event)"></mapping-tab>
     </div>
 
@@ -106,7 +107,8 @@
       [mappingShortkey]="mappingShortkey"
       [mapping]="mapping"
       [revisions]="revisions"
-      [version]="version">
+      [version]="version"
+      [projectRole]="projectRole">
     </history>
   </mat-tab>
 </mat-tab-group>
