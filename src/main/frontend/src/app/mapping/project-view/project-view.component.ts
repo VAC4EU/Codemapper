@@ -31,16 +31,16 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'events-view',
-  templateUrl: './events-view.component.html',
-  styleUrls: ['./events-view.component.scss']
+  selector: 'project-view',
+  templateUrl: './project-view.component.html',
+  styleUrls: ['./project-view.component.scss']
 })
-export class EventsViewComponent {
+export class ProjectViewComponent {
   serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   projectName! : string;
   newEventName : string = "";
   mappings : MappingInfo[] = [];
-  projectPerm : ProjectPermission | undefined = undefined;
+  projectPerm : ProjectPermission = null;
   selected = new SelectionModel<MappingInfo>(true, []);
   users : { [key : string] : string[] } = {};
   user : User | null = null;
@@ -60,7 +60,6 @@ export class EventsViewComponent {
     this.route.params.subscribe(params => {
       this.projectName = params['project'];
       this.title.setTitle(`CodeMapper: Project ${this.projectName}`);
-      this.projectPerm = this.auth.projectRole(this.projectName);
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
       this.reloadUsers();
@@ -73,6 +72,7 @@ export class EventsViewComponent {
   }
   reloadUsers() {
     this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
+    this.persistency.getProjectPermission(this.projectName).subscribe((perm) => this.projectPerm = perm);
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;

@@ -87,7 +87,7 @@
 
   <mat-card appearance="outlined" *ngIf="projectName != 'Tests' || user?.admin">
     <h3>Members</h3>
-    <div *ngIf="user?.admin">
+    <div *ngIf="user?.admin || projectPerm == 'Owner'">
       <mat-form-field>
         <mat-label>User</mat-label>
         <mat-select #addUserRoleName>
@@ -105,7 +105,10 @@
           <mat-option value="C">Commentator</mat-option>
         </mat-select>
       </mat-form-field>
-      <button mat-raised-button (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Change user role</button>
+      <button
+       mat-raised-button
+       [disabled]="!addUserRoleName.value"
+       (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Change user role</button>
     </div>
     <ul class="bullet-separated">
       <li *ngFor="let user of users | keyvalue">

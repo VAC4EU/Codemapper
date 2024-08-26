@@ -21,6 +21,9 @@ package org.biosemantics.codemapper.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -123,7 +126,9 @@ public class ReviewResource {
       }
       MappingInfo mapping =
           CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
-      ProjectPermission perm = user.getProjectPermissions().get(mapping.projectName);
+      Map<String, ProjectPermission> permissions =
+          CodeMapperApplication.getPersistencyApi().getProjectPermissions(user.getUsername());
+      ProjectPermission perm = permissions.get(mapping.projectName);
       String createdBy = CodeMapperApplication.getReviewApi().getTopicCreatedBy(topicId);
       if (!perm.implies(ProjectPermission.Editor)
           && createdBy != null

@@ -568,7 +568,7 @@ public class PersistencyApi {
       while (results.next()) {
         String username = results.getString(1);
         boolean isAdmin = results.getBoolean(2);
-        User user = new User(username, new HashMap<>(), isAdmin);
+        User user = new User(username, isAdmin);
         res.add(user);
       }
       return res;
@@ -585,7 +585,7 @@ public class PersistencyApi {
       PreparedStatement statement = connection.prepareStatement(query);
       statement.setString(1, username);
       statement.setString(2, AuthentificationApi.hash(password));
-      statement.setString(2, email);
+      statement.setString(3, email);
       statement.execute();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create users", e);

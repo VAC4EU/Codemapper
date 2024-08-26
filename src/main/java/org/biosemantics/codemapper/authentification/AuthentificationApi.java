@@ -126,9 +126,7 @@ public class AuthentificationApi {
         String passwordHash = result.getString(1);
         boolean isAdmin = result.getBoolean(2);
         if (passwordHash.equals(hash(password))) {
-          Map<String, ProjectPermission> projectPermissions =
-              CodeMapperApplication.getPersistencyApi().getProjectPermissions(username);
-          User user = new User(username, projectPermissions, isAdmin);
+          User user = new User(username, isAdmin);
           request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
           logger.info("Authentificated " + username);
           return LoginResult.createSuccess(user);
@@ -207,14 +205,17 @@ public class AuthentificationApi {
     if (user == null) throw new UnauthorizedException();
   }
 
-  /** Test if user has any of the projectPermissions in a project. */
+  /** Test if user has any of the projectPermissions in a project. 
+ * @throws CodeMapperException */
   public static void assertProjectRolesImplies(
-      User user, String project, ProjectPermission requiredPerm) {
+      User user, String project, ProjectPermission requiredPerm) throws CodeMapperException {
     assertAuthentificated(user);
     if (user.isAdmin()) {
       return;
     }
-    ProjectPermission perm = user.getProjectPermissions().get(project);
+    Map<String, ProjectPermission> projectPermissions =
+        CodeMapperApplication.getPersistencyApi().getProjectPermissions(user.getUsername());
+    ProjectPermission perm = projectPermissions.get(project);
     if (perm != null) {
       if (perm.implies(requiredPerm)) {
         return;

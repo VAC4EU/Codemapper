@@ -19,23 +19,21 @@
 package org.biosemantics.codemapper.authentification;
 
 import java.io.Serializable;
-import java.util.Map;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 public class User implements Serializable {
   private static final long serialVersionUID = 457068490529031472L;
   private String username;
-  private Map<String, ProjectPermission> projectPermissions;
   private boolean isAdmin;
 
   public User() {
-    this(null, null, false);
+    this(null, false);
   }
 
-  public User(String username, Map<String, ProjectPermission> projectPermissions, boolean isAdmin) {
+  public User(String username, boolean isAdmin) {
     this.username = username;
-    this.projectPermissions = projectPermissions;
     this.isAdmin = isAdmin;
   }
 
@@ -50,14 +48,6 @@ public class User implements Serializable {
 
   public void setUsername(String username) {
     this.username = username;
-  }
-
-  public Map<String, ProjectPermission> getProjectPermissions() {
-    return projectPermissions;
-  }
-
-  public void setProjectPermissions(Map<String, ProjectPermission> projectPermissions) {
-    this.projectPermissions = projectPermissions;
   }
 
   public boolean isAdmin() {

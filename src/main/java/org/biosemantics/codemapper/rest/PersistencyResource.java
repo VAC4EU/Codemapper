@@ -80,8 +80,8 @@ public class PersistencyResource {
       @PathParam("project") String project,
       @Context HttpServletRequest request,
       @Context User user) {
-    AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
     try {
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
       return api.getUsersOfProject(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -95,8 +95,8 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public List<MappingInfo> getCaseDefinitionNames(
       @PathParam("project") String project, @Context User user) {
-    AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
     try {
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
       return api.getMappingInfos(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -197,8 +197,8 @@ public class PersistencyResource {
       @FormParam("mappingName") String mappingName,
       @Context User user) {
     logger.info(String.format("Create mapping %s/%s (%s)", projectName, mappingName, user));
-    AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
     try {
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
       return api.createMapping(projectName, mappingName);
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -274,6 +274,32 @@ public class PersistencyResource {
       throw new InternalServerErrorException(e);
     }
   }
+  
+  @GET
+  @Path("user/project-permissions")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Map<String, ProjectPermission> getProjectPermissions(@Context User user) {
+	  try {
+		return api.getProjectPermissions(user.getUsername());
+	} catch (CodeMapperException e) {
+	      e.printStackTrace();
+	      throw new InternalServerErrorException(e);
+	}
+  }
+  
+  @GET
+  @Path("user/project-permission/{projectName}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public ProjectPermission getProjectPermissions(
+		  @PathParam("projectName") String projectName,
+		  @Context User user) {
+	  try {
+		return api.getProjectPermissions(user.getUsername()).get(projectName);
+	} catch (CodeMapperException e) {
+	      e.printStackTrace();
+	      throw new InternalServerErrorException(e);
+	}
+  }
 
   @POST
   @Path("user/password")
@@ -310,8 +336,8 @@ public class PersistencyResource {
       @FormParam("username") String username,
       @FormParam("role") String role,
       @Context User user) {
-    AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
     try {
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
       api.addProjectUser(projectName, username, role);
     } catch (CodeMapperException e) {
       e.printStackTrace();

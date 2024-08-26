@@ -26,6 +26,8 @@ import { User } from './auth.service';
 
 export type ProjectPermission = 'Owner' | 'Editor' | 'Commentator' | null;
 
+export type ProjectPermissions = { [key : string] : ProjectPermission };
+
 export interface ProjectInfo {
   name : string;
   permission : ProjectPermission;
@@ -100,6 +102,14 @@ export class PersistencyService {
       }))
   }
 
+  getProjectPermissions() {
+    return this.http.get<ProjectPermissions>(this.url + "/user/project-permissions")
+  }
+
+  getProjectPermission(projectName : string) {
+    return this.http.get<ProjectPermission>(this.url + "/user/project-permission/" + projectName)
+  }
+
   getRevisions(shortkey : string) {
     return this.http.get<Revision[]>(this.url + `/mapping/${shortkey}/revisions`);
   }
@@ -145,7 +155,7 @@ export class PersistencyService {
     return this.http.post<void>(url, body, urlEncodedOptions);
   }
   createUser(username : string, password : string, email : string) {
-    let url = this.url = '/user';
+    let url = this.url + '/user';
     let body = new URLSearchParams();
     body.set("username", username);
     body.set("password", password);

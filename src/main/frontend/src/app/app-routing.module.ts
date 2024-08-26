@@ -21,7 +21,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { WelcomeViewComponent } from './mapping/welcome-view/welcome-view.component';
 import { MappingViewComponent } from './mapping/mapping-view/mapping-view.component';
 import { ProjectsViewComponent } from './mapping/projects-view/projects-view.component';
-import { EventsViewComponent } from './mapping/events-view/events-view.component';
+import { ProjectViewComponent } from './mapping/project-view/project-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
 import { AuthGuard } from './mapping/auth.guard';
 import { PendingChangesGuard } from './mapping/pending-changes.guard';
@@ -48,7 +48,7 @@ const routes : Routes = [
   {
     path: "project/:project",
     canActivate: [AuthGuard],
-    component: EventsViewComponent,
+    component: ProjectViewComponent,
   },
   {
     path: "mapping",

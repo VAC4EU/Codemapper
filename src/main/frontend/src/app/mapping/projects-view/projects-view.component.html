@@ -1,22 +1,21 @@
+<mat-toolbar>
+  <app-navigation></app-navigation>
+  <span>CodeMapper: All projects</span>
+  <span class="menu-spacer"></span>
+  <app-loggedin></app-loggedin>
+</mat-toolbar>
+<div class="center-content">
+  <div class="toolbox">
 
-  <mat-toolbar>
-    <app-navigation></app-navigation>
-    <span>CodeMapper: All projects</span>
-    <span class="menu-spacer"></span>
-    <app-loggedin></app-loggedin>
-  </mat-toolbar>
-  <div class="center-content">
-    <div class="toolbox">
-
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      New project
-    </mat-card-header>
-    <mat-card-actions>
-      <button (click)="openDialog(newProjectDialog)" mat-button>Create</button>
-    </mat-card-actions>
-  </mat-card>
-</div>
+    <mat-card appearance="outlined" *ngIf="user?.admin">
+      <mat-card-header>
+        New project
+      </mat-card-header>
+      <mat-card-actions>
+        <button (click)="openDialog(newProjectDialog)" mat-button>Create</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
   <table mat-table [dataSource]="projects">
     <tr mat-header-row *matHeaderRowDef="['name', 'role']"></tr>
     <tr mat-row *matRowDef="let mapping; columns: ['name', 'role'];"></tr>
@@ -50,9 +49,6 @@
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
-    <button
-      mat-raised-button
-      (click)="createProject(projectName.value)"
-      color="primary">Create</button>
+    <button mat-raised-button (click)="createProject(projectName.value)" color="primary">Create</button>
   </mat-dialog-actions>
 </ng-template>

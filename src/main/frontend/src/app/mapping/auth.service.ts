@@ -26,7 +26,6 @@ import { PersistencyService, ProjectInfo, ProjectPermission } from './persistenc
 
 export interface User {
   username : string,
-  projectPermissions : { [key : string] : ProjectPermission },
   admin : boolean
 }
 
@@ -116,9 +115,6 @@ export class AuthService {
       }));
   }
 
-  projectRole(projectName : string) : ProjectPermission | undefined {
-    return this.userSubject.value?.projectPermissions[projectName];
-  }
   changePassword(oldPassword : string, newPassword : string) {
     let body = new URLSearchParams();
     body.set('oldPassword', oldPassword);

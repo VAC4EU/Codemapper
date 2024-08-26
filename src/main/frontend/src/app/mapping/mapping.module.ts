@@ -69,7 +69,7 @@ import { NewsViewComponent } from './news-view/news-view.component';
 import { WelcomeViewComponent } from './welcome-view/welcome-view.component';
 import { IndexerComponent } from './indexer/indexer.component';
 import { ImportCsvDialogComponent } from './import-csv-dialog/import-csv-dialog.component';
-import { EventsViewComponent } from './events-view/events-view.component';
+import { ProjectViewComponent } from './project-view/project-view.component';
 import { SortPipe } from './sort.pipe';
 import { CodesDialogComponent } from './codes-dialog/codes-dialog.component';
 import { CodesTableComponent } from './codes-table/codes-table.component';
@@ -105,7 +105,7 @@ import { UserViewComponent } from './user-view/user-view.component';
     WelcomeViewComponent,
     IndexerComponent,
     ImportCsvDialogComponent,
-    EventsViewComponent,
+    ProjectViewComponent,
     SortPipe,
     CodesDialogComponent,
     CodesTableComponent,
