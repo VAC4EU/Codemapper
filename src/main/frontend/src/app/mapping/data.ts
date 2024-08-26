@@ -244,6 +244,53 @@ export class Mapping {
       }
     }
   }
+  public getLost(remapConcepts : Concepts, remapCodes : Codes) : ConceptsCodes {
+    let lost : ConceptsCodes = {
+      concepts: {}, codes: {}
+    };
+    for (let [cui, concept] of Object.entries(this.concepts)) {
+      let hasLostCode = false;
+      let concept1 = new Concept(cui, concept.name, concept.definition, {}, concept.tag);
+      for (let voc of Object.keys(concept.codes)) {
+        for (let code of concept.codes[voc]) {
+          if (!remapConcepts[cui]?.codes[voc]?.has(code)) {
+            hasLostCode = true;
+            concept1.codes[voc] ??= new Set();
+            concept1.codes[voc].add(code);
+            if (!remapCodes[voc]?.[code]) {
+              lost.codes[voc] ??= {};
+              let oldCode = this.codes[voc][code];
+              lost.codes[voc][code] = new Code(code, oldCode.term, true, oldCode.enabled, oldCode.tag);
+            }
+          }
+        }
+      }
+      if (hasLostCode) lost.concepts[cui] = concept1;
+    }
+    return lost;
+  }
+  public setLost(lost : ConceptsCodes) {
+    for (let [cui, concept] of Object.entries(lost.concepts)) {
+      if (this.concepts[cui]) {
+        for (let [voc, codes] of Object.entries(concept.codes)) {
+          this.concepts[cui].codes[voc] ??= new Set();
+          for (let code of codes) {
+            this.concepts[cui].codes[voc].add(code);
+          }
+        }
+      } else {
+        this.concepts[cui] = concept;
+      }
+    }
+    for (let [voc, codes] of Object.entries(lost.codes)) {
+      this.codes[voc] ??= {};
+      for (let [id, code] of Object.entries(codes)) {
+        if (!this.codes[voc]?.[id]) {
+          this.codes[voc][id] = code;
+        }
+      }
+    }
+  }
   public runIntern(op : Operation) {
     let inv = op.run(this);
     this.cleanupRecacheCheck();

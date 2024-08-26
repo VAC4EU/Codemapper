@@ -477,16 +477,17 @@ export class Remap extends Operation {
     let disabled = mapping.getCodesDisabled();
     let tags = mapping.getTags();
     let customConcept = mapping.concepts[CUSTOM_CUI];
+    let lost = mapping.getLost(this.conceptsCodes.concepts, this.conceptsCodes.codes);
+    console.log("Lost in remap", lost);
     mapping.umlsVersion = this.umlsVersion;
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
     mapping.vocabularies = this.vocabularies;
     mapping.setCustomCodes(customCodes);
     mapping.setCodesDisabled(disabled);
+    mapping.setLost(lost);
     mapping.setTags(tags);
-    if (customConcept) {
-      mapping.concepts[customConcept.id] = customConcept;
-    }
+    if (customConcept) mapping.concepts[customConcept.id] = customConcept;
     return;
   }
 }
