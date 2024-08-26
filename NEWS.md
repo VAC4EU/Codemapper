@@ -1,5 +1,5 @@
 
-[//]: # (pandoc -i NEWS.md -o ui-2023/src/app/mapping/news-view/news-view.component.html)
+[//]: # (pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html)
 
 <section class="center-content mat-elevation-z3">
 
@@ -21,6 +21,7 @@ Testing
 - view coding systems, and create custom coding systems
 - integrated non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
 - rename mappings
+- download all mappings of a project
 
 October 4, 2023
 ----

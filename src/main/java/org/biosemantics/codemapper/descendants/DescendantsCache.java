@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.CodingSystem;
@@ -81,7 +82,7 @@ public class DescendantsCache {
             mapper.readValue(descendantsJson, new TypeReference<Collection<CachedCode>>() {})
                 .stream()
                 .map(CachedCode::toCode)
-                .toList();
+                .collect(Collectors.toList());
         result.put(code, cachedCodes);
       }
       return result;
@@ -93,7 +94,8 @@ public class DescendantsCache {
   public void setDescendants(
       String voc, String vocVersion, String code, Collection<Code> descendants)
       throws CodeMapperException {
-    Collection<CachedCode> cachedCodes = descendants.stream().map(c -> new CachedCode(c)).toList();
+    Collection<CachedCode> cachedCodes =
+        descendants.stream().map(c -> new CachedCode(c)).collect(Collectors.toList());
     String query = "SELECT set_cached_descendants(?, ?, ?, ?::TEXT)";
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -104,7 +106,6 @@ public class DescendantsCache {
       statement.setString(2, vocVersion);
       statement.setString(3, code);
       statement.setString(4, descendendsJson);
-      System.out.println(statement);
       statement.execute();
     } catch (SQLException | JsonProcessingException e) {
       throw CodeMapperException.server("could not cache descendants", e);
@@ -136,8 +137,6 @@ public class DescendantsCache {
       Descendants descendants = getDescendants(voc, vocVersion, codes);
       Collection<String> missing = new HashSet<>(codes);
       missing.removeAll(descendants.keySet());
-      System.out.println(
-          "Cached descendants in " + voc + " for: " + String.join(", ", descendants.keySet()));
       if (!missing.isEmpty()) {
         Descendants missingDescendants = descendantsApi.getCodeDescendants(voc, missing);
         descendants.putAll(missingDescendants);
