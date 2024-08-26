@@ -605,18 +605,18 @@ public class PersistencyApi {
     }
   }
 
-	public void setUserAdmin(String username, boolean isAdmin) throws CodeMapperException {
-	    String query = "UPDATE users SET is_admin = ? WHERE username = ?";
-	    try {
-	      Connection connection = connectionPool.getConnection();
-	      PreparedStatement statement = connection.prepareStatement(query);
-	      statement.setBoolean(1, isAdmin);
-	      statement.setString(2, username);
-	      statement.execute();
-	    } catch (SQLException e) {
-	      throw CodeMapperException.server("Cannot execute query to set admin", e);
-	    }
-	}
+  public void setUserAdmin(String username, boolean isAdmin) throws CodeMapperException {
+    String query = "UPDATE users SET is_admin = ? WHERE username = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setBoolean(1, isAdmin);
+      statement.setString(2, username);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to set admin", e);
+    }
+  }
 
   public void createProject(String name) throws CodeMapperException {
     String query = "INSERT INTO projects (name) VALUES (?)";
@@ -683,19 +683,20 @@ public class PersistencyApi {
     }
   }
 
-public boolean isOwner(String username) throws CodeMapperException {
-	String query = "SELECT up.id FROM users_projects up "
-			+ "JOIN users u ON u.id = up.user_id "
-			+ "WHERE u.username = ? "
-			+ "AND up.role = 'O'";
+  public boolean isOwner(String username) throws CodeMapperException {
+    String query =
+        "SELECT up.id FROM users_projects up "
+            + "JOIN users u ON u.id = up.user_id "
+            + "WHERE u.username = ? "
+            + "AND up.role = 'O'";
     try {
-        Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, username);
-        ResultSet results = statement.executeQuery();
-        return results.next();
-      } catch (SQLException e) {
-        throw CodeMapperException.server("Cannot execute query to check user exists", e);
-      }
-}
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, username);
+      ResultSet results = statement.executeQuery();
+      return results.next();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to check user exists", e);
+    }
+  }
 }

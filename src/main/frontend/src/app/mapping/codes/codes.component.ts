@@ -39,6 +39,7 @@ export class CodesComponent {
   @Input() mapping! : Mapping;
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
+  @Input() canEdit : boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
 

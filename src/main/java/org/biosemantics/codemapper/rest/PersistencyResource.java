@@ -145,7 +145,8 @@ public class PersistencyResource {
       @PathParam("mappingName") String mappingName,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Commentator);
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Commentator);
       return api.getMappingInfoByOldName(projectName, mappingName);
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -251,10 +252,10 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<User> getUsers(@Context User user) {
     try {
-    	// Allowed for all project owners and admins
-		if (!api.isOwner(user.getUsername())) {
-			AuthentificationApi.assertAdmin(user);
-		}
+      // Allowed for all project owners and admins
+      if (!api.isOwner(user.getUsername())) {
+        AuthentificationApi.assertAdmin(user);
+      }
       return api.getUsers();
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -286,7 +287,7 @@ public class PersistencyResource {
   @Path("user/project-permissions")
   @Produces(MediaType.APPLICATION_JSON)
   public Map<String, ProjectPermission> getProjectPermissions(@Context User user) {
-	AuthentificationApi.assertAuthentificated(user);
+    AuthentificationApi.assertAuthentificated(user);
     try {
       return api.getProjectPermissions(user.getUsername());
     } catch (CodeMapperException e) {
@@ -300,7 +301,7 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public ProjectPermission getProjectPermissions(
       @PathParam("projectName") String projectName, @Context User user) {
-      AuthentificationApi.assertAuthentificated(user);
+    AuthentificationApi.assertAuthentificated(user);
     try {
       return api.getProjectPermissions(user.getUsername()).get(projectName);
     } catch (CodeMapperException e) {
@@ -361,11 +362,11 @@ public class PersistencyResource {
       @FormParam("role") String roleString,
       @Context User user) {
     try {
-    	// admins and project owners
+      // admins and project owners
       try {
-    	  AuthentificationApi.assertAdmin(user);
+        AuthentificationApi.assertAdmin(user);
       } catch (UnauthorizedException e) {
-    	  AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+        AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
       }
       ProjectPermission role = null;
       if (roleString != null) {

@@ -5,7 +5,8 @@ create table users (
   username char(100) not null unique,
   password char(64) not null,
   email text,
-  anonymous boolean default false,
+  anonymous boolean default false not null,
+  is_admin boolean default false not null,
   primary key (id)
 );
 

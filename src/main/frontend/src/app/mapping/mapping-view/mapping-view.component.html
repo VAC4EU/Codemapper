@@ -18,7 +18,7 @@
     <span matTooltip="Save changes">
       <button
         (click)="openDialog(saveDialog)"
-        [disabled]="mapping.start == null || (!saveRequired && mapping.undoStack.length == 0)"
+        [disabled]="mapping.start == null || (!saveRequired && mapping.undoStack.length == 0) || !(projectRole == 'Owner' || projectRole == 'Editor')"
         mat-icon-button>
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
@@ -26,6 +26,7 @@
   </ng-container>
   <span matTooltip="{{titleTooltip()}}">
     Mapping:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+    (you are {{projectRole?.toLowerCase()}})
   </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <span class="menu-spacer"></span>
   <app-loggedin></app-loggedin>
@@ -73,6 +74,7 @@
       [mapping]="mapping"
       [allTopics]="allTopics"
       [vocabularies]="vocabularies"
+      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
@@ -82,6 +84,7 @@
       *ngIf="!mapping.isEmpty() && mapping.numVocabularies() > 0"
       [mapping]="mapping"
       [allTopics]="allTopics"
+      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
@@ -89,6 +92,7 @@
   <mat-tab label="Vocabularies" [disabled]="mapping.start == null">
     <vocabularies
       *ngIf="!mapping.isEmpty()"
+      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
       [mapping]="mapping"
       (run)="run($event)"></vocabularies>
   </mat-tab>

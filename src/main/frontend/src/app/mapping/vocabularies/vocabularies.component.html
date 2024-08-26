@@ -5,7 +5,7 @@
       Modify {{table.selection.selected.length}} vocabular{{table.selection.selected.length == 1 ? 'y' : 'ies'}}
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="delete(table.selection.selected)" [disabled]="table.selection.selected.length == 0">Delete</button>
+      <button mat-stroked-button (click)="delete(table.selection.selected)" [disabled]="table.selection.selected.length == 0 || !canEdit">Delete</button>
     </mat-card-actions>
   </mat-card>
 
@@ -14,8 +14,8 @@
       Add vocabulary
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="addStandard()">Standard</button>
-      <button mat-stroked-button (click)="createCustom()">Custom</button>
+      <button mat-stroked-button (click)="addStandard()" [disabled]="!canEdit">Standard</button>
+      <button mat-stroked-button (click)="createCustom()" [disabled]="!canEdit">Custom</button>
     </mat-card-actions>
   </mat-card>
 </div>

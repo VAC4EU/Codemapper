@@ -35,6 +35,7 @@
           </span>
         </mat-card-actions>
       </mat-card>
+
       <mat-card>
         <mat-card-header>
           {{selected.selected.length}} selected mapping{{selected.selected.length == 1 ? '' : 's'}}
@@ -47,7 +48,9 @@
               (click)="openDialog(renameDialog)">Rename</button>
           </span>
           <span matTooltip="Download all mappings of the project">
-            <button mat-raised-button (click)="openDialog(downloadDialog)" [disabled]="selected.selected.length == 0">
+            <button mat-raised-button
+             (click)="openDialog(downloadDialog)"
+             [disabled]="selected.selected.length == 0 || !(role == 'Owner' || role == 'Editor')">
               Download <mat-icon>download</mat-icon>
             </button>
           </span>
@@ -119,6 +122,15 @@
           <li *ngFor="let username of usersByRole[role]">
             {{username}}
           </li>
+          <p *ngIf="role == 'Owner'">
+            (Owners can create mappings and assign project roles to other users.)
+          </p>
+          <p *ngIf="role == 'Editor'">
+            (Editors can modify and download mappings.)
+          </p>
+          <p *ngIf="role == 'Commentator'">
+            (Commentators can view and comment mappings.)
+          </p>
         </div>
     </section>
   </mat-card>

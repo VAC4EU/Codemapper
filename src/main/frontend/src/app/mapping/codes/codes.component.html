@@ -21,7 +21,6 @@
     <mat-card-actions>
       <button mat-stroked-button [matMenuTriggerFor]="menu">
         {{vocabularyId}}<ng-container *ngIf="isCustom(vocabularyId)">*</ng-container>
-
         <mat-icon fontIcon="expand_more"></mat-icon>
       </button>
       <mat-menu #menu="matMenu">
@@ -37,9 +36,9 @@
       {{selected.length}} selected code{{selected.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0">Tag</button>
-      <button mat-stroked-button (click)="enableCodes(selected)" [disabled]="selected.length == 0">Enable</button>
-      <button mat-stroked-button (click)="disableCodes(selected)" [disabled]="selected.length == 0">Disable</button>
+      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0 || !canEdit">Tag</button>
+      <button mat-stroked-button (click)="enableCodes(selected)" [disabled]="selected.length == 0 || !canEdit">Enable</button>
+      <button mat-stroked-button (click)="disableCodes(selected)" [disabled]="selected.length == 0 || !canEdit">Disable</button>
       <button mat-stroked-button (click)="showDescendants(selected)" [disabled]="selected.length == 0">Descendants</button>
     </mat-card-actions>
   </mat-card>
@@ -51,9 +50,9 @@
     <mat-card-actions>
       <!-- <button mat-stroked-button color="primary" (click)="selectAllCustomCodes()">Select</button> -->
       <button *ngIf="false" mat-stroked-button (click)="importCustomCodeDialog()" matTooltip="TODO">Import</button>
-      <button mat-stroked-button (click)="addCustomCodeDialog()">Create</button>
-      <button mat-stroked-button (click)="editCustomCodeDialog()" [disabled]="!oneOrMoreCustomCodes(selected)">Edit</button>
-      <button mat-stroked-button color="warn" (click)="removeCustomCode(selected)" [disabled]="!oneOrMoreCustomCodes(selected)">Delete</button>
+      <button mat-stroked-button (click)="addCustomCodeDialog()" [disabled]="!canEdit">Create</button>
+      <button mat-stroked-button (click)="editCustomCodeDialog()" [disabled]="!oneOrMoreCustomCodes(selected) || !canEdit">Edit</button>
+      <button mat-stroked-button color="warn" (click)="removeCustomCode(selected)" [disabled]="!oneOrMoreCustomCodes(selected) || !canEdit">Delete</button>
     </mat-card-actions>
   </mat-card>
 </div>
