@@ -16,11 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import { TypesInfo } from './api.service';
 import * as data from './data';
-
-var relevantSemanticTypes =
-  ["T020", "T190", "T049", "T019", "T047", "T050", "T037", "T048",
-    "T191", "T046", "T184", "T033", "T005", "T004", "T204", "T007"];
+import { VocabularyId } from './data';
 
 export interface SourceConcept {
   cui : string;
@@ -60,14 +58,15 @@ export function importConcept(c : UmlsConcept) :
   return [concept, codes]
 }
 
-function hasRelevantType(concept : UmlsConcept) : boolean {
-  return concept.semanticTypes.some(t => relevantSemanticTypes.indexOf(t) != -1);
+function isRelevant(concept : UmlsConcept, vocIds : VocabularyId[], info : TypesInfo) : boolean {
+  return concept.semanticTypes.some(t => info.ignoreSemanticTypes.indexOf(t) == -1) &&
+    concept.sourceConcepts.some(c => vocIds.indexOf(c.codingSystem) != -1);
 }
 
-export function importConcepts(umlsConcepts : UmlsConcept[]) : data.ConceptsCodes {
+export function importConcepts(umlsConcepts : UmlsConcept[], vocIds : string[], info : TypesInfo) : data.ConceptsCodes {
   let concepts : data.Concepts = {};
   let codes : data.Codes = {};
-  for (let [concept, codes1] of umlsConcepts.filter(hasRelevantType).map(importConcept)) {
+  for (let [concept, codes1] of umlsConcepts.filter(c => isRelevant(c, vocIds, info)).map(importConcept)) {
     concepts[concept.id] = concept;
     for (let vocId in codes1) {
       codes[vocId] ??= {};

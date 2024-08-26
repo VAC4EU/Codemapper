@@ -24,9 +24,16 @@ import { map, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
 import * as compat from './data-compatibility';
-import { MappingData, Vocabulary, VocabularyId, ConceptId, Concept, Concepts, ConceptsCodes, Code, CodeId, VersionInfo, Span, Mapping, Vocabularies, cuiOfId } from './data';
+import { MappingData, Vocabulary, VocabularyId, ConceptId, Concept, Concepts, ConceptsCodes, Code, CodeId, ServerInfo, Span, Mapping, Vocabularies, cuiOfId } from './data';
 import { AllTopics0 } from './review';
 import { urlEncodedOptions } from '../app.module';
+
+export interface TypesInfo { ignoreTermTypes : string[], ignoreSemanticTypes : string[] }
+
+export const EMPTY_TYPES_INFO : TypesInfo = {
+  ignoreTermTypes: [],
+  ignoreSemanticTypes: []
+}
 
 @Injectable({
   providedIn: 'root'
@@ -66,33 +73,33 @@ export class ApiService {
     return this.http.get<Descendants>(this.descendantsUrl, { params });
   }
 
-  searchUts(query : string, vocIds : VocabularyId[]) : Observable<ConceptsCodes> {
+  searchUts(query : string, vocIds : VocabularyId[], info : TypesInfo) : Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append("query", query);
     return this.http.post<string[]>(this.searchUtsUrl, body, urlEncodedOptions)
       .pipe(switchMap(cuis =>
-        this.concepts(cuis, vocIds)
+        this.concepts(cuis, vocIds, info)
       ))
   }
 
-  broaderConcepts(conceptId : ConceptId, vocIds : VocabularyId[]) : Observable<ConceptsCodes> {
+  broaderConcepts(conceptId : ConceptId, vocIds : VocabularyId[], info : TypesInfo) : Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append("cuis", conceptId);
     for (let vocId of vocIds) {
       body.append("codingSystems", vocId);
     }
     return this.http.post<compat.UmlsConcept[]>(this.broaderConceptsUrl, body, urlEncodedOptions)
-      .pipe(map(res => compat.importConcepts(res)))
+      .pipe(map(res => compat.importConcepts(res, vocIds, info)))
   }
 
-  narrowerConcepts(conceptId : ConceptId, vocIds : VocabularyId[]) : Observable<ConceptsCodes> {
+  narrowerConcepts(conceptId : ConceptId, vocIds : VocabularyId[], info : TypesInfo) : Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append("cuis", conceptId);
     for (let vocId of vocIds) {
       body.append("codingSystems", vocId);
     }
     return this.http.post<compat.UmlsConcept[]>(this.narrowerConceptsUrl, body, urlEncodedOptions)
-      .pipe(map(res => compat.importConcepts(res)))
+      .pipe(map(res => compat.importConcepts(res, vocIds, info)))
   }
 
   vocabularies() : Observable<Vocabulary[]> {
@@ -100,7 +107,7 @@ export class ApiService {
       .pipe(map(v => v.map(compat.importVocabulary)))
   }
 
-  concepts(cuis : ConceptId[], vocIds : VocabularyId[], ignoreTermTypes : string[] = []) : Observable<ConceptsCodes> {
+  concepts(cuis : ConceptId[], vocIds : VocabularyId[], info : TypesInfo) : Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     for (let cui of cuis) {
       body.append("cuis", cui);
@@ -108,19 +115,19 @@ export class ApiService {
     for (let vocId of vocIds) {
       body.append('codingSystems', vocId);
     }
-    for (let tty of ignoreTermTypes) {
+    for (let tty of info.ignoreTermTypes) {
       body.append("ignoreTermTypes", tty);
     }
     return this.http.post<compat.UmlsConcept[]>(this.conceptsUrl, body, urlEncodedOptions)
-      .pipe(map(compat.importConcepts))
+      .pipe(map(cs => compat.importConcepts(cs, vocIds, info)))
   }
 
-  async remapData(mapping : Mapping, vocabularies : Vocabularies, ignoreTermTypes : string[]) : Promise<{ conceptsCodes : ConceptsCodes, vocabularies : Vocabularies }> {
+  async remapData(mapping : Mapping, vocabularies : Vocabularies, info : TypesInfo) : Promise<{ conceptsCodes : ConceptsCodes, vocabularies : Vocabularies }> {
     let cuis = Object.keys(mapping.concepts);
     let vocIds = Object.keys(mapping.vocabularies);
     let vocs = Object.fromEntries(vocIds.map(id => [id, vocabularies[id]]));
     let conceptsCodes = await firstValueFrom(
-      this.concepts(cuis, vocIds, ignoreTermTypes));
+      this.concepts(cuis, vocIds, info));
     return { conceptsCodes, vocabularies: vocs }
   }
 
@@ -180,8 +187,8 @@ export class ApiService {
     return this.http.post(url, null, {});
   }
 
-  versionInfo() : Observable<VersionInfo> {
-    return this.http.get<VersionInfo>(this.baseUrl + "/version-info")
+  serverInfo() : Observable<ServerInfo> {
+    return this.http.get<ServerInfo>(this.baseUrl + "/server-info")
   }
 
   importCsvContent(csvContent : string, commentColumns : string[]) : Observable<ImportResult> {
@@ -223,7 +230,7 @@ export class ApiService {
     });
   }
 
-  peregrineIndex(text : string) : Observable<[Span[], Concepts]> {
+  peregrineIndex(text : string, vocIds : VocabularyId[], info : TypesInfo) : Observable<[Span[], Concepts]> {
     let normalize = (text : string) => {
       // Python: print "".join(r"\u%x" % ord(c) for c in u"–—")
       return text
@@ -246,7 +253,7 @@ export class ApiService {
           return [];
         }
         let ids = res.spans.map(s => cuiOfId(s.id));
-        return this.concepts(ids, [])
+        return this.concepts(ids, vocIds, info)
           .pipe(map(cc => [res.spans, cc.concepts] as [Span[], Concepts]));
       }));
   }

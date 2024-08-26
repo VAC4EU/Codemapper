@@ -26,7 +26,7 @@ import { environment } from '../../../environments/environment';
 import { PersistencyService, MappingInfo, ProjectPermission, mappingInfoLink } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
-import { DEFAULT_ALLOWED_TAGS, EMPTY_VERSION_INFO, Mapping, MappingFormat, Start, StartType, VersionInfo } from '../data';
+import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 
@@ -36,7 +36,7 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
   styleUrls: ['./events-view.component.scss']
 })
 export class EventsViewComponent {
-  versionInfo : VersionInfo = EMPTY_VERSION_INFO;
+  serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   projectName! : string;
   newEventName : string = "";
   mappings : MappingInfo[] = [];
@@ -52,7 +52,7 @@ export class EventsViewComponent {
     public auth : AuthService,
   ) { }
   ngOnInit() {
-    this.api.versionInfo().subscribe(info => this.versionInfo = info);
+    this.api.serverInfo().subscribe(info => this.serverInfo = info);
     this.route.params.subscribe(params => {
       this.projectName = params['project'];
       this.title.setTitle(`CodeMapper: Project ${this.projectName}`);
@@ -78,7 +78,7 @@ export class EventsViewComponent {
       return;
     }
     let vocs0 = await firstValueFrom(this.api.vocabularies());
-    let vers = await firstValueFrom(this.api.versionInfo());
+    let vers = await firstValueFrom(this.api.serverInfo());
     let vocabularies = Object.fromEntries(
       vocs0
         .filter(v => environment.defaultVocabularies.includes(v.id))
@@ -86,7 +86,9 @@ export class EventsViewComponent {
     let info = {
       formatVersion: MappingFormat.version,
       umlsVersion,
-      allowedTags: DEFAULT_ALLOWED_TAGS,
+      allowedTags: this.serverInfo.defaultAllowedTags,
+      ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
+      ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
     };
     let mapping = new Mapping(info, null, vocabularies, {}, {});
     let initial = { mappingName, projectName, mapping };
@@ -108,7 +110,9 @@ export class EventsViewComponent {
           let info = {
             formatVersion: MappingFormat.version,
             umlsVersion,
-            allowedTags: DEFAULT_ALLOWED_TAGS,
+            allowedTags: this.serverInfo.defaultAllowedTags,
+            ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
+            ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
           };
           let mapping = new Mapping(info, start, vocabularies, concepts, codes);
           let allTopics = AllTopics.fromRaw(imported.allTopics, null, Object.keys(concepts));

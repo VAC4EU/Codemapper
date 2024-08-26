@@ -38,7 +38,7 @@
       <mapping-tab
         [mapping]="mapping"
         [mappingShortkey]="mappingShortkey"
-        [versionInfo]="versionInfo"
+        [serverInfo]="serverInfo"
         [vocabularies]="vocabularies"
         [canDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
         (run)="run($event)"></mapping-tab>
@@ -57,6 +57,8 @@
             or revise the textual description by clicking "Edit text".</p>
           <indexer
             [locked]="false"
+            [vocIds]="serverInfo.defaultVocabularies"
+            [typesInfo]="typesInfo(serverInfo)"
             (confirmedIndexing)="setStartIndexing($event)"
             confirmLabel="Start with selected concepts"></indexer>
         </mat-card-content>

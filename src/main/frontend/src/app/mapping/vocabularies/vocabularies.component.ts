@@ -68,7 +68,7 @@ export class VocabulariesComponent {
             if (vocs != null) {
               let cuis = Object.keys(this.mapping!.concepts);
               let vocIds = (vocs as Vocabulary[]).map(v => v.id);
-              this.api.concepts(cuis, vocIds)
+              this.api.concepts(cuis, vocIds, this.mapping!.meta)
                 .subscribe(({ concepts, codes }) => {
                   let conceptCodes =
                     Object.fromEntries(

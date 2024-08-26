@@ -34,8 +34,6 @@ export type Concepts = { [key : ConceptId] : Concept }
 
 export type Codes = { [key : VocabularyId] : { [key : CodeId] : Code } }
 
-export const DEFAULT_ALLOWED_TAGS = ['narrow', 'possible', 'exclude', 'ignore']
-
 export interface Tags {
   concepts : { [key : ConceptId] : Tag },
   codes : { [key : VocabularyId] : { [key : CodeId] : Tag } }
@@ -100,7 +98,9 @@ export enum MappingFormat {
 export interface MappingMeta {
   formatVersion : MappingFormat;
   umlsVersion : string | null; // null indicates import from old CodeMapper format
-  allowedTags : string[] | null;
+  allowedTags : string[];
+  ignoreTermTypes : string[];
+  ignoreSemanticTypes : string[];
 }
 
 export interface MappingData {
@@ -382,7 +382,7 @@ export class Mapping {
       this.concepts[id].codes[vocId].add(codeId);
     }
   }
-  static importJSON(json0 : JSONValue) : Mapping {
+  static importJSON(json0 : JSONValue, info : ServerInfo) : Mapping {
     let json = json0 as JSONObject;
     let start : Start = null;
     if (json['start']) {
@@ -442,7 +442,13 @@ export class Mapping {
     if (json['meta']) {
       meta = json['meta'] as unknown as MappingMeta;
       if (meta.formatVersion !== MappingFormat.version) {
-
+        throw new Error(`Mapping data is in version ${meta.formatVersion}, expected version ${MappingFormat.version}`);
+      }
+      if (meta['ignoreTermTypes'] === undefined) {
+        meta.ignoreTermTypes = [...info.defaultIgnoreTermTypes];
+      }
+      if (meta['ignoreSemanticTypes'] === undefined) {
+        meta.ignoreSemanticTypes = [...info.defaultIgnoreSemanticTypes];
       }
     } else {
       let umlsVersion = json["umlsVersion"] as string;
@@ -452,12 +458,16 @@ export class Mapping {
       meta = {
         formatVersion: MappingFormat.version,
         umlsVersion,
-        allowedTags: DEFAULT_ALLOWED_TAGS,
+        allowedTags: info.defaultAllowedTags,
+        ignoreTermTypes: [...info.defaultIgnoreTermTypes],
+        ignoreSemanticTypes: [...info.defaultIgnoreSemanticTypes],
       };
     }
-    return new Mapping(meta, start, vocabularies, concepts, codes);
+    let res = new Mapping(meta, start, vocabularies, concepts, codes);
+    console.log("Import mapping", json0, res);
+    return res;
   }
-  static importV1(v0 : JSONValue) : Mapping {
+  static importV1(v0 : JSONValue, serverInfo : ServerInfo) : Mapping {
     let v = v0 as JSONObject;
     let vocabularies : { [key : VocabularyId] : Vocabulary } = {};
     for (const id0 of v['codingSystems'] as JSONArray) {
@@ -518,9 +528,13 @@ export class Mapping {
     let info = {
       formatVersion: MappingFormat.version,
       umlsVersion: null,
-      allowedTags: DEFAULT_ALLOWED_TAGS,
+      allowedTags: serverInfo.defaultAllowedTags,
+      ignoreTermTypes: serverInfo.defaultIgnoreTermTypes,
+      ignoreSemanticTypes: serverInfo.defaultIgnoreSemanticTypes,
     };
-    return new Mapping(info, start, vocabularies, concepts, codes);
+    let res = new Mapping(info, start, vocabularies, concepts, codes);
+    console.log("Import mapping v1", v0, res);
+    return res;
   }
 
   addConceptsCodes(concepts : Concepts, codes : Codes) {
@@ -626,20 +640,26 @@ export function tagsInCodes(codes : Code[]) : Tag[] {
 }
 
 /// Server version info
-export interface VersionInfo {
+export interface ServerInfo {
   contactEmail : string;
   projectVersion : string;
   umlsVersion : string;
   url : string;
-  ignoreTermTypes : string[];
+  defaultVocabularies : string[];
+  defaultAllowedTags : string[];
+  defaultIgnoreTermTypes : string[];
+  defaultIgnoreSemanticTypes : string[];
 }
 
-export const EMPTY_VERSION_INFO : VersionInfo = {
+export const EMPTY_SERVER_INFO : ServerInfo = {
   contactEmail: "",
   projectVersion: "",
   umlsVersion: "",
   url: "",
-  ignoreTermTypes: [],
+  defaultAllowedTags: [],
+  defaultIgnoreTermTypes: [],
+  defaultIgnoreSemanticTypes: [],
+  defaultVocabularies: []
 }
 
 export interface Revision {

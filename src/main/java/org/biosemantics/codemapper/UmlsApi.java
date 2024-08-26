@@ -51,7 +51,7 @@ import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
 import org.biosemantics.codemapper.MappingData.Vocabulary;
 import org.biosemantics.codemapper.rest.NonUmlsTargets;
-import org.biosemantics.codemapper.rest.VersionInfo;
+import org.biosemantics.codemapper.rest.ServerInfo;
 import org.biosemantics.codemapper.review.Message;
 import org.biosemantics.codemapper.review.ReviewApi.AllTopics;
 import org.biosemantics.codemapper.review.ReviewApi.Topics;
@@ -80,7 +80,7 @@ public class UmlsApi {
   private List<String> codingSystemsWithDefinition;
   private List<String> availableCodingSystems;
   private Set<String> ignoreTermTypes;
-  private VersionInfo versionInfo;
+  private ServerInfo serverInfo;
   private NonUmlsTargets nonUmls;
 
   public UmlsApi(
@@ -88,13 +88,13 @@ public class UmlsApi {
       List<String> availableCodingSystems,
       List<String> codingSystemsWithDefinition,
       Set<String> ignoreTermTypes,
-      VersionInfo versionInfo,
+      ServerInfo serverInfo,
       NonUmlsTargets nonUmls) {
     this.connectionPool = connectionPool;
     this.availableCodingSystems = availableCodingSystems;
     this.codingSystemsWithDefinition = codingSystemsWithDefinition;
     this.ignoreTermTypes = ignoreTermTypes;
-    this.versionInfo = versionInfo;
+    this.serverInfo = serverInfo;
     this.nonUmls = nonUmls;
   }
 
@@ -767,8 +767,8 @@ public class UmlsApi {
     }
   }
 
-  public VersionInfo getVersionInfo() {
-    return this.versionInfo;
+  public ServerInfo getServerInfo() {
+    return this.serverInfo;
   }
 
   @XmlRootElement
@@ -966,7 +966,7 @@ public class UmlsApi {
         vocabularies.put(vocId, voc);
       }
       MappingData mapping =
-          MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, versionInfo.getUmlsVersion());
+          MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, serverInfo.getUmlsVersion());
 
       // disable codes
       for (String vocId : mapping.codes.keySet()) {

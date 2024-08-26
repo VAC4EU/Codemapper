@@ -60,7 +60,7 @@
         </mat-autocomplete>
       </mat-form-field>
       <button
-        (click)="searchAddConcepts(query.value)"
+        (click)="searchAddConcepts(query.value, mapping.meta)"
         mat-stroked-button
         matTooltip="Search concepts by query">Search</button>
       <button
@@ -89,6 +89,8 @@
   <h2 matDialogTitle>Search and add concepts from free-text</h2>
   <mat-dialog-content>
     <indexer
+      [vocIds]="vocIds()"
+      [typesInfo]="mapping.meta"
       (confirmedIndexing)="addIndexing($event); dialogRef!.close()"
       confirmLabel="Add selected concepts"></indexer>
   </mat-dialog-content>

@@ -25,7 +25,7 @@ import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
 import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts } from '../data';
 import { AllTopics, ReviewOperation } from '../review';
-import { ApiService } from '../api.service';
+import { ApiService, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';
 
 @Component({
@@ -149,8 +149,8 @@ export class ConceptsComponent implements OnInit {
       })
   }
 
-  searchAddConcepts(query : string) {
-    this.api.searchUts(query, this.vocIds())
+  searchAddConcepts(query : string, info : TypesInfo) {
+    this.api.searchUts(query, this.vocIds(), info)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(concepts, codes, `Concepts matching query "${query}"`))
   }
@@ -165,13 +165,13 @@ export class ConceptsComponent implements OnInit {
   // }
 
   broaderConcepts(concept : Concept, vocIds : VocabularyId[]) {
-    this.api.broaderConcepts(concept.id, this.vocIds())
+    this.api.broaderConcepts(concept.id, this.vocIds(), this.mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(concepts, codes, `Concepts broader than ${concept.name}`))
   }
 
   narrowerConcepts(concept : Concept, vocIds : VocabularyId[]) {
-    this.api.narrowerConcepts(concept.id, this.vocIds())
+    this.api.narrowerConcepts(concept.id, this.vocIds(), this.mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(concepts, codes, `Concepts narrower than ${concept.name}`))
   }
@@ -199,7 +199,7 @@ export class ConceptsComponent implements OnInit {
 
   addIndexing(indexing : Indexing) {
     let ids = indexing.concepts.map(c => c.id);
-    this.api.concepts(ids, this.vocIds())
+    this.api.concepts(ids, this.vocIds(), this.mapping.meta)
       .subscribe(({ concepts, codes }) => this.run.emit(new ops.AddConcepts(concepts, codes)));
   }
 }

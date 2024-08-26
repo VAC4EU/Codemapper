@@ -16,7 +16,8 @@ DECLARE
 BEGIN
   -- 8 bytes gives a collision p = .5 after 5.1 x 10^9 values
   gkey := encode(gen_random_bytes(8), 'base64');
-  gkey := replace(gkey, '/', '_');  -- url safe replacement
+  gkey := lower(gkey);
+  gkey := replace(gkey, '/', '-');  -- url safe replacement
   gkey := replace(gkey, '+', '-');  -- url safe replacement
   RETURN rtrim(gkey, '=');          -- cut off padding
 END

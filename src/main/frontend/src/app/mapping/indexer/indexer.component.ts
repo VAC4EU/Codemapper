@@ -17,8 +17,8 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Input, Output, EventEmitter, Component, ViewChild, SimpleChanges, OnChanges } from '@angular/core';
-import { Concept, Concepts, ConceptId, StartType, Span, Indexing, cuiOfId } from '../data';
-import { ApiService } from '../api.service';
+import { Concept, Concepts, ConceptId, StartType, Span, Indexing, cuiOfId, VocabularyId } from '../data';
+import { ApiService, EMPTY_TYPES_INFO, TypesInfo } from '../api.service';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -33,6 +33,8 @@ enum State {
   styleUrls: ['./indexer.component.scss']
 })
 export class IndexerComponent implements OnChanges {
+  @Input({ required: true }) vocIds! : VocabularyId[];
+  @Input() typesInfo : TypesInfo = EMPTY_TYPES_INFO;
   @Input() initialIndexing : Indexing | null = null;
   @Input() locked : boolean = false;
   @Input() confirmLabel : string = "";
@@ -83,7 +85,7 @@ export class IndexerComponent implements OnChanges {
   }
 
   index(text : string) {
-    this.api.peregrineIndex(text)
+    this.api.peregrineIndex(text, this.vocIds, this.typesInfo)
       .subscribe(([spans, concepts]) => {
         this.indexedText = text;
         this.state = State.Indexed;

@@ -25,10 +25,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { map } from 'rxjs';
-import { Indexing, Vocabularies, Mapping, Revision, VersionInfo, MappingMeta, MappingFormat } from '../data';
+import { Indexing, Vocabularies, Mapping, Revision, ServerInfo, MappingMeta, MappingFormat, EMPTY_SERVER_INFO } from '../data';
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
-import { ApiService } from '../api.service';
+import { ApiService, TypesInfo } from '../api.service';
 import { mappingInfoLink, PersistencyService, slugify } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
@@ -47,7 +47,9 @@ enum Tabs {
 const EMPTY_MAPPING_INFO : MappingMeta = {
   formatVersion: MappingFormat.version,
   umlsVersion: null,
-  allowedTags: null
+  allowedTags: [],
+  ignoreTermTypes: [],
+  ignoreSemanticTypes: []
 };
 
 @Component({
@@ -56,12 +58,12 @@ const EMPTY_MAPPING_INFO : MappingMeta = {
   styleUrls: ['./mapping-view.component.scss']
 })
 export class MappingViewComponent implements HasPendingChanges {
-  mappingShortkey : string | null = null; // null if not saved
+  mappingShortkey : string | null = null; // null means mapping is not saved
   mappingName : string = "??";
   projectName : string = "??";
   viewName! : string;
   mapping : Mapping = new Mapping(EMPTY_MAPPING_INFO, null, {}, {}, {}); // initial value needed to avoid Expression has changed after it was checked
-  versionInfo! : VersionInfo;
+  serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   version : number = -1;
   revisions : Revision[] = [];
   allTopics : AllTopics = new AllTopics();
@@ -72,11 +74,8 @@ export class MappingViewComponent implements HasPendingChanges {
   error : string | null = null;
 
   constructor(
-    private http : HttpClient,
     private route : ActivatedRoute,
     private router : Router,
-    private cdr : ChangeDetectorRef,
-    private ngZone : NgZone,
     private persistency : PersistencyService,
     private apiService : ApiService,
     private title : Title,
@@ -94,7 +93,7 @@ export class MappingViewComponent implements HasPendingChanges {
     let params = await firstValueFrom(this.route.params);
     let vocabularies = await firstValueFrom(this.apiService.vocabularies());
     this.vocabularies = Object.fromEntries(vocabularies.map(v => [v.id, v]));
-    this.versionInfo = await firstValueFrom(this.apiService.versionInfo());
+    this.serverInfo = await firstValueFrom(this.apiService.serverInfo());
     this.mappingShortkey = params['shortkey'];
     if (this.mappingShortkey == null) {
       let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
@@ -125,16 +124,15 @@ export class MappingViewComponent implements HasPendingChanges {
         let version, mapping;
         try {
           [version, mapping] = await firstValueFrom(
-            this.persistency.latestRevisionMapping(this.mappingShortkey));
+            this.persistency.latestRevisionMapping(this.mappingShortkey, this.serverInfo));
         } catch (err) {
           console.log(err, typeof err);
           if ((err as HttpErrorResponse).status == 404) {
             [version, mapping] = await firstValueFrom(
-              this.persistency.legacyMapping(this.mappingShortkey));
-            let ignoreTermTypes = this.versionInfo.ignoreTermTypes;
+              this.persistency.legacyMapping(this.mappingShortkey, this.serverInfo));
             let { conceptsCodes, vocabularies } =
-              await this.apiService.remapData(mapping, this.vocabularies, ignoreTermTypes);
-            let umlsVersion = this.versionInfo.umlsVersion;
+              await this.apiService.remapData(mapping, this.vocabularies, this.mapping.meta);
+            let umlsVersion = this.serverInfo.umlsVersion;
             postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
             this.snackBar.open("Imported mapping from the old version of CodeMapper and remapped, please save.", "Close");
           } else {
@@ -266,7 +264,7 @@ export class MappingViewComponent implements HasPendingChanges {
             console.error("Could not save mapping", err);
             this.snackBar.open("Could not save mapping: " + err.message, "Close");
           }
-      });
+        });
     });
   }
 
@@ -296,12 +294,19 @@ export class MappingViewComponent implements HasPendingChanges {
   async setStartIndexing(indexing : Indexing) {
     if (this.mapping.start === null) {
       let vocIds = Object.keys(this.mapping.vocabularies);
-      await this.apiService.concepts(indexing.selected, vocIds)
+      await this.apiService.concepts(indexing.selected, vocIds, this.mapping.meta)
         .subscribe(({ concepts, codes }) => {
           let op = new ops.SetStartIndexing(indexing, concepts, codes)
             .withAfterRunCallback(() => this.selectedIndex = 1);
           this.run(op);
         });
     }
+  }
+
+  typesInfo(info : ServerInfo) : TypesInfo {
+    return {
+      ignoreSemanticTypes: info.defaultIgnoreSemanticTypes,
+      ignoreTermTypes: info.defaultIgnoreTermTypes,
+    };
   }
 }

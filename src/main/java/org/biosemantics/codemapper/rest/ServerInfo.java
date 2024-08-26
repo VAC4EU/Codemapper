@@ -20,24 +20,57 @@ package org.biosemantics.codemapper.rest;
 
 import java.util.Set;
 
-public class VersionInfo {
+public class ServerInfo {
   String umlsVersion;
   String url;
   String contactEmail;
   String projectVersion;
-  Set<String> ignoreTermTypes;
+  Set<String> defaultVocabularies;
+  Set<String> defaultAllowedTags;
+  Set<String> defaultIgnoreTermTypes;
+  Set<String> defaultIgnoreSemanticTypes;
 
-  public VersionInfo(
+  public ServerInfo(
       String umlsVersion,
       String url,
       String contactEmail,
       String projectVersion,
-      Set<String> ignoreTermTypes) {
+      Set<String> defaultVocabularies,
+      Set<String> defaultAllowedTags,
+      Set<String> defaultIgnoreTermTypes,
+      Set<String> defaultIgnoreSemanticTypes) {
     this.umlsVersion = umlsVersion;
     this.url = url;
     this.contactEmail = contactEmail;
     this.projectVersion = projectVersion;
-    this.ignoreTermTypes = ignoreTermTypes;
+    this.defaultVocabularies = defaultVocabularies;
+    this.defaultAllowedTags = defaultAllowedTags;
+    this.defaultIgnoreTermTypes = defaultIgnoreTermTypes;
+    this.defaultIgnoreSemanticTypes = defaultIgnoreSemanticTypes;
+  }
+
+  public Set<String> getDefaultVocabularies() {
+    return defaultVocabularies;
+  }
+
+  public void setDefaultVocabularies(Set<String> defaultVocabularies) {
+    this.defaultVocabularies = defaultVocabularies;
+  }
+
+  public Set<String> getDefaultAllowedTags() {
+    return defaultAllowedTags;
+  }
+
+  public void setDefaultAllowedTags(Set<String> defaultAllowedTags) {
+    this.defaultAllowedTags = defaultAllowedTags;
+  }
+
+  public Set<String> getDefaultIgnoreSemanticTypes() {
+    return defaultIgnoreSemanticTypes;
+  }
+
+  public void setDefaultIgnoreSemanticTypes(Set<String> defaultIgnoreSemanticTypes) {
+    this.defaultIgnoreSemanticTypes = defaultIgnoreSemanticTypes;
   }
 
   public String getUmlsVersion() {
@@ -57,6 +90,6 @@ public class VersionInfo {
   }
 
   public Set<String> getIgnoreTermTypes() {
-    return ignoreTermTypes;
+    return defaultIgnoreTermTypes;
   }
 }

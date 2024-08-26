@@ -74,7 +74,10 @@ public class CodeMapperApplication extends ResourceConfig {
   private static final String PEREGRINE_RESOURCE_URL = "peregrine-resource-url";
   private static final String UMLS_DB = "umls-db";
   private static final String UTS_API_KEY = "uts-api-key";
-  private static final String IGNORE_TERM_TYPES = "ignore-term-types";
+  private static final String DEFAULT_ALLOWED_TAGS = "default-allowed-tags";
+  private static final String DEFAULT_IGNORE_TERM_TYPES = "default-ignore-term-types";
+  private static final String DEFAULT_IGNORE_SEMANTIC_TYPES = "default-ignore-semantic-types";
+  private static final String DEFAULT_VOCABULARIES = "default-vocabularies";
 
   private static Properties properties;
   private static Properties propertiesConfig;
@@ -154,22 +157,40 @@ public class CodeMapperApplication extends ResourceConfig {
     peregrineResourceUrl = propertiesConfig.getProperty(PEREGRINE_RESOURCE_URL);
     umlsVersion = properties.getProperty(CODEMAPPER_UMLS_VERSION);
 
-    Set<String> ignoreTermTypes =
+    Set<String> defaultVocabularies =
         new HashSet<>(
-            Arrays.asList(propertiesConfig.getProperty(IGNORE_TERM_TYPES).split(",\\s*")));
+            Arrays.asList(propertiesConfig.getProperty(DEFAULT_VOCABULARIES).split(",\\s*")));
+    Set<String> defaultAllowedTags =
+        new HashSet<>(
+            Arrays.asList(propertiesConfig.getProperty(DEFAULT_ALLOWED_TAGS).split(",\\s*")));
+    Set<String> defaultIgnoreTermTypes =
+        new HashSet<>(
+            Arrays.asList(propertiesConfig.getProperty(DEFAULT_IGNORE_TERM_TYPES).split(",\\s*")));
+    Set<String> defaultIgnoreSemanticTypes =
+        new HashSet<>(
+            Arrays.asList(
+                propertiesConfig.getProperty(DEFAULT_IGNORE_SEMANTIC_TYPES).split(",\\s*")));
 
     String url = propertiesConfig.getProperty(CODEMAPPER_URL);
     String contactEmail = propertiesConfig.getProperty(CODEMAPPER_CONTACT_EMAIL);
     String projectVersion = propertiesConfig.getProperty(CODEMAPPER_PROJECT_VERSION);
-    VersionInfo versionInfo =
-        new VersionInfo(umlsVersion, url, contactEmail, projectVersion, ignoreTermTypes);
+    ServerInfo versionInfo =
+        new ServerInfo(
+            umlsVersion,
+            url,
+            contactEmail,
+            projectVersion,
+            defaultVocabularies,
+            defaultAllowedTags,
+            defaultIgnoreTermTypes,
+            defaultIgnoreSemanticTypes);
 
     umlsApi =
         new UmlsApi(
             umlsConnectionPool,
             availableCodingSystems,
             codingSystemsWithDefinition,
-            ignoreTermTypes,
+            defaultIgnoreTermTypes,
             versionInfo,
             nonUmls);
 

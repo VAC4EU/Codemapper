@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component } from '@angular/core';
-import { VersionInfo, EMPTY_VERSION_INFO } from '../data';
+import { ServerInfo, EMPTY_SERVER_INFO } from '../data';
 import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 
@@ -28,12 +28,12 @@ import { ApiService } from '../api.service';
 })
 export class WelcomeViewComponent {
   user : User | null = null;
-  info : VersionInfo = EMPTY_VERSION_INFO;
+  info : ServerInfo = EMPTY_SERVER_INFO;
   constructor(
     private auth : AuthService,
     private api : ApiService,
   ) {
     this.auth.userSubject.subscribe(user => this.user = user);
-    this.api.versionInfo().subscribe(info => this.info = info);
+    this.api.serverInfo().subscribe(info => this.info = info);
   }
 }

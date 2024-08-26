@@ -82,9 +82,9 @@ public class CodeMapperResource {
   }
 
   @GET
-  @Path("version-info")
-  public VersionInfo versionInfo(@Context User user) {
-    return api.getVersionInfo();
+  @Path("server-info")
+  public ServerInfo versionInfo(@Context User user) {
+    return api.getServerInfo();
   }
 
   @GET
