@@ -1,10 +1,10 @@
 <mat-form-field>
   <mat-label>Username</mat-label>
-  <input matInput [formControl]="username" type="text">
+  <input matInput [formControl]="username" type="text" autocomplete="user">
 </mat-form-field>
 <mat-form-field>
   <mat-label>Password</mat-label>
-  <input matInput [formControl]="password" [type]="hide ? 'password' : 'text'" (keydown.enter)="login()">
+  <input matInput [formControl]="password" [type]="hide ? 'password' : 'text'" autocomplete="password" (keydown.enter)="login()">
   <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
     <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
   </button>

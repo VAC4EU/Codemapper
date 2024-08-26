@@ -111,7 +111,7 @@ public class UmlsApi {
         PreparedStatement statement = connection.prepareStatement(query)) {
       ResultSet result = statement.executeQuery();
       while (result.next()) {
-    	  int ix = 1;
+        int ix = 1;
         String rsab = result.getString(ix++);
         String name = result.getString(ix++);
         String family = result.getString(ix++);

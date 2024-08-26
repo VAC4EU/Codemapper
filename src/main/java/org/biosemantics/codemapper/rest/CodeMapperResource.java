@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
@@ -47,7 +46,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.annotation.XmlRootElement;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
@@ -58,9 +56,9 @@ import org.biosemantics.codemapper.UmlsConcept;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
-import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.descendants.DescendantsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
+import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
@@ -281,11 +279,14 @@ public class CodeMapperResource {
       mapping.revision = revision;
       mapping.data = revision.parseMappingData();
       if (includeDescendants) {
-          DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
-          DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
+        DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
+        DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
         Map<String, Collection<String>> codes = mapping.data.getCodesByVoc();
-        Map<String, CodingSystem> codingSystems = api.getCodingSystems().stream().collect(Collectors.toMap(CodingSystem::getName, v -> v));
-		mapping.descendants = descendantsCacheApi.getDescendants(codes, codingSystems, descendantsApi);
+        Map<String, CodingSystem> codingSystems =
+            api.getCodingSystems().stream()
+                .collect(Collectors.toMap(CodingSystem::getAbbreviation, v -> v));
+        mapping.descendants =
+            descendantsCacheApi.getDescendantsAndCache(codes, codingSystems, descendantsApi, api);
       } else {
         mapping.descendants = Collections.emptyMap();
       }
@@ -350,7 +351,7 @@ public class CodeMapperResource {
             mapping.data = mapping.revision.parseMappingData();
           } catch (CodeMapperException e) {
             String msg = "Could not parse mapping \"" + info.mappingName + "\": " + e;
-            logger.warn(msg);
+            logger.warn(msg, e);
             if (ignoreMappingFailures) {
               continue;
             }
@@ -364,7 +365,6 @@ public class CodeMapperResource {
           mappings.add(mapping);
         }
       }
-      ;
       try {
         writeApi.writeProjectCSV(output, project, mappings, formattedTime, url);
       } catch (IOException e) {

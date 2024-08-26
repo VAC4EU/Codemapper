@@ -43,9 +43,9 @@ import org.biosemantics.codemapper.UmlsApi;
 import org.biosemantics.codemapper.UtsApi;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.User;
-import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.descendants.DescendantsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
+import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.descendants.UmlsDescender;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.review.ReviewApi;
@@ -180,7 +180,7 @@ public class CodeMapperApplication extends ResourceConfig {
     utsApi = new UtsApi(utsApiKey);
 
     reviewApi = new ReviewApi(codeMapperConnectionPool);
-    
+
     descendantsCacheApi = new DescendantsCache(codeMapperConnectionPool);
 
     GeneralDescender umlsDescender = new UmlsDescender(umlsConnectionPool);
@@ -238,9 +238,9 @@ public class CodeMapperApplication extends ResourceConfig {
   public static DescendantsApi getDescendantsApi() {
     return descendersApi;
   }
-  
+
   public static DescendantsCache getDescendantsCacheApi() {
-	  return descendantsCacheApi;
+    return descendantsCacheApi;
   }
 
   public static void reconfigureLog4j2(Level level) {

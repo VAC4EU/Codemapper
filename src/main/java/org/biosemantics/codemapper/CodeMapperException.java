@@ -31,19 +31,31 @@ public class CodeMapperException extends Exception {
 
   private Family errorFamily;
 
+  public String toString() {
+    String res = this.getMessage();
+    Throwable cause = this.getCause();
+    if (cause != null) {
+      res += " (" + cause.getMessage() + ")";
+    }
+    return res;
+  }
+
   private CodeMapperException(Family errorFamily, String msg) {
     super(msg);
     this.errorFamily = errorFamily;
+    this.printStackTrace();
   }
 
   private CodeMapperException(Family errorFamily, String msg, Exception e) {
     super(msg, e);
     this.errorFamily = errorFamily;
+    this.printStackTrace();
   }
 
   private CodeMapperException(Family errorFamily, Exception e) {
     super(e);
     this.errorFamily = errorFamily;
+    this.printStackTrace();
   }
 
   public static CodeMapperException user(String msg) {

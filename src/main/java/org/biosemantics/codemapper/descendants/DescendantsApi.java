@@ -121,6 +121,7 @@ public class DescendantsApi {
   /* Codes to descendant codes */
   public static class Descendants extends HashMap<String, Collection<Code>> {
     public Descendants() {}
+
     public Descendants(Map<String, Collection<Code>> map) {
       this.putAll(map);
     }

@@ -33,6 +33,8 @@ public class MappingData {
   Map<String, Vocabulary> vocabularies; // voc -> voc info
   String umlsVersion;
 
+  public MappingData() {}
+
   public MappingData(
       Map<String, Concept> concepts,
       Map<String, Map<String, Code>> codes,
@@ -201,6 +203,11 @@ public class MappingData {
       this.tag = tag;
     }
 
+    @Override
+    public String toString() {
+      return id;
+    }
+
     public String getId() {
       return id;
     }
@@ -260,6 +267,11 @@ public class MappingData {
       this.custom = custom;
       this.enabled = enabled;
       this.tag = tag;
+    }
+
+    @Override
+    public String toString() {
+      return id;
     }
 
     public SourceConcept toSourceConcept(String cui, String codingSystem) {
