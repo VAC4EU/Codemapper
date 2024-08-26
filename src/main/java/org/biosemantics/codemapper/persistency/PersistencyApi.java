@@ -102,7 +102,7 @@ public class PersistencyApi {
       while (result.next()) {
         String project = result.getString("project");
         String role0 = result.getString("role");
-        ProjectPermission role = ProjectPermission.fromString(role0);
+        ProjectPermission role = ProjectPermission.fromChar(role0);
         permissions.put(project, role);
       }
       return permissions;
@@ -127,7 +127,7 @@ public class PersistencyApi {
       while (result.next()) {
         String username = result.getString("username");
         String role0 = result.getString("role");
-        ProjectPermission role = ProjectPermission.fromString(role0);
+        ProjectPermission role = ProjectPermission.fromChar(role0);
         if (!users.containsKey(username)) users.put(username, new HashSet<ProjectPermission>());
         users.get(username).add(role);
       }
@@ -439,7 +439,7 @@ public class PersistencyApi {
       while (result.next()) {
         String projectName = result.getString(1);
         String role0 = result.getString(2);
-        ProjectPermission role = ProjectPermission.fromString(role0);
+        ProjectPermission role = ProjectPermission.fromChar(role0);
         permissions.put(projectName, role);
       }
       return permissions.entrySet().stream()
@@ -474,7 +474,7 @@ public class PersistencyApi {
       while (result.next()) {
         String projectName = result.getString(1);
         String role0 = result.getString(2);
-        ProjectPermission role = role0 == null ? null : ProjectPermission.fromString(role0);
+        ProjectPermission role = role0 == null ? null : ProjectPermission.fromChar(role0);
         permissions.put(projectName, role);
       }
       return permissions.entrySet().stream()
@@ -646,10 +646,10 @@ public class PersistencyApi {
       try {
         Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, perm.toString());
+        statement.setString(1, perm.toChar());
         statement.setString(2, username);
         statement.setString(3, projectName);
-        statement.setString(4, perm.toString());
+        statement.setString(4, perm.toChar());
         statement.execute();
       } catch (SQLException e) {
         throw CodeMapperException.server("Cannot execute query to remove project user", e);

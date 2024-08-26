@@ -29,7 +29,7 @@ import { Indexing, Vocabularies, Mapping, Revision, ServerInfo, MappingMeta, Map
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService, TypesInfo } from '../api.service';
-import { mappingInfoLink, PersistencyService, ProjectPermission, slugify } from '../persistency.service';
+import { mappingInfoLink, PersistencyService, ProjectRole, slugify } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
@@ -72,7 +72,7 @@ export class MappingViewComponent implements HasPendingChanges {
   selectedIndex : number = 0;
   saveRequired : boolean = false;
   error : string | null = null;
-  perm : ProjectPermission = null;
+  projectRole : ProjectRole | null = null;
 
   constructor(
     private route : ActivatedRoute,
@@ -105,7 +105,7 @@ export class MappingViewComponent implements HasPendingChanges {
         console.log("Initial mapping", initial.mapping);
         this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
         this.setTitle();
-        this.persistency.getProjectPermission(this.projectName).subscribe((perm) => {
+        this.persistency.getProjectRole(this.projectName).subscribe((perm) => {
           if (perm != 'Owner') {
             this.error = "you aren't project owner, you won't be able to save this new mapping";
           }
@@ -147,9 +147,7 @@ export class MappingViewComponent implements HasPendingChanges {
         mapping.cleanupRecacheCheck()
         this.version = version;
         this.mapping = mapping;
-        this.persistency.getProjectPermission(this.projectName).subscribe(perm => {
-          this.perm = perm;
-        })
+        this.persistency.getProjectRole(this.projectName).subscribe(role => this.projectRole = role)
         this.reloadReviews();
         this.reloadRevisions();
         if (postOp != null) this.run(postOp);
@@ -291,7 +289,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   titleTooltip() : string {
-    let role = this.perm?.toLowerCase();
+    let role = this.projectRole?.toLowerCase();
     let res = `In project ${this.projectName} (you are ${role})`;
     if (this.saveRequired) {
       res += `, mapping needs save`;

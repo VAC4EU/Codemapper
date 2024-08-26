@@ -22,7 +22,7 @@ import { environment } from '../../../src/environments/environment';
 import { map } from 'rxjs/operators';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { urlEncodedOptions } from '../app.module';
-import { PersistencyService, ProjectInfo, ProjectPermission } from './persistency.service';
+import { PersistencyService, ProjectInfo, ProjectRole } from './persistency.service';
 
 export interface User {
   username : string,

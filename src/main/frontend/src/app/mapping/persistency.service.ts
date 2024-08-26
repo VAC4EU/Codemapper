@@ -24,13 +24,17 @@ import { urlEncodedOptions } from '../app.module';
 import { Observable, map } from 'rxjs';
 import { User } from './auth.service';
 
-export type ProjectPermission = 'Owner' | 'Editor' | 'Commentator' | null;
+export enum ProjectRole {
+  Owner = "Owner",
+  Editor = "Editor",
+  Commentator = "Commentator"
+}
 
-export type ProjectPermissions = { [key : string] : ProjectPermission };
+export type ProjectsRoles = { [key : string] : ProjectRole | null };
 
 export interface ProjectInfo {
   name : string;
-  permission : ProjectPermission;
+  permission : ProjectRole;
 }
 
 export interface MappingInfo {
@@ -102,12 +106,12 @@ export class PersistencyService {
       }))
   }
 
-  getProjectPermissions() {
-    return this.http.get<ProjectPermissions>(this.url + "/user/project-permissions")
+  getProjectsRoless() {
+    return this.http.get<ProjectsRoles>(this.url + "/user/project-permissions")
   }
 
-  getProjectPermission(projectName : string) {
-    return this.http.get<ProjectPermission>(this.url + "/user/project-permission/" + projectName)
+  getProjectRole(projectName : string) {
+    return this.http.get<ProjectRole>(this.url + "/user/project-permission/" + projectName)
   }
 
   getRevisions(shortkey : string) {
@@ -145,7 +149,7 @@ export class PersistencyService {
     return this.http.get<User[]>(this.url + '/users');
   }
 
-  addUserRole(projectName : string, username : string, role : string) {
+  setUserRole(projectName : string, username : string, role : ProjectRole | null) {
     let url = this.url + '/project/' + projectName + '/user-role';
     let body = new URLSearchParams();
     body.append("username", username);

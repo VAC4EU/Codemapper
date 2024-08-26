@@ -1,13 +1,16 @@
-
-<mat-form-field subscriptSizing="dynamic" class="input-form">
-  <mat-label>Username</mat-label>
-  <input matInput [formControl]="username" type="text" autocomplete="user">
-</mat-form-field>
-<mat-form-field subscriptSizing="dynamic" class="input-form">
-  <mat-label>Password</mat-label>
-  <input matInput [formControl]="password" [type]="hide ? 'password' : 'text'" autocomplete="password" (keydown.enter)="login()">
-  <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
-    <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
-  </button>
-</mat-form-field>
-<button mat-raised-button color="primary" (click)="login()" type="button">Login <mat-icon>login</mat-icon></button>
+<span class="login-form">
+  <mat-form-field subscriptSizing="dynamic" class="input-form">
+    <mat-label>Username</mat-label>
+    <input matInput [formControl]="username" type="text" autocomplete="user">
+  </mat-form-field>
+  <mat-form-field subscriptSizing="dynamic" class="input-form">
+    <mat-label>Password</mat-label>
+    <input matInput [formControl]="password" [type]="hide ? 'password' : 'text'" autocomplete="password"
+      (keydown.enter)="login()">
+    <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'"
+      [attr.aria-pressed]="hide">
+      <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+    </button>
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="login()" type="button">Login <mat-icon>login</mat-icon></button>
+</span>

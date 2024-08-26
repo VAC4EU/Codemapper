@@ -7,7 +7,7 @@
   </mat-toolbar>
   <div class="center-content spaced">
 
-    <p>You are {{(projectPerm ?? "not member").toLowerCase()}} of this project.</p>
+    <p>You are {{(role ?? "not member").toLowerCase()}} of this project.</p>
 
   <mat-card appearance="outlined">
     <h3>Mappings</h3>
@@ -20,7 +20,7 @@
           <span matTooltip="Create a new mapping (only for project owners)">
             <button
               (click)="openDialog(createMapping)"
-              [disabled]="projectPerm != 'Owner'"
+              [disabled]="role != 'Owner'"
               mat-raised-button>
               Create
             </button>
@@ -28,7 +28,7 @@
           <span matTooltip="Import a mapping from a CSV file (only for project owners)">
             <button
               (click)="importNew(projectName)"
-              [disabled]="projectPerm != 'Owner'"
+              [disabled]="role != 'Owner'"
               mat-raised-button>
               Import CSV
             </button>
@@ -43,7 +43,7 @@
           <span matTooltip="Rename one selected mapping (only for project owners)">
             <button
               mat-raised-button
-              [disabled]="projectPerm != 'Owner' || selected.selected.length != 1"
+              [disabled]="role != 'Owner' || selected.selected.length != 1"
               (click)="openDialog(renameDialog)">Rename</button>
           </span>
           <span matTooltip="Download all mappings of the project">
@@ -87,7 +87,7 @@
 
   <mat-card appearance="outlined" *ngIf="projectName != 'Tests' || user?.admin">
     <h3>Members</h3>
-    <div *ngIf="user?.admin || projectPerm == 'Owner'">
+    <div *ngIf="user?.admin || role == 'Owner'">
       <mat-form-field>
         <mat-label>User</mat-label>
         <mat-select #addUserRoleName>
@@ -100,9 +100,7 @@
         <mat-label>Role</mat-label>
         <mat-select #addUserRoleRole >
           <mat-option>Remove from project</mat-option>
-          <mat-option value="O">Owner</mat-option>
-          <mat-option value="E">Editor</mat-option>
-          <mat-option value="C">Commentator</mat-option>
+          <mat-option *ngFor="let role of rolesDomain()" [value]="role">{{role}}</mat-option>
         </mat-select>
       </mat-form-field>
       <button

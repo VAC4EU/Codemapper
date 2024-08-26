@@ -22,7 +22,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
-import { PersistencyService, MappingInfo, ProjectPermission, mappingInfoLink } from '../persistency.service';
+import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
@@ -40,7 +40,7 @@ export class ProjectViewComponent {
   projectName! : string;
   newEventName : string = "";
   mappings : MappingInfo[] = [];
-  projectPerm : ProjectPermission = null;
+  role : ProjectRole | null = null;
   selected = new SelectionModel<MappingInfo>(true, []);
   users : { [key : string] : string[] } = {};
   user : User | null = null;
@@ -72,7 +72,7 @@ export class ProjectViewComponent {
   }
   reloadUsers() {
     this.persistency.projectUsers(this.projectName).subscribe(users => this.users = users);
-    this.persistency.getProjectPermission(this.projectName).subscribe((perm) => this.projectPerm = perm);
+    this.persistency.getProjectRole(this.projectName).subscribe((role) => this.role = role);
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;
@@ -155,10 +155,14 @@ export class ProjectViewComponent {
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');
   }
-  addUserRole(username : string, role : string) {
-    this.persistency.addUserRole(this.projectName, username, role).subscribe({
+  addUserRole(username : string, role : ProjectRole) {
+    console.log("ROLE", role, ProjectRole);
+    this.persistency.setUserRole(this.projectName, username, role).subscribe({
       next: _ => this.reloadUsers(),
-      error: err => this.snackbar.open(err.error, "Ok"),
+      error: err => this.snackbar.open(err.message, "Ok"),
     });
+  }
+  rolesDomain() : string[] {
+    return Object.keys(ProjectRole)
   }
 }

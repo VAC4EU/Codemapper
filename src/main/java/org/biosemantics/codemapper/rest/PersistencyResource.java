@@ -342,8 +342,8 @@ public class PersistencyResource {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
       ProjectPermission role = null;
-      if (roleString == null || roleString.isEmpty()) {
-        role = ProjectPermission.fromString(roleString);
+      if (roleString != null) {
+        role = ProjectPermission.fromName(roleString);
         if (role == null) {
           throw new ClientErrorException("invalid role", 400);
         }

@@ -19,7 +19,7 @@
 import { Component, TemplateRef } from '@angular/core';
 import { PersistencyService, ProjectInfo } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 
@@ -34,6 +34,7 @@ export class ProjectsViewComponent {
   projects : ProjectInfo[] = [];
   newNames : { [key : string] : string } = {};
   user : User | null = null;
+  dialogRef : MatDialogRef<any, any> | null = null;
   constructor(
     private persistency : PersistencyService,
     private auth : AuthService,
@@ -54,13 +55,19 @@ export class ProjectsViewComponent {
 
   createProject(name : string) {
     this.persistency.createProject(name).subscribe({
-      next: _ => this.reloadProjects(),
-      error: err => this.snackbar.open(err.error, "Ok"),
+      next: _ => {
+        this.reloadProjects();
+        this.snackbar.open("Created project " + name, "Ok", { duration: 2000 });
+        if (this.dialogRef != null) {
+          this.dialogRef.close();
+        }
+      },
+      error: err => this.snackbar.open(err.message, "Ok"),
     })
   }
 
   openDialog(templateRef : TemplateRef<any>) {
-    this.dialog.open(templateRef, {
+    this.dialogRef = this.dialog.open(templateRef, {
       width: '700px'
     });
   }

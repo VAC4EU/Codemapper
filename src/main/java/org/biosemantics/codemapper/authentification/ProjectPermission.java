@@ -23,7 +23,20 @@ public enum ProjectPermission {
   Editor,
   Commentator;
 
-  public static ProjectPermission fromString(String c) {
+  public static ProjectPermission fromName(String s) {
+    switch (s) {
+      case "Owner":
+        return Owner;
+      case "Editor":
+        return Editor;
+      case "Commentator":
+        return Commentator;
+      default:
+        return null;
+    }
+  }
+
+  public static ProjectPermission fromChar(String c) {
     switch (c) {
       case "O":
         return Owner;
@@ -36,7 +49,7 @@ public enum ProjectPermission {
     }
   }
 
-  public String toString() {
+  public String toChar() {
     switch (this) {
       case Commentator:
         return "C";
