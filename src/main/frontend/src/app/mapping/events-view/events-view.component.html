@@ -2,7 +2,7 @@
 <div class="center-content">
   <mat-toolbar>
     <app-navigation [projectName]="projectName"></app-navigation>
-    <span>CodeMapper: Project {{projectName}} ({{projectPerm?.toLowerCase()}})</span>
+    <span>CodeMapper project: {{projectName}}</span>
     <span class="menu-spacer"></span>
     <span matTooltip="Download all mappings of the project">
       <button
@@ -13,7 +13,8 @@
     </span>
     <app-loggedin></app-loggedin>
   </mat-toolbar>
-  <h2>Mappings</h2>
+  <p>You are {{projectPerm?.toLowerCase()}} in this project.</p>
+  <h3>Mappings</h3>
   <div class="toolbox">
     <mat-card>
       <mat-card-header>

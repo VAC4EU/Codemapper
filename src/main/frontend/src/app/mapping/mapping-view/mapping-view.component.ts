@@ -269,7 +269,7 @@ export class MappingViewComponent implements HasPendingChanges {
 
   titleTooltip() : string {
     let role = this.auth.projectRole(this.projectName)?.toLowerCase();
-    let res = `Project: ${this.projectName} (you are ${role})`;
+    let res = `In project ${this.projectName} (you are ${role})`;
     if (this.saveRequired) {
       res += `, mapping needs save`;
     }

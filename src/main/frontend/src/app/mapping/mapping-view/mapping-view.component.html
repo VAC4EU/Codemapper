@@ -1,10 +1,6 @@
 <mat-toolbar>
   <app-navigation [projectName]="projectName"></app-navigation>
-  <span matTooltip="{{titleTooltip()}}">
-    CodeMapper:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
-  </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <ng-container *ngIf="mapping != null">
-    <span class="menu-spacer"></span>
     <button
       (click)="undo()"
       [disabled]="mapping.undoStack.length == 0"
@@ -19,7 +15,7 @@
       mat-icon-button>
       <mat-icon>redo</mat-icon>
     </button>
-    <span matTooltip="Save the mapping">
+    <span matTooltip="Save changes">
       <button
         (click)="openDialog(saveDialog)"
         [disabled]="mapping.start == null || (!saveRequired && mapping.undoStack.length == 0)"
@@ -28,6 +24,10 @@
       </button>
     </span>
   </ng-container>
+  <span matTooltip="{{titleTooltip()}}">
+    CodeMapper mapping:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+  </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
+  <span class="menu-spacer"></span>
   <app-loggedin></app-loggedin>
 </mat-toolbar>
 
