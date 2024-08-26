@@ -88,3 +88,10 @@ mat-icon.text-align {
 .remap-snackbar {
     white-space: pre-wrap;
 }
+
+// Manipulate initial background color
+.input-form {
+.mdc-text-field--filled:not(.mdc-text-field--disabled), .mat-mdc-input-element, .mat-mdc-form-field-focus-overlay {
+    background-color: white !important;
+  }
+}

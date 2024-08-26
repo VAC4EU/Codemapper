@@ -1,26 +1,17 @@
 
-<section class="center-content max-vertical mat-elevation-z1">
+<section class="center-content mat-elevation-z1 mat-outline">
   <mat-toolbar>
     <app-navigation></app-navigation>
     CodeMapper: Welcome!
     <span class="menu-spacer"></span>
     <app-loggedin></app-loggedin>
+    <span *ngIf="!user">
+      <login-form></login-form>
+    </span>
   </mat-toolbar>
 
-  <login-form *ngIf="!user">
-  </login-form>
-
-  <section *ngIf="user">
-    <p>Use the menu button <mat-icon class="text-align">menu</mat-icon> above
-    access your projects and mappings.</p>
-
-    <h4><mat-icon class="text-align">warning</mat-icon> Testing
-      version <mat-icon class="text-align">warning</mat-icon></h4>
-
-    <p>This is the testing version of a major update, things may not be stable
-    yet, so be careful. But feedback is welcome
-    by <a href="mailto:benedikt.becker@posteo.de?subject=CodeMapper">email</a>!</p>
-  </section>
+  <p>Use the menu button <mat-icon class="text-align">menu</mat-icon> on the top left
+    to access your projects and mappings (when logged in).</p>
 
   <h3>CodeMapper: Semi-automatic coding of case definitions</h3>
 
@@ -42,9 +33,13 @@
   
   <h4>Development</h4>
 
-  <p>The current development of CodeMapper is funded by <a href="https://vac4eu.org/" target="_blank">VAC4EU</a> (view the <a routerLink="/news">development news</a>). The research leading to this tool was carried out at Erasmus Medical Center, Rotterdam, and has received support from the Innovative Medicines Initiative Joint Undertaking under ADVANCE grant agreement.</p>
+  <p>CodeMapper is open source software and licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">Affero GPL 3</a>. The source code is available on <a href="https://github.com/VAC4EU/Codemapper" target="_blank">github</a>.</p>
 
-  <p>CodeMapper is open source software and licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">Affero GPL 3</a>. The source code is available on <a href="https://github.com/mi-erasmusmc/comap" target="_blank">github</a>.</p>
+   <p>The current development of CodeMapper is funded by <a href="https://vac4eu.org/" target="_blank">VAC4EU</a> (view the <a routerLink="/news">development news</a>). The research leading to this tool was carried out at Erasmus Medical Center, Rotterdam, and has received support from the Innovative Medicines Initiative Joint Undertaking under ADVANCE grant agreement.</p>
+
+ <h4>Found a problem?</h4>
+
+  Please report problems on <a href="https://github.com/VAC4EU/Codemapper/issues">Github issues</a>.
 
   <h4>UMLS license</h4>
 

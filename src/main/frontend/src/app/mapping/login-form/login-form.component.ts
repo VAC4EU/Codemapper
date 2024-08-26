@@ -49,11 +49,9 @@ export class LoginFormComponent {
           if (res.success) {
             if (res.redirectUrl) {
               this.router.navigate([res.redirectUrl]);
-            } else {
-              this.router.navigate(['projects']);
             }
           } else {
-            this.error = res.error!;
+            this.snackBar.open(res.error!, "Ok");
           }
         });
     }
