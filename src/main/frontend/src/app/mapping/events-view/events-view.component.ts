@@ -81,7 +81,7 @@ export class EventsViewComponent {
     let vers = await firstValueFrom(this.api.serverInfo());
     let vocabularies = Object.fromEntries(
       vocs0
-        .filter(v => environment.defaultVocabularies.includes(v.id))
+        .filter(v => vers.defaultVocabularies.includes(v.id))
         .map(v => [v.id, v]));
     let info = {
       formatVersion: MappingFormat.version,

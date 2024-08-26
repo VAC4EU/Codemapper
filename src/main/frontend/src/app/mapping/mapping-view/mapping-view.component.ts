@@ -101,6 +101,7 @@ export class MappingViewComponent implements HasPendingChanges {
         this.saveRequired = true;
         this.mappingName = initial.mappingName;
         this.projectName = initial.projectName;
+        console.log("Initial mapping", initial.mapping);
         this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
         this.setTitle();
         if (this.auth.projectRole(this.projectName) != 'Admin') {

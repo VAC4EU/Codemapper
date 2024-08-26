@@ -149,7 +149,6 @@ export class IndexerComponent implements OnChanges {
           .map(c => conceptsByCui[c.id]?.name)
           .filter(s => s !== undefined)
           .join(", ");
-        var cuisStr = concepts.map(c => c.id).join(" ");
         let cuiClasses = concepts.map(c => c.id).join(" ")
         let enabled = cuis.some(cui => selectedCuis.includes(cui)) ? "enabled " : "";
         result += `<span class="indexedConcept ${enabled}${cuiClasses}" title="${title}" >`;
