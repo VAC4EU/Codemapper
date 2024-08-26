@@ -18,11 +18,9 @@
 
 import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { NgFor } from '@angular/common';
-import { MatTable } from '@angular/material/table';
-import { Mapping, Code, Concept, CodeId, Vocabulary, VocabularyId, ConceptId, Tag, tagsInCodes, tagsInConcepts } from '../data';
+import { Mapping, Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../data';
 import * as ops from '../mapping-ops';
-import { AllTopics, TopicsInfo, ReviewData, ReviewOperation } from '../review';
+import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 import { ApiService, Descendants } from '../api.service';
 import { compareCodes } from '../sort.pipe';

@@ -17,11 +17,11 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { JSONObject, Mapping, Revision, Vocabularies } from './data';
+import { JSONObject, Mapping, Revision } from './data';
 import { urlEncodedOptions } from '../app.module';
-import { Observable, map, catchError } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 export type ProjectPermission = 'Admin' | 'Editor' | 'Commentator';
 

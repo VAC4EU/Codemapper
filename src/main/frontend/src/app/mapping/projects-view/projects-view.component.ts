@@ -19,12 +19,9 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistencyService, ProjectInfo } from '../persistency.service';
-import { Mapping } from '../data';
-import { ApiService, ImportedMapping } from '../api.service';
+import { ApiService } from '../api.service';
 import { AuthService } from '../auth.service';
-import { environment } from '../../../environments/environment';
 import { MatDialog } from '@angular/material/dialog';
-import * as ops from '../mapping-ops';
 
 const DEFAULT_VOCABULARIES = ["ICD10CM", "SNOMEDCT_US"];
 

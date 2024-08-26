@@ -17,9 +17,9 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { filter, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { urlEncodedOptions } from '../app.module';
 import { PersistencyService, ProjectInfo, ProjectPermission } from './persistency.service';

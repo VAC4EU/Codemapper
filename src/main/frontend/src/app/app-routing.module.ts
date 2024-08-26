@@ -23,7 +23,7 @@ import { MappingViewComponent } from './mapping/mapping-view/mapping-view.compon
 import { ProjectsViewComponent } from './mapping/projects-view/projects-view.component';
 import { EventsViewComponent } from './mapping/events-view/events-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
-import { AuthGuard, NoAuthGuard } from './mapping/auth.guard';
+import { AuthGuard } from './mapping/auth.guard';
 import { PendingChangesGuard } from './mapping/pending-changes.guard';
 import { LegacyMappingRedirectComponent } from './mapping/legacy-mapping-redirect/legacy-mapping-redirect.component';
 

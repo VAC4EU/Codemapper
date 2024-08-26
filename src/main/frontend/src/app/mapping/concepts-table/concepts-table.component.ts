@@ -18,12 +18,12 @@
 
 import { Input, Component, SimpleChanges, Output, EventEmitter, ViewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
-import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
-import { Concept, Vocabulary, VocabularyId, ConceptId, CodeId, Code } from '../data';
-import { AllTopics, TopicsInfo, ReviewData, ReviewOperation } from '../review';
+import { Concept, VocabularyId, ConceptId, CodeId, Code } from '../data';
+import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 
 const BASE_COLUMNS = ["select", "concept", "tag", "comments"];

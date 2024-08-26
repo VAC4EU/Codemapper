@@ -18,7 +18,7 @@
 
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, LoginResult } from '../auth.service';
+import { AuthService } from '../auth.service';
 import { FormControl } from "@angular/forms";
 import { MatSnackBar } from '@angular/material/snack-bar';
 

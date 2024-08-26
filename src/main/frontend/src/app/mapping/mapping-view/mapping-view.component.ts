@@ -17,23 +17,21 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { of, firstValueFrom } from 'rxjs';
-import { Component, OnInit, ChangeDetectorRef, NgZone, ViewChild, TemplateRef } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, TemplateRef } from '@angular/core';
 import { Title } from "@angular/platform-browser";
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatTabGroup } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Subscription, Observable, map } from 'rxjs';
-import { Start, StartType, Indexing, CsvImport, Vocabularies, Concept, Concepts, Codes, Mapping, Code, JSONObject, ConceptsCodes, Revision, VersionInfo } from '../data';
-import { AllTopics, AllTopics0, ReviewData } from '../review';
+import { map } from 'rxjs';
+import { Start, StartType, Indexing, CsvImport, Vocabularies, Mapping, Revision, VersionInfo } from '../data';
+import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService } from '../api.service';
-import { PersistencyService, ProjectPermission } from '../persistency.service';
+import { PersistencyService } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
-import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 
 enum Tabs {
   Start = 0,

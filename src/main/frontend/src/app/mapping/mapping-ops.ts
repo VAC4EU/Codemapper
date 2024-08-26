@@ -17,8 +17,6 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { MappingData, Code, Concept, ConceptsCodes, Vocabularies, Concepts, Codes, ConceptId, Mapping, Tag, Vocabulary, VocabularyId, CodeId, Indexing, emptyIndexing } from './data';
-import { ApiService } from './api.service';
-import * as comp from './data-compatibility';
 
 export const CUSTOM_CUI = "C0000000";
 

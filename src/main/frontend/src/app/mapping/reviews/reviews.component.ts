@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { ConceptId, Concept, VocabularyId, CodeId } from '../data';
+import { ConceptId, VocabularyId, CodeId } from '../data';
 import { TopicsInfo, ReviewData, ReviewOperation, NewTopic, NewMessage, ResolveTopic, MarkAsRead } from '../review';
 
 @Component({

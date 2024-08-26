@@ -21,14 +21,13 @@ import { Component, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { environment } from '../../../environments/environment';
 import { PersistencyService, MappingInfo, ProjectPermission } from '../persistency.service';
 import { AuthService } from '../auth.service';
-import { ApiService, ImportedMapping } from '../api.service';
+import { ApiService } from '../api.service';
 import { Mapping, Start, StartType } from '../data';
 import { AllTopics } from '../review';
-import * as ops from '../mapping-ops';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 
 @Component({

@@ -17,13 +17,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Input, Output, Component, SimpleChanges, EventEmitter, ViewChild } from '@angular/core';
-import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { map } from 'rxjs';
 import { VocabulariesDialogComponent } from '../vocabularies-dialog/vocabularies-dialog.component';
 import { VocabulariesTableComponent } from '../vocabularies-table/vocabularies-table.component';
 import { CustomVocabularyDialogComponent } from '../custom-vocabulary-dialog/custom-vocabulary-dialog.component';
 import { ApiService } from '../api.service';
-import { Concept, Mapping, Code, Vocabulary } from '../data';
+import { Mapping, Vocabulary } from '../data';
 import * as ops from '../mapping-ops';
 
 @Component({
