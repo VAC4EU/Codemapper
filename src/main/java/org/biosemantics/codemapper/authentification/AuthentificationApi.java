@@ -205,8 +205,11 @@ public class AuthentificationApi {
     if (user == null) throw new UnauthorizedException();
   }
 
-  /** Test if user has any of the projectPermissions in a project. 
- * @throws CodeMapperException */
+  /**
+   * Test if user has any of the projectPermissions in a project.
+   *
+   * @throws CodeMapperException
+   */
   public static void assertProjectRolesImplies(
       User user, String project, ProjectPermission requiredPerm) throws CodeMapperException {
     assertAuthentificated(user);

@@ -77,6 +77,7 @@ import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy
 import { MappingTabComponent } from './mapping-tab/mapping-tab.component';
 import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
 import { UserViewComponent } from './user-view/user-view.component';
+import { UsersViewComponent } from './users-view/users-view.component';
 
 @NgModule({
   declarations: [
@@ -112,6 +113,7 @@ import { UserViewComponent } from './user-view/user-view.component';
     LegacyMappingRedirectComponent,
     MappingTabComponent,
     UserViewComponent,
+    UsersViewComponent,
   ],
   imports: [
     HttpClientModule,

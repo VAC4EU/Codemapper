@@ -36,6 +36,19 @@ public enum ProjectPermission {
     }
   }
 
+  public String toString() {
+    switch (this) {
+      case Commentator:
+        return "C";
+      case Editor:
+        return "E";
+      case Owner:
+        return "O";
+      default:
+        throw new RuntimeException();
+    }
+  }
+
   public boolean implies(ProjectPermission perm) {
     switch (this) {
       case Owner:

@@ -9,55 +9,23 @@
 
 <div class="center-content ">
     <mat-card *ngIf="user != null" appearance="outlined">
-        <mat-card-header>You</mat-card-header>
-        <mat-card-content>
-            <button (click)="openDialog(changePasswordDialog)" mat-button>
-                Change your password
-            </button>
-        </mat-card-content>
-    </mat-card>
-    <mat-card *ngIf="user?.admin" appearance="outlined">
-        <mat-card-header>Create user</mat-card-header>
+        <mat-card-header>Change password</mat-card-header>
         <mat-card-content>
             <mat-form-field subscriptSizing="dynamic" class="input-form">
-                <mat-label>Name</mat-label>
-                <input #createUserName matInput>
+                <mat-label>Old password</mat-label>
+                <input #oldPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
             </mat-form-field>
             <mat-form-field subscriptSizing="dynamic" class="input-form">
-                <mat-label>Password</mat-label>
-                <input #createUserPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
+                <mat-label>New password</mat-label>
+                <input #newPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
                 <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
                     <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                 </button>
             </mat-form-field>
-            <mat-form-field subscriptSizing="dynamic" class="input-form">
-                <mat-label>Email</mat-label>
-                <input #createUserEmail matInput>
-            </mat-form-field>
-            <button mat-raised-button (click)="createUser(createUserName.value, createUserPassword.value, createUserEmail.value)"
-            color="primary">Create</button>
         </mat-card-content>
+        <mat-card-actions>
+            <button mat-raised-button (click)="changePassword(oldPassword.value, newPassword.value)"
+                color="primary">Change</button>
+        </mat-card-actions>
     </mat-card>
 </div>
-
-<ng-template #changePasswordDialog>
-    <h2 matDialogTitle>Change password</h2>
-    <mat-dialog-content>
-        <mat-form-field subscriptSizing="dynamic" class="input-form">
-            <mat-label>Old password</mat-label>
-            <input #oldPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
-        </mat-form-field>
-        <mat-form-field subscriptSizing="dynamic" class="input-form">
-            <mat-label>New password</mat-label>
-            <input #newPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
-            <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
-                <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-            </button>
-        </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-button matDialogClose>Cancel</button>
-        <button mat-raised-button (click)="changePassword(oldPassword.value, newPassword.value)"
-            color="primary">Change</button>
-    </mat-dialog-actions>
-</ng-template>

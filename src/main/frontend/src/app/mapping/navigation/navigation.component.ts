@@ -17,10 +17,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, Input, SimpleChanges } from '@angular/core';
-import { AuthService } from '../auth.service';
+import { AuthService, User } from '../auth.service';
 import { ProjectInfo } from '../persistency.service';
 
-const DEFAULT_PROJECTS : string[] = ["Tests", "VAC4EU"];
+export const TESTS_PROJECT = "Tests";
+export const VAC4EU_PROJECT = "VAC4EU";
+
+const DEFAULT_PROJECTS : string[] = [TESTS_PROJECT, VAC4EU_PROJECT];
 
 @Component({
   selector: 'app-navigation',
@@ -30,10 +33,12 @@ const DEFAULT_PROJECTS : string[] = ["Tests", "VAC4EU"];
 export class NavigationComponent {
   @Input() projectName : string | null = null;
   projects! : Promise<ProjectInfo[]>;
+  user : User | null = null;
   public constructor(
     private auth : AuthService,
   ) {
     this.updateProjects();
+    auth.userSubject.subscribe(user => this.user = user);
   }
   ngOnChanges(changes : SimpleChanges) : void {
     this.updateProjects();

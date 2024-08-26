@@ -327,7 +327,7 @@ public class CodeMapperResource {
     String filename = String.format("%s %s.%s", project, formattedTime, WriteCsvApi.FILE_EXTENSION);
     String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
     try {
-	  AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Editor);
       OutputStream output = new ByteArrayOutputStream();
       PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
       DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();

@@ -617,9 +617,9 @@ public class PersistencyApi {
     }
   }
 
-  public void addProjectUser(String projectName, String username, String role)
+  public void addProjectUser(String projectName, String username, ProjectPermission perm)
       throws CodeMapperException {
-    if (role == null || role.isEmpty()) {
+    if (perm == null) {
       String query =
           "DELETE FROM users_projects "
               + "WHERE project_id IN (SELECT id FROM projects WHERE name = ?) "
@@ -646,14 +646,27 @@ public class PersistencyApi {
       try {
         Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, role);
+        statement.setString(1, perm.toString());
         statement.setString(2, username);
         statement.setString(3, projectName);
-        statement.setString(4, role);
+        statement.setString(4, perm.toString());
         statement.execute();
       } catch (SQLException e) {
         throw CodeMapperException.server("Cannot execute query to remove project user", e);
       }
+    }
+  }
+
+  public boolean userExists(String username) throws CodeMapperException {
+    String query = "SELECT id FROM users WHERE username = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, username);
+      ResultSet results = statement.executeQuery();
+      return results.next();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to check user exists", e);
     }
   }
 }

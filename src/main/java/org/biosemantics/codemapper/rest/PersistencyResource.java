@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -268,37 +269,39 @@ public class PersistencyResource {
       @Context User user) {
     AuthentificationApi.assertAdmin(user);
     try {
+      if (api.userExists(username)) {
+        throw new ClientErrorException("user already exists", 409);
+      }
       api.createUser(username, password, email);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
   }
-  
+
   @GET
   @Path("user/project-permissions")
   @Produces(MediaType.APPLICATION_JSON)
   public Map<String, ProjectPermission> getProjectPermissions(@Context User user) {
-	  try {
-		return api.getProjectPermissions(user.getUsername());
-	} catch (CodeMapperException e) {
-	      e.printStackTrace();
-	      throw new InternalServerErrorException(e);
-	}
+    try {
+      return api.getProjectPermissions(user.getUsername());
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
   }
-  
+
   @GET
   @Path("user/project-permission/{projectName}")
   @Produces(MediaType.APPLICATION_JSON)
   public ProjectPermission getProjectPermissions(
-		  @PathParam("projectName") String projectName,
-		  @Context User user) {
-	  try {
-		return api.getProjectPermissions(user.getUsername()).get(projectName);
-	} catch (CodeMapperException e) {
-	      e.printStackTrace();
-	      throw new InternalServerErrorException(e);
-	}
+      @PathParam("projectName") String projectName, @Context User user) {
+    try {
+      return api.getProjectPermissions(user.getUsername()).get(projectName);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
   }
 
   @POST
@@ -306,7 +309,7 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public void setUserPassword(
       @FormParam("username") String username,
-      @FormParam("FormParam(\"username\") ") String password,
+      @FormParam("password") String password,
       @Context User user) {
     AuthentificationApi.assertAdmin(user);
     try {
@@ -334,10 +337,17 @@ public class PersistencyResource {
   public void addProjectUser(
       @PathParam("projectName") String projectName,
       @FormParam("username") String username,
-      @FormParam("role") String role,
+      @FormParam("role") String roleString,
       @Context User user) {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+      ProjectPermission role = null;
+      if (roleString == null || roleString.isEmpty()) {
+        role = ProjectPermission.fromString(roleString);
+        if (role == null) {
+          throw new ClientErrorException("invalid role", 400);
+        }
+      }
       api.addProjectUser(projectName, username, role);
     } catch (CodeMapperException e) {
       e.printStackTrace();

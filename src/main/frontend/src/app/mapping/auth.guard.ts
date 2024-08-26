@@ -58,7 +58,6 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -90,6 +89,44 @@ export class NoAuthGuard implements CanActivate {
         });
     } else {
       return this.mappingsIfPossible(this.auth.user);
+    }
+  }
+}
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AdminGuard implements CanActivate {
+
+  constructor(
+    public auth : AuthService,
+    public router : Router,
+  ) { }
+
+  loginIfNecessary(user : User | null, redirectUrl : string) : boolean | UrlTree {
+    if (user == null) {
+      this.auth.redirectUrl = redirectUrl;
+      return this.router.parseUrl('/login');
+    } else {
+      return true;
+    }
+  }
+
+  canActivate(
+    route : ActivatedRouteSnapshot,
+    state : RouterStateSnapshot,
+  ) : Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    if (this.auth.user instanceof Promise) {
+      return this.auth.user
+        .then((user) => user?.admin ?? false)
+        .catch((err) => {
+          console.error("GUARD ERR", err);
+          alert("Error getting user: " + err.message);
+          return false;
+        });
+    } else {
+      return this.loginIfNecessary(this.auth.user, state.url);
     }
   }
 }

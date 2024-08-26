@@ -3,6 +3,14 @@
 </a>
 <mat-menu #menu="matMenu">
   <a
+    routerLink="/"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button"
+    mat-menu-item>
+    <mat-icon class="marker">chevron_right</mat-icon>Welcome &amp; info
+  </a>
+  <a
     routerLink="/projects"
     routerLinkActive="active"
     [routerLinkActiveOptions]="{exact: true}"
@@ -21,12 +29,13 @@
     <mat-icon class="list">remove</mat-icon><mat-icon class="marker">chevron_right</mat-icon>Project: {{proj.name}}
   </a>
   <a
-    routerLink="/"
+    *ngIf="user?.admin"
+    routerLink="/users"
     routerLinkActive="active"
     [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button"
     mat-menu-item>
-    <mat-icon class="marker">chevron_right</mat-icon>Welcome &amp; info
+    <mat-icon class="marker">chevron_right</mat-icon>User administration
   </a>
   <a
     routerLink="/news"
