@@ -20,7 +20,8 @@ import { Injectable } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
-  HttpInterceptor} from '@angular/common/http';
+  HttpInterceptor
+} from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { finalize } from 'rxjs/operators';
 import { LoadingService } from './loading.service';

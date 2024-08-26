@@ -49,6 +49,7 @@ export class CodesComponent {
   codes : Code[] = [];
   vocabularyIds : VocabularyId[] = [];
   selected : Code[] = [];
+  codesFilter : string = "";
 
   constructor(
     public dialog : MatDialog,

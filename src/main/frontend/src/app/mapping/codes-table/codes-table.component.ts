@@ -34,6 +34,7 @@ import { AuthService } from '../auth.service';
 export class CodesTableComponent {
   @Input() vocabularyId! : VocabularyId;
   @Input() mapping! : Mapping;
+  @Input() filter : string = "";
   @Input() codes : Code[] = [];
   @Input() codeParents : null | { [key : CodeId] : Set<CodeId> } = null;
   @Input() showConcepts : boolean = true;
@@ -72,6 +73,9 @@ export class CodesTableComponent {
     if (changes['allTopics'] !== undefined) {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
+    if (changes['filter'] !== undefined) {
+      this.dataSource.filter = changes['filter'].currentValue.trim().toLowerCase();
+    }
     if (changes['vocabularyId']) {
       setTimeout(() => this.selectedCodes.clear(), 0);
     }
@@ -98,9 +102,8 @@ export class CodesTableComponent {
   }
 
   isAllSelected() {
-    const numSelected = this.selectedCodes.selected.length;
-    const numRows = this.codes.length;
-    return numSelected == numRows;
+    return this.selectedCodes.selected.length == this.dataSource.filteredData.length &&
+      this.selectedCodes.selected.every(c => this.dataSource.filteredData.indexOf(c) != -1);
   }
 
   toggleSelectAll() {

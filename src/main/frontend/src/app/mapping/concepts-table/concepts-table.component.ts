@@ -46,6 +46,7 @@ export class ConceptsTableComponent {
   @Input() hideTagColumn : boolean = false;
   @Input() disabled : boolean = false;
   @Input() showCodeTagIndication : boolean = false;
+  @Input() filter : string = "";
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Concept[]> = new EventEmitter();
   dataSource : MatTableDataSource<Concept> = new MatTableDataSource<Concept>();
@@ -75,6 +76,9 @@ export class ConceptsTableComponent {
   }
 
   ngOnChanges(changes : SimpleChanges) {
+    if (changes['filter']) {
+      this.dataSource.filter = changes['filter'].currentValue.trim().toLowerCase();
+    }
     if (changes['allTopics']) {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
@@ -100,7 +104,8 @@ export class ConceptsTableComponent {
   }
 
   isAllSelected() {
-    return this.selection.selected.length == this.dataSource.data.length;
+    return this.selection.selected.length == this.dataSource.filteredData.length &&
+      this.selection.selected.every(c => this.dataSource.filteredData.indexOf(c) != -1);
   }
 
   toggleAllRows() {
@@ -112,7 +117,7 @@ export class ConceptsTableComponent {
   }
 
   selectAll() {
-    this.dataSource.data.forEach(row => this.selection.select(row));
+    this.dataSource.filteredData.forEach(row => this.selection.select(row));
   }
 
   setSelected(concepts : Concept[]) {

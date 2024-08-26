@@ -1,6 +1,20 @@
 <div class="toolbox">
 
   <mat-card>
+    <mat-card-header matTooltip="Filter the displayed concepts">
+      Filter displayed concepts
+    </mat-card-header>
+    <mat-card-actions>
+      <mat-form-field>
+        <input matInput [(ngModel)]="codesFilter" placeholder="">
+        <button mat-icon-button matSuffix (click)="codesFilter = ''">
+          <mat-icon>backspace</mat-icon>
+        </button>
+      </mat-form-field>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card>
     <mat-card-header>
       Vocabulary
     </mat-card-header>
@@ -47,6 +61,7 @@
 <codes-table
   [vocabularyId]="vocabularyId"
   [mapping]="mapping"
+  [filter]="codesFilter"
   [codes]="codes"
   [showTags]="true"
   [allTopics]="allTopics"

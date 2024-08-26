@@ -46,6 +46,7 @@ export class ConceptsComponent implements OnInit {
   codeSearchQueryControl = new FormControl('');
   codeConcepts : Concept[] = [];
   dialogRef : MatDialogRef<any, any> | null = null;
+  conceptsFilter : string = "";
 
   constructor(
     private dialog : MatDialog,
