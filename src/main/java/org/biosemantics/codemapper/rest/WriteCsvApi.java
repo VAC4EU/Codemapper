@@ -44,7 +44,7 @@ public class WriteCsvApi {
   public static final String MIME_TYPE = "text/csv";
   static final String[] MAPPING_HEADERS = {"Mapping"};
   static final String[] HEADERS = {
-    "Coding system", "Code", "Code name", "Concept", "Concept name", "Tag", "Origin"
+    "Coding system", "Code", "Code name", "Concept", "Concept name", "Tags", "Origin"
   };
 
   public void writeMappingCSV(OutputStream output, Mapping mapping, String url) throws IOException {
