@@ -50,19 +50,19 @@
                 <mat-card-content>
                     <mat-form-field>
                         <mat-label>Name</mat-label>
-                        <input #createUserName matInput>
+                        <input #createUserName matInput autocomplete="off">
                     </mat-form-field>
                     <mat-form-field>
                         <mat-label>Password</mat-label>
                         <input #createUserPassword matInput [type]="hidePassword ? 'password' : 'text'"
-                            autocomplete="password">
+                            autocomplete="new-password">
                         <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
                             <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                         </button>
                     </mat-form-field>
                     <mat-form-field>
                         <mat-label>Email</mat-label>
-                        <input #createUserEmail matInput>
+                        <input #createUserEmail matInput autocomplete="off">
                     </mat-form-field>
                     <mat-checkbox #createUserProjectTest checked>Add to project Tests</mat-checkbox>
                     <button mat-raised-button
@@ -87,7 +87,7 @@
                     <mat-form-field subscriptSizing="dynamic" class="input-form">
                         <mat-label>Password</mat-label>
                         <input #changePasswordPassword matInput [type]="hidePassword ? 'password' : 'text'"
-                            autocomplete="password">
+                            autocomplete="new-password">
                         <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
                             <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                         </button>
