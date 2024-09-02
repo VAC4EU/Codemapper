@@ -28,7 +28,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,25 +110,56 @@ public class PersistencyApi {
     }
   }
 
-  public Map<String, Set<ProjectPermission>> getUsersOfProject(String project)
-      throws CodeMapperException {
+  public static class UserRole {
+    User user;
+    ProjectPermission role;
+
+    public UserRole() {
+      super();
+    }
+
+    public UserRole(User user, ProjectPermission role) {
+      this.user = user;
+      this.role = role;
+    }
+
+    public User getUser() {
+      return user;
+    }
+
+    public void setUser(User user) {
+      this.user = user;
+    }
+
+    public ProjectPermission getRole() {
+      return role;
+    }
+
+    public void setRole(ProjectPermission role) {
+      this.role = role;
+    }
+  }
+
+  public Collection<UserRole> getUserRoles(String projectName) throws CodeMapperException {
     String query =
-        "SELECT users.username as username, users_projects.role as role "
-            + "FROM projects "
-            + "INNER JOIN users_projects ON users_projects.project_id = projects.id "
-            + "INNER JOIN users ON users.id = users_projects.user_id "
-            + "WHERE projects.name = ?";
+        "SELECT u.username, u.email, u.is_admin, up.role "
+            + "FROM projects p "
+            + "INNER JOIN users_projects up ON up.project_id = p.id "
+            + "INNER JOIN users u ON u.id = up.user_id "
+            + "WHERE p.name = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, project);
+      statement.setString(1, projectName);
       ResultSet result = statement.executeQuery();
-      Map<String, Set<ProjectPermission>> users = new HashMap<>();
+      Collection<UserRole> users = new LinkedList<>();
       while (result.next()) {
-        String username = result.getString("username");
-        String role0 = result.getString("role");
+        String username = result.getString(0);
+        String email = result.getString(1);
+        boolean isAdmin = result.getBoolean(2);
+        String role0 = result.getString(3);
         ProjectPermission role = ProjectPermission.fromChar(role0);
-        if (!users.containsKey(username)) users.put(username, new HashSet<ProjectPermission>());
-        users.get(username).add(role);
+        User user = new User(username, email, isAdmin);
+        users.add(new UserRole(user, role));
       }
       return users;
     } catch (SQLException e) {
@@ -698,6 +728,19 @@ public class PersistencyApi {
       return results.next();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to check user exists", e);
+    }
+  }
+
+  public boolean projectExists(String name) throws CodeMapperException {
+    String query = "SELECT id FROM projects WHERE name = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, name);
+      ResultSet results = statement.executeQuery();
+      return results.next();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to check project exists", e);
     }
   }
 }

@@ -21,7 +21,6 @@ package org.biosemantics.codemapper.rest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.FormParam;
@@ -45,6 +44,7 @@ import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi.ProjectInfo;
+import org.biosemantics.codemapper.persistency.PersistencyApi.UserRole;
 
 @Path("persistency")
 public class PersistencyResource {
@@ -75,15 +75,16 @@ public class PersistencyResource {
   }
 
   @GET
-  @Path("projects/{project}/users")
+  @Path("projects/{projectName}/user-roles")
   @Produces(MediaType.APPLICATION_JSON)
-  public Map<String, Set<ProjectPermission>> getUsersOfProject(
-      @PathParam("project") String project,
+  public Collection<UserRole> getUserRoles(
+      @PathParam("projectName") String projectName,
       @Context HttpServletRequest request,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Commentator);
-      return api.getUsersOfProject(project);
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Commentator);
+      return api.getUserRoles(projectName);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
       e.printStackTrace();
@@ -347,6 +348,9 @@ public class PersistencyResource {
   public void createProject(@FormParam("name") String name, @Context User user) {
     AuthentificationApi.assertAdmin(user);
     try {
+      if (api.projectExists(name)) {
+        throw new ClientErrorException("project already exists", 409);
+      }
       api.createProject(name);
     } catch (CodeMapperException e) {
       e.printStackTrace();

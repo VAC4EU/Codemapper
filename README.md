@@ -1,4 +1,4 @@
-# ADVANCE CodeMapper
+# CodeMapper
 
 CodeMapper assists in the creation of code sets from case definitions, for several coding
 systems simultaneously while keeping a record of the complete mapping process. Its
@@ -18,9 +18,8 @@ our article:
 
 - `src/main/java`: backend (J2EE)
 - `src/main/frontend/`: frontend (Angular)
-- `AESI-import/`: normalization of mapping files from SharePoint
+- `AESI-import/`: normalization of mapping files in Excel format
 - `non-umls/`: integration of non-UMLS coding systems
-- `codemapper_manager`: administration interface
 
 ## Installation
 

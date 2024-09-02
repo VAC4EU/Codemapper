@@ -13,15 +13,15 @@
 Testing
 -------
 
-- complete overhaul of the user interface
 - import a mapping from a CSV file
 - remap a mapping using the latest UMLS data
+- download all mappings of a project
+- rename mappings
 - review on codes
 - view, select and tag codes per coding system, and create custom codes
 - view coding systems, and create custom coding systems
-- integrated non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
-- rename mappings
-- download all mappings of a project
+- integration of non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
+- complete overhaul of the user interface
 
 October 4, 2023
 ----
