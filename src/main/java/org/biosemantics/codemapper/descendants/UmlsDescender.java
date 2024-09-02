@@ -19,11 +19,11 @@
 package org.biosemantics.codemapper.descendants;
 
 import com.mchange.v2.c3p0.DataSources;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,8 @@ import org.biosemantics.codemapper.SourceConcept;
 import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 
 public class UmlsDescender implements GeneralDescender {
+
+  private static final int AUIS_BATCH_SIZE = 20;
 
   private static Logger logger = LogManager.getLogger(UmlsDescender.class);
 
@@ -120,6 +123,18 @@ public class UmlsDescender implements GeneralDescender {
     }
   }
 
+  static <T> List<List<T>> partitionList(List<T> source, int batchSize) {
+    int numBatches = (source.size() - 1) / batchSize;
+    return IntStream.rangeClosed(0, numBatches)
+        .mapToObj(
+            batch -> {
+              int startIndex = batch * batchSize;
+              int endIndex = (batch == numBatches) ? source.size() : (batch + 1) * batchSize;
+              return source.subList(startIndex, endIndex);
+            })
+        .collect(Collectors.toList());
+  }
+
   Map<String, Collection<String>> getDescendantAuis(
       String sab, Collection<String> auis1, boolean includeIndirect) throws CodeMapperException {
     Set<String> auis = auis1.stream().collect(Collectors.toSet());
@@ -127,23 +142,27 @@ public class UmlsDescender implements GeneralDescender {
       return new HashMap<>();
     }
     String query = "SELECT aui, ptra FROM mrhier WHERE sab = ? AND ptra && ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, sab);
-      statement.setArray(2, connection.createArrayOf("VARCHAR", auis.toArray()));
+    try {
+      Connection connection = connectionPool.getConnection();
       Map<String, Collection<String>> res = new HashMap<>();
-      ResultSet set = statement.executeQuery();
-      while (set.next()) {
-        String aui = set.getString(1);
-        String[] ptra = (String[]) set.getArray(2).getArray();
-        for (int i = 0; i < ptra.length; i++) {
-          String paui = ptra[i];
-          if (!auis.contains(paui)) {
-            continue;
+      for (List<String> auiBatch : partitionList(new ArrayList<>(auis), AUIS_BATCH_SIZE)) {
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, sab);
+        statement.setArray(2, connection.createArrayOf("VARCHAR", auiBatch.toArray()));
+        ResultSet set = statement.executeQuery();
+        while (set.next()) {
+          String aui = set.getString(1);
+          String[] ptra = (String[]) set.getArray(2).getArray();
+          for (int i = 0; i < ptra.length; i++) {
+            String paui = ptra[i];
+            if (!auis.contains(paui)) {
+              continue;
+            }
+            res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
           }
-          res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
         }
       }
+
       return res;
     } catch (SQLException e) {
       logger.debug("ERROR", e);
@@ -156,8 +175,7 @@ public class UmlsDescender implements GeneralDescender {
     String query = "SELECT DISTINCT aui, code, str, ispref FROM mrconso WHERE aui = ANY(?)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
-      Array array = connection.createArrayOf("VARCHAR", auis.toArray());
-      statement.setArray(1, array);
+      statement.setArray(1, connection.createArrayOf("VARCHAR", auis.toArray()));
       ResultSet set = statement.executeQuery();
       Map<String, SourceConcept> res = new HashMap<>();
       while (set.next()) {

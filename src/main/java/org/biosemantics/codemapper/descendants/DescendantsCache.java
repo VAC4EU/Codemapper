@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.CodingSystem;
 import org.biosemantics.codemapper.MappingData.Code;
@@ -21,6 +23,8 @@ import org.biosemantics.codemapper.UmlsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 
 public class DescendantsCache {
+
+  private static Logger logger = LogManager.getLogger(DescendantsCache.class);
 
   static class CachedCode {
     String id;
@@ -92,7 +96,11 @@ public class DescendantsCache {
   }
 
   public void setDescendants(
-      String voc, String vocVersion, String code, Collection<Code> descendants)
+      Connection connection,
+      String voc,
+      String vocVersion,
+      String code,
+      Collection<Code> descendants)
       throws CodeMapperException {
     Collection<CachedCode> cachedCodes =
         descendants.stream().map(c -> new CachedCode(c)).collect(Collectors.toList());
@@ -100,7 +108,6 @@ public class DescendantsCache {
     try {
       ObjectMapper mapper = new ObjectMapper();
       String descendendsJson = mapper.writeValueAsString(cachedCodes);
-      Connection connection = connectionPool.getConnection();
       PreparedStatement statement = connection.prepareStatement(query);
       statement.setString(1, voc);
       statement.setString(2, vocVersion);
@@ -131,19 +138,31 @@ public class DescendantsCache {
       UmlsApi umlsApi)
       throws CodeMapperException {
     Map<String, Descendants> res = new HashMap<>();
+    Connection connection;
+    try {
+      connection = connectionPool.getConnection();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("could not get connection to get and cache descendants", e);
+    }
+
     for (String voc : codesByVoc.keySet()) {
+      CodingSystem vocabulary = codingSystems.get(voc);
+      if (vocabulary == null) {
+        logger.error("Cannot find descendant codes, unknown vocabulary: " + voc);
+        continue;
+      }
       Collection<String> codes = codesByVoc.get(voc);
-      String vocVersion = codingSystems.get(voc).getVersion();
+      String vocVersion = vocabulary.getVersion();
       Descendants descendants = getDescendants(voc, vocVersion, codes);
       Collection<String> missing = new HashSet<>(codes);
       missing.removeAll(descendants.keySet());
       if (!missing.isEmpty()) {
-        Descendants missingDescendants = descendantsApi.getCodeDescendants(voc, missing);
-        descendants.putAll(missingDescendants);
+        Descendants missedDescendants = descendantsApi.getCodeDescendants(voc, missing);
+        descendants.putAll(missedDescendants);
         for (String code : missing) {
           Collection<Code> cacheDescendants =
-              missingDescendants.getOrDefault(code, new LinkedList<>());
-          setDescendants(voc, vocVersion, code, cacheDescendants);
+              missedDescendants.getOrDefault(code, new LinkedList<>());
+          setDescendants(connection, voc, vocVersion, code, cacheDescendants);
         }
       }
       res.put(voc, descendants);
