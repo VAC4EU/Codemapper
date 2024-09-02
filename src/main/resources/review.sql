@@ -64,7 +64,7 @@ $$ language sql;
 drop function if exists review_edit_user_message;
 create function review_edit_user_message(
   message_id int, username text, content text
-) returns void as $$
+) returns int as $$
   update review_message
   set content = review_edit_user_message.content
   where id = (

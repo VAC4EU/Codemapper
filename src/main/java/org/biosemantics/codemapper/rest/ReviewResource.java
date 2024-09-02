@@ -130,8 +130,7 @@ public class ReviewResource {
       if (topic.isResolved) {
         throw CodeMapperException.user("cannot edit message on resolved topic");
       }
-      CodeMapperApplication.getReviewApi()
-      	.editMessage(messageId, user.getUsername(), content);
+      CodeMapperApplication.getReviewApi().editMessage(messageId, user.getUsername(), content);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

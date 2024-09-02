@@ -28,3 +28,14 @@ deploy-dev:
 
 test:
 	cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
+
+FRONTEND=src/main/frontend
+
+deploy-testing-all:
+	mvn -P testing clean package
+	make -C $(FRONTEND) dist-testing
+	rsync -zrv --delete \
+	  target/codemapper-testing.war \
+	  $(FRONTEND)/dist-testing \
+	  $(SERVER):/tmp/
+	ssh -t $(SERVER) sudo sh -c "'sudo -u tomcat8 cp /tmp/codemapper-testing.war /var/lib/tomcat8/webapps & sudo -u www-data rsync --delete -avz /tmp/dist-testing/ /var/www/ui-2023-testing'"

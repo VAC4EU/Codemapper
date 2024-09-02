@@ -78,30 +78,31 @@ public class ReviewApi {
       statement.setString(ix++, timestamp);
       ResultSet set = statement.executeQuery();
       if (!set.next()) {
-    	  throw CodeMapperException.server("could not save message");
+        throw CodeMapperException.server("could not save message");
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create message", e);
     }
   }
-  
-  public void editMessage(int messageId, String username, String content) throws CodeMapperException {
-	String query = "SELECT review_edit_user_message(?, ?, ?)";
-	try {
-	  Connection connection = connectionPool.getConnection();
+
+  public void editMessage(int messageId, String username, String content)
+      throws CodeMapperException {
+    String query = "SELECT review_edit_user_message(?, ?, ?)";
+    try {
+      Connection connection = connectionPool.getConnection();
       PreparedStatement statement = connection.prepareStatement(query);
-	  int ix = 1;
-	  statement.setInt(ix++, messageId);
-	  statement.setString(ix++, username);
-	  statement.setString(ix++, content);
-	  if (!statement.executeQuery().next()) {
-		  throw CodeMapperException.user("No such message");
-	  }
+      int ix = 1;
+      statement.setInt(ix++, messageId);
+      statement.setString(ix++, username);
+      statement.setString(ix++, content);
+      if (!statement.executeQuery().next()) {
+        throw CodeMapperException.user("No such message");
+      }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to edit message", e);
     }
   }
-  
+
   public int newTopic(
       String mappingShortkey,
       String cui,
