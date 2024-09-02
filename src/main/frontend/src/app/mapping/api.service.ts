@@ -192,6 +192,14 @@ export class ApiService {
     return this.http.post(url, body, urlEncodedOptions);
   }
 
+  editMessage(mappingShortkey : string, topicId : number, messageId : number, content : string) {
+    let url = `${this.reviewUrl}/message/${mappingShortkey}/${topicId}`;
+    let body = new URLSearchParams();
+    body.append('messageId', "" + messageId);
+    body.append('content', content);
+    return this.http.put(url, body, urlEncodedOptions);
+  }
+
   markAsRead(mappingShortkey : string, topicId : number) : Observable<Object> {
     let url = `${this.reviewUrl}/topic-mark-read/${mappingShortkey}/${topicId}`;
     return this.http.post(url, null, {});

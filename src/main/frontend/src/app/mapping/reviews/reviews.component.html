@@ -20,12 +20,12 @@
       <span *ngIf="topic.value.numNewMessages > 0">
         (<span class="num-new-messages">{{topic.value.numNewMessages}} unread</span>)</span>.
       Created by
-      <span class="message-author">{{topic.value.created.user}}</span>
+      <span class="message-author">{{displayUsername(topic.value.created.user)}}</span>
       on
       <span class="message-timestamp" matTooltip="{{topic.value.created.timestamp|date:'medium'}}">{{topic.value.created.timestamp | date:'mediumDate'}}</span>.
       <span *ngIf="topic.value.resolved">
         Resolved by
-        <span class="message-author">{{topic.value.resolved.user}}</span>
+        <span class="message-author">{{displayUsername(topic.value.resolved.user)}}</span>
         on
         <span class="message-timestamp" matTooltip="{{topic.value.resolved.timestamp|date:'medium'}}">{{topic.value.resolved.timestamp | date:'mediumDate'}}</span>.
       </span>
@@ -49,7 +49,7 @@
         mat-raised-button
         *ngIf="!topic.value.resolved"
         (click)="resolveTopic(topic.key)"
-        [disabled]="!userIsEditor && topic.value.created.user != 'me'"
+        [disabled]="!userIsEditor && topic.value.created.user != username"
         matTooltip="Resolve this discussion, preventing further messages"
         class="btn-xs">
         <mat-icon fontIcon="done"></mat-icon>
@@ -57,10 +57,16 @@
       </button>
       <ul class="messages" [class.resolved]="topic.value.resolved != null">
         <li *ngFor="let message of topic.value.messages" [class.new-message]="!message.isRead && topic.value.resolved == null" class="message"> <!--  ng-class="{new: (!message.isRead)" -->
-          <span class="message-author">{{message.username}}</span>
+          <span class="message-author">{{displayUsername(message.username)}}</span>
           on
           <span class="message-timestamp" matTooltip="{{message.timestamp|date:'medium'}}">{{message.timestamp | date:'mediumDate'}}</span>:
           <span class="message-content" [class.newline]="message.hasNewline">{{message.content}}</span>
+          <button
+              mat-icon-button
+              *ngIf="!topic.value.resolved && message.username == username"
+              (click)="openEditMessageDialog(editMessageDialog, topic.key, message.id, message.content)">
+            <mat-icon class="edit-button">edit</mat-icon>
+          </button> 
         </li>
       </ul>
       <div *ngIf="topic.value.resolved == null" class="post-message">
@@ -100,3 +106,25 @@
     </div>
   </section>
 </div>
+
+<ng-template #editMessageDialog>
+  <div *ngIf="editMessage">
+    <h2 matDialogTitle>Edit message</h2>
+    <mat-dialog-content>
+      <mat-form-field style="width:100%;">
+        <textarea rows="5" cols="30" #summary matInput [(ngModel)]="editMessage.content"></textarea>
+      </mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button 
+        mat-button
+        matDialogClose
+        (click)="cancelEditMessage()">Cancel</button>
+      <button
+        mat-raised-button
+        (click)="saveEditMessage()"
+        matDialogClose
+        color="primary">Edit</button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

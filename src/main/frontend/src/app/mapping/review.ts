@@ -91,27 +91,19 @@ export class TopicsInfo {
             if (!isRead) {
               numNewMessages += 1;
             }
-            let username = me != null && message.username == me ? "me" : message.username;
+            let username = message.username;
             return { ...message, username, hasNewline, isRead }
           });
           cuiNumMessages += numMessages;
           cuiNumNewMessages += numNewMessages;
-          let created = topic.created;
-          if (created != null && me != null && created.user == me) {
-            created.user = "me";
-          }
-          let resolved = topic.resolved;
-          if (resolved != null && me != null && resolved.user == me) {
-            resolved.user = "me";
-          }
           return [topicId, {
             id: topicId,
             numMessages,
             numNewMessages,
             messages: messages,
             heading: topic.heading,
-            created,
-            resolved
+            created: topic.created,
+            resolved: topic.resolved
           }];
         })
     );
@@ -244,5 +236,16 @@ export class ResolveTopic implements ReviewOperation {
       api.markAsRead(mappingShortkey, this.topicId),
       api.resolveTopic(mappingShortkey, this.topicId)
     ).pipe(map(_ => this.data.topicShowMessages[this.topicId] = false))
+  }
+}
+
+export class EditMessage implements ReviewOperation {
+  constructor(
+    private topicId : number,
+    private messageId : number,
+    private content : string,
+  ) { }
+  run(api : ApiService, mappingShortkey : string) : Observable<Object> {
+    return api.editMessage(mappingShortkey, this.topicId, this.messageId, this.content);
   }
 }

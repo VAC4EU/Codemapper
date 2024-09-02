@@ -19,6 +19,8 @@
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../api.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'import-csv-dialog',
@@ -30,7 +32,8 @@ export class ImportCsvDialogComponent {
   mappingName : string = "";
   constructor(
     private api : ApiService,
-    public dialogRef : MatDialogRef<ImportCsvDialogComponent>,
+    private dialogRef : MatDialogRef<ImportCsvDialogComponent>,
+    private snackbar : MatSnackBar,
     // @Inject(MAT_DIALOG_DATA) public data : {
     //   title : string,
     //   action : string,
@@ -64,8 +67,8 @@ export class ImportCsvDialogComponent {
 
   importCsv(mappingName : string, file : File) {
     this.api.importCsv(file, [])
-      .subscribe(
-        (imported) => {
+      .subscribe({
+        next: (imported) => {
           if (imported.warnings.length) {
             let msg = "There were problems with the import: " +
               imported.warnings.map(s => `${s}. `).join("") +
@@ -77,8 +80,11 @@ export class ImportCsvDialogComponent {
           imported.mappingName = mappingName;
           this.dialogRef.close(imported);
         },
-        (error) => alert(error),
-      );
+        error: (err) => {
+          console.log("CSV import error", err);
+          this.snackbar.open("Could not import CSV file: " + (err as HttpErrorResponse).error, "Ok");
+        },
+      });
     this.unsetCsvImportFile();
   }
 }

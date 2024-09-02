@@ -16,9 +16,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
 import { ConceptId, VocabularyId, CodeId } from '../data';
-import { TopicsInfo, ReviewData, ReviewOperation, NewTopic, NewMessage, ResolveTopic, MarkAsRead } from '../review';
+import { TopicsInfo, ReviewData, ReviewOperation, NewTopic, NewMessage, EditMessage, ResolveTopic, MarkAsRead } from '../review';
+import { MatDialog } from '@angular/material/dialog';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'reviews',
@@ -34,6 +36,14 @@ export class ReviewsComponent {
   @Input() data! : ReviewData;
   @Input() userIsEditor! : boolean;
   @Output() run : EventEmitter<ReviewOperation> = new EventEmitter<ReviewOperation>();
+  username : string | null = null;
+  editMessage : { content : string, topicId : string, messageId : number } | null = null;
+  constructor(
+    private dialog : MatDialog,
+    private auth : AuthService,
+  ) {
+    this.auth.userSubject.subscribe(u => this.username = u?.username ?? null);
+  }
   toggleTopicShowMessages(topicId : string) {
     this.data.topicShowMessages[topicId] = !this.data.topicShowMessages[topicId];
   }
@@ -55,7 +65,31 @@ export class ReviewsComponent {
       this.run.emit(new NewMessage(parseInt(topicId), content, this.data))
     }
   }
+
   key() {
     return `${this.cui ?? "-"}/${this.voc ?? "-"}/${this.code ?? "-"}`
+  }
+
+  openEditMessageDialog(templateRef : TemplateRef<any>, topicId : string, messageId : number, content : string) {
+    this.editMessage = { content, topicId, messageId };
+    this.dialog.open(templateRef, {
+      width: '700px'
+    });
+  }
+  cancelEditMessage() {
+    this.editMessage = null;
+  }
+  saveEditMessage() {
+    if (this.editMessage) {
+      this.run.emit(new EditMessage(parseInt(this.editMessage.topicId), this.editMessage.messageId, this.editMessage.content));
+      this.editMessage = null;
+    }
+  }
+  displayUsername(username : string) {
+    if (username == this.username) {
+      return "me";
+    } else {
+      return username;
+    }
   }
 }

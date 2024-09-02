@@ -27,6 +27,7 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -103,6 +104,34 @@ public class ReviewResource {
       }
       CodeMapperApplication.getReviewApi()
           .newMessage(mappingShortkey, topicId, content, user.getUsername(), null);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @PUT
+  @Path("message/{mappingShortkey}/{topicId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void editMessage(
+      @Context HttpServletRequest request,
+      @Context User user,
+      @PathParam("mappingShortkey") String mappingShortkey,
+      @PathParam("topicId") int topicId,
+      @FormParam("messageId") int messageId,
+      @FormParam("content") String content) {
+    try {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, mappingShortkey, ProjectPermission.Commentator);
+      TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
+      if (!topic.mappingShortkey.equals(mappingShortkey)) {
+        throw CodeMapperException.user("mapping does not belong to topic");
+      }
+      if (topic.isResolved) {
+        throw CodeMapperException.user("cannot edit message on resolved topic");
+      }
+      CodeMapperApplication.getReviewApi()
+      	.editMessage(messageId, user.getUsername(), content);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

@@ -60,6 +60,23 @@ where message_id in
   where topic_id = review_reset_mark_read.topic_id )
 $$ language sql;
 
+-- edit message if it belongs to the given user
+drop function if exists review_edit_user_message;
+create function review_edit_user_message(
+  message_id int, username text, content text
+) returns void as $$
+  update review_message
+  set content = review_edit_user_message.content
+  where id = (
+    select m.id
+    from review_message m
+    left join users u on u.id = m.author_id
+    where u.username = review_edit_user_message.username
+    and m.id = review_edit_user_message.message_id
+  )
+  returning id
+$$ language sql;
+
 -- create a new message
 drop function if exists review_new_message;
 create function review_new_message(topic_id int, content text, username text, t timestamp)
