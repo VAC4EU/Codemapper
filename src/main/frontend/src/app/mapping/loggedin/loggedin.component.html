@@ -1,5 +1,5 @@
 <div *ngIf="user" class="loggedin">
-  <a routerLink="/user" mat-stroked-button>
+  <a routerLink="/account" mat-stroked-button>
     <mat-icon fontIcon="person" class="text-align"></mat-icon> {{user.username}}
   </a>
   <button (click)="logout()" matTooltip="Logout" mat-button class="logout-button" type="button">

@@ -1,9 +1,7 @@
-<div class="center-content spaced">
+<div class="center-content">
 
-  <mat-card appearance="outlined">
-    <mat-card-content>
       <p>
-      The following versions of the mapping exist, use the button on the right to download them.
+      The following versions of the mapping exist<span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">, use the button on the right to download them</span>.
       <span *ngIf="revisions.length == 0">
         (The mapping must be saved first.)
       </span>
@@ -32,7 +30,5 @@
           </tr>
         </tbody>
       </table>
-    </mat-card-content>
-  </mat-card>
 
 </div>

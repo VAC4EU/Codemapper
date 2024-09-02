@@ -117,16 +117,17 @@ public class AuthentificationApi {
   public LoginResult login(String username, String password, HttpServletRequest request)
       throws CodeMapperException {
 
-    String query = "SELECT password, is_admin FROM users WHERE username = ?";
+    String query = "SELECT password, email, is_admin FROM users WHERE username = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       ResultSet result = statement.executeQuery();
       if (result.next()) {
         String passwordHash = result.getString(1);
-        boolean isAdmin = result.getBoolean(2);
+        String email = result.getString(2);
+        boolean isAdmin = result.getBoolean(3);
         if (passwordHash.equals(hash(password))) {
-          User user = new User(username, isAdmin);
+          User user = new User(username, email, isAdmin);
           request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
           logger.info("Authentificated " + username);
           return LoginResult.createSuccess(user);

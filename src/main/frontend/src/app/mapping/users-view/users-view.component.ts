@@ -13,8 +13,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class UsersViewComponent {
   user : User | null = null;
-  hidePassword : boolean = true;
+  hidePasswordNew : boolean = true;
+  hidePasswordSet : boolean = true;
   users : User[] = [];
+  admins : User[] = [];
 
   constructor(
     private auth : AuthService,
@@ -29,6 +31,7 @@ export class UsersViewComponent {
     this.persistency.allUsers().subscribe((users) => {
       this.users = users;
       this.users.sort((a, b) => a.username.localeCompare(b.username));
+      this.admins = users.filter(u => u.admin);
     });
   }
 

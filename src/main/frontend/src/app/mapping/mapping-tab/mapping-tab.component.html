@@ -1,103 +1,86 @@
 <div class="center-content spaced">
 
-  <mat-card appearance="outlined" *ngIf="projectRole != 'Commentator'">
-    <mat-card-header>
-      <h3>Download</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <p>Download the mapping as a CSV file.</p>
-      <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
-    </mat-card-content>
-    <mat-card-actions>
-      <button
-        [disabled]="!canDownload || !mappingShortkey"
-        mat-raised-button
-        (click)="download(mappingShortkey!, includeDescendants.checked)"
-        matDialogClose
-        color="primary">
-        Download
-      </button>
-      <p *ngIf="mapping.undoStack.length">The mapping must be saved before.</p>
-    </mat-card-actions>
-  </mat-card>
+  <section *ngIf="projectRole != 'Commentator'">
+    <h3>Download</h3>
+    <div class="toolbox">
+      <mat-card appearance="outlined">
+        <mat-card-header>Download the mapping as a CSV file</mat-card-header>
+        <mat-card-content class="column">
+          <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
+          <button [disabled]="!canDownload || !mappingShortkey" mat-raised-button
+            (click)="download(mappingShortkey!, includeDescendants.checked)">
+            Download
+          </button>
+          <p *ngIf="!canDownload || !mappingShortkey">(The mapping must be saved before.)</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </section>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <h3>UMLS version</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <ul>
-        <li>mapping based on UMLS version: <span class="version">{{mapping.meta.umlsVersion}}</span></li>
-        <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
-      </ul>
+  <section>
+    <h3>UMLS version</h3>
+    <ul>
+      <li>mapping based on UMLS version: <span class="version">{{mapping.meta.umlsVersion}}</span></li>
+      <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
+    </ul>
+    <div class="toolbox">
+      <mat-card appearance="outlined">
+        <mat-card-header>Remap the mapping</mat-card-header>
+        <mat-card-content>
+          <p>
+            When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
+            remap the mapping to update the concept codes using the latest version of the UMLS.
+          </p>
+          <div *ngIf="projectRole == 'Editor' || projectRole == 'Owner'">
+            <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack"
+              (click)="remap()" mat-raised-button color="primary">
+              Remap
+            </button>
+            <p *ngIf="mapping.undoStack.length">The mapping must be saved before.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </section>
+
+  <section>
+    <h3>Start</h3>
+    <div *ngIf="isIndexing(mapping.start)">
       <p>
-        When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
-        remap the mapping to update the concept codes using the latest version of the UMLS.
+        The mapping was started with the following textual description and selected concepts:
       </p>
-    </mat-card-content>
-    <mat-card-actions *ngIf="projectRole == 'Editor' || projectRole == 'Owner'">
-      <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack" (click)="remap()"
-        mat-raised-button color="primary">
-        Remap
-      </button>
-      <p *ngIf="mapping.undoStack.length">The mapping must be saved before.</p>
-    </mat-card-actions>
-  </mat-card>
+      <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
+    </div>
+    <div *ngIf="isCsvImport(mapping.start)">
+      <p>
+        The mapping was started by importing a mapping from the following CSV data:
+      </p>
+      <pre class="csv-import">{{mapping.start.csvContent}}</pre>
+    </div>
+  </section>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <h3>Start</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <div *ngIf="isIndexing(mapping.start)">
-        <p>
-          The mapping was started with the following textual description of the event:
-        </p>
-        <indexer
-          [initialIndexing]="mapping.start"
-          [vocIds]="[]"
-          [locked]="true"
-          class="center-content"></indexer>
-      </div>
-      <div *ngIf="isCsvImport(mapping.start)">
-        <p>
-          The mapping was started by importing a mapping from the following CSV data:
-        </p>
-        <pre class="csv-import">{{mapping.start.csvContent}}</pre>
-      </div>
-    </mat-card-content>
-  </mat-card>
+  <section>
+    <h3>Allowed tags</h3>
+    <p *ngIf="mapping.meta.allowedTags.length == 0">None.</p>
+    <ul>
+      <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
+    </ul>
+  </section>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <h3>Allowed tags</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <ul>
-        <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
-      </ul>
-    </mat-card-content>
-  </mat-card>
+  <section>
+    <h3>Ignored semantic types</h3>
+    <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
+    <ul>
+      <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
+    </ul>
+  </section>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <h3>Ignored semantic types</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <ul>
-        <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
-      </ul>
-    </mat-card-content>
-  </mat-card>
+  <section>
+    <h3>Ignored term types</h3>
+    <p *ngIf="mapping.meta.ignoreTermTypes.length == 0">None.</p>
+    <ul>
+      <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
+    </ul>
+  </section>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <h3>Ignored term types</h3>
-    </mat-card-header>
-    <mat-card-content>
-      <ul>
-        <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
-      </ul>
-    </mat-card-content>
-  </mat-card>
 </div>

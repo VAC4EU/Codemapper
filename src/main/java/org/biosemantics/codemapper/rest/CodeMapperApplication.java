@@ -160,16 +160,20 @@ public class CodeMapperApplication extends ResourceConfig {
     Set<String> defaultVocabularies =
         new HashSet<>(
             Arrays.asList(propertiesConfig.getProperty(DEFAULT_VOCABULARIES).split(",\\s*")));
+    defaultVocabularies.remove("");
     Set<String> defaultAllowedTags =
         new HashSet<>(
             Arrays.asList(propertiesConfig.getProperty(DEFAULT_ALLOWED_TAGS).split(",\\s*")));
+    defaultAllowedTags.remove("");
     Set<String> defaultIgnoreTermTypes =
         new HashSet<>(
             Arrays.asList(propertiesConfig.getProperty(DEFAULT_IGNORE_TERM_TYPES).split(",\\s*")));
+    defaultIgnoreTermTypes.remove("");
     Set<String> defaultIgnoreSemanticTypes =
         new HashSet<>(
             Arrays.asList(
                 propertiesConfig.getProperty(DEFAULT_IGNORE_SEMANTIC_TYPES).split(",\\s*")));
+    defaultIgnoreSemanticTypes.remove("");
 
     String url = propertiesConfig.getProperty(CODEMAPPER_URL);
     String contactEmail = propertiesConfig.getProperty(CODEMAPPER_CONTACT_EMAIL);

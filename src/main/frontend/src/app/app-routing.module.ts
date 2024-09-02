@@ -64,13 +64,15 @@ const routes : Routes = [
     component: MappingViewComponent,
   },
   {
-    path: "user",
+    path: "account",
     canActivate: [AuthGuard],
+    title: "Your account",
     component: UserViewComponent,
   },
   {
     path: "users",
     canActivate: [AdminGuard],
+    title: "User administration",
     component: UsersViewComponent,
   },
   {

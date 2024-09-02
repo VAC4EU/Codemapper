@@ -22,13 +22,19 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
-import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink } from '../persistency.service';
+import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, ProjectsRoles, ProjectUsers } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
+
+function usernameCompare(a : User | string, b : User | string) {
+  let a1 = typeof a == 'string' ? a : a.username;
+  let b1 = typeof b == 'string' ? b : b.username;
+  return a1.toLowerCase().localeCompare(b1.toLowerCase());
+}
 
 @Component({
   selector: 'project-view',
@@ -42,9 +48,9 @@ export class ProjectViewComponent {
   mappings : MappingInfo[] = [];
   role : ProjectRole | null = null;
   selected = new SelectionModel<MappingInfo>(true, []);
-  users : { [key : string] : string[] } = {}; // { username: role[] }
-  usersByRole : { [key : string] : string[] } = {}; // { role: username[] }
   user : User | null = null;
+  projectUsers : User[] = [];
+  projectUserRoles : { [key : string] : string[] } = {};
   allUsers : User[] = [];
   constructor(
     private api : ApiService,
@@ -66,25 +72,20 @@ export class ProjectViewComponent {
       this.reloadUsers();
     });
   }
-  reloadUsers() {
-    this.persistency.projectUsers(this.projectName).subscribe(users => {
-      this.users = users;
-      this.usersByRole = Object.fromEntries(Object.keys(ProjectRole).map(role => [role, []]));
-      for (let [username, roles] of Object.entries(users)) {
-        for (let role of roles) {
-          this.usersByRole[role].push(username);
-        }
-      }
-    });
-    this.persistency.getProjectRole(this.projectName).subscribe((role) => this.role = role);
+  async reloadUsers() {
     this.auth.userSubject.subscribe(user => this.user = user);
-    this.persistency.allUsers().subscribe({
-      next: users => {
-        this.allUsers = users;
-        this.allUsers.sort((a, b) => a.username.localeCompare(b.username));
-      },
-      error: _ => null, // ok
-    });
+    this.persistency.getProjectRole(this.projectName).subscribe(role => this.role = role);
+    let allUsers : { [key : string] : User } = {};
+    try {
+      this.allUsers = await firstValueFrom(this.persistency.allUsers());
+      this.allUsers.sort(usernameCompare);
+      allUsers = Object.fromEntries(this.allUsers.map(u => [u.username, u]));
+    } catch (e) { }
+    this.projectUserRoles = await firstValueFrom(this.persistency.projectUsers(this.projectName));
+    this.projectUsers = Object.entries(this.projectUserRoles).map(([username, roles]) => {
+      return allUsers[username] ?? { username, email: "", isAdmin: false };
+    })
+    this.projectUsers.sort(usernameCompare);
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;

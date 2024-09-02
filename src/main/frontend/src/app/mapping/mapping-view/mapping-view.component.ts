@@ -69,7 +69,7 @@ export class MappingViewComponent implements HasPendingChanges {
   allTopics : AllTopics = new AllTopics();
   reviewData : ReviewData = new ReviewData();
   vocabularies! : Vocabularies;
-  selectedIndex : number = 0;
+  selectedIndex : number = 1;
   saveRequired : boolean = false;
   error : string | null = null;
   projectRole : ProjectRole | null = null;
@@ -138,7 +138,7 @@ export class MappingViewComponent implements HasPendingChanges {
               await this.apiService.remapData(mapping, this.vocabularies, this.mapping.meta);
             let umlsVersion = this.serverInfo.umlsVersion;
             postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
-            messages.unshift("The mapping was automatically imported from the old version of CodeMapper and remapped. Please save.");
+            messages.unshift(`The mapping ${this.mappingName} was automatically imported from the old version of CodeMapper and remapped. Please save.`);
             this.snackBar.open(messages.join("\n\n"), "Ok", { panelClass: 'remap-snackbar' });
           } else {
             throw err;

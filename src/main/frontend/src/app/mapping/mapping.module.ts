@@ -41,7 +41,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarConfig, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSortModule } from '@angular/material/sort';
 import { AppRoutingModule } from '../app-routing.module';
 import { MappingViewComponent } from './mapping-view/mapping-view.component';
@@ -78,6 +78,12 @@ import { MappingTabComponent } from './mapping-tab/mapping-tab.component';
 import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
 import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
+import { UsersTableComponent } from './users-table/users-table.component';
+
+const matSnackbarDefaultConfig: MatSnackBarConfig = {
+  verticalPosition: 'top',
+  horizontalPosition: 'center',
+};
 
 @NgModule({
   declarations: [
@@ -114,6 +120,7 @@ import { UsersViewComponent } from './users-view/users-view.component';
     MappingTabComponent,
     UserViewComponent,
     UsersViewComponent,
+    UsersTableComponent,
   ],
   imports: [
     HttpClientModule,
@@ -147,6 +154,12 @@ import { UsersViewComponent } from './users-view/users-view.component';
     NoopAnimationsModule,
     ReactiveFormsModule,
     RouterModule,
+  ],
+  providers: [
+    {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
+      useValue: matSnackbarDefaultConfig,
+    },
   ],
 })
 export class MappingModule { }

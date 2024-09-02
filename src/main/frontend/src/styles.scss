@@ -99,3 +99,8 @@ mat-icon.text-align {
 mat-form-field {
     margin-right: 1ex;
 }
+
+.column {
+    display: flex !important;
+    flex-direction: column;
+}

@@ -26,7 +26,8 @@ import { PersistencyService, ProjectInfo, ProjectRole } from './persistency.serv
 
 export interface User {
   username : string,
-  admin : boolean
+  admin : boolean,
+  email : string,
 }
 
 export interface LoginResult {

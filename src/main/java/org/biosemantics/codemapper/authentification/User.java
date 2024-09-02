@@ -25,14 +25,16 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class User implements Serializable {
   private static final long serialVersionUID = 457068490529031472L;
   private String username;
+  private String email;
   private boolean isAdmin;
 
   public User() {
-    this(null, false);
+    this(null, null, false);
   }
 
-  public User(String username, boolean isAdmin) {
+  public User(String username, String email, boolean isAdmin) {
     this.username = username;
+    this.email = email;
     this.isAdmin = isAdmin;
   }
 
@@ -47,6 +49,14 @@ public class User implements Serializable {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   public boolean isAdmin() {

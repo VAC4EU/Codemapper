@@ -559,7 +559,7 @@ public class PersistencyApi {
   }
 
   public Collection<User> getUsers() throws CodeMapperException {
-    String query = "SELECT username, is_admin FROM users";
+    String query = "SELECT username, email, is_admin FROM users";
     try {
       Connection connection = connectionPool.getConnection();
       PreparedStatement statement = connection.prepareStatement(query);
@@ -567,8 +567,9 @@ public class PersistencyApi {
       ResultSet results = statement.executeQuery();
       while (results.next()) {
         String username = results.getString(1);
-        boolean isAdmin = results.getBoolean(2);
-        User user = new User(username, isAdmin);
+        String email = results.getString(2);
+        boolean isAdmin = results.getBoolean(3);
+        User user = new User(username, email, isAdmin);
         res.add(user);
       }
       return res;
