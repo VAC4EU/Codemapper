@@ -19,7 +19,7 @@ create table review_message (
   id serial primary key,
   topic_id int not null references review_topic(id),
   timestamp TIMESTAMP not null default CURRENT_TIMESTAMP,
-  author_id int not null references users(id),
+  author_id int references users(id), -- may be null for imported messages
   content text not null
 );
 
@@ -65,11 +65,28 @@ drop function if exists review_new_message;
 create function review_new_message(topic_id int, content text, username text, t timestamp)
 returns table (message_id int) as $$
 with
+  nobody as (
+    select null::bigint id
+  ),
+  uuser as (
+    select id from users u
+    where u.username = review_new_message.username
+  ),
+  author as (
+    select coalesce(uuser.id, nobody.id) as id
+    from nobody left join uuser on true
+  ),
+  content as (
+    select case
+      when exists (select from uuser)
+      then review_new_message.content
+      else review_new_message.username || ': ' || review_new_message.content
+    end as content
+  ),
   message as (
     insert into review_message (topic_id, author_id, content, timestamp)
-    select review_new_message.topic_id, a.id, review_new_message.content, review_new_message.t
-    from users a
-    where a.username = review_new_message.username
+    select review_new_message.topic_id, a.id, c.content, review_new_message.t
+    from author a, content c
     returning id
   ),
   x as (

@@ -357,42 +357,6 @@ public class PersistencyApi {
     }
   }
 
-  public int ensureUser(String username) throws CodeMapperException {
-    String query =
-        ""
-            + "WITH sel AS ( "
-            + "  SELECT u.id "
-            + "  FROM users AS u "
-            + "  WHERE u.username = ? "
-            + "), ins AS ( "
-            + "  INSERT INTO users (username, password, email, anonymous) "
-            + "  VALUES (?, '', '', true) "
-            + "  ON CONFLICT DO NOTHING "
-            + "  RETURNING id "
-            + ") "
-            + "SELECT id FROM sel "
-            + "UNION ALL "
-            + "SELECT id FROM ins";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
-      statement.setString(1, username);
-      statement.setString(2, username);
-      ResultSet res = statement.executeQuery();
-      if (!res.next()) {
-        throw CodeMapperException.server("Missing ID to ensure user");
-      }
-      return res.getInt(1);
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot execute query to ensure user", e);
-    }
-  }
-
-  public void ensureUsers(Set<String> users) throws CodeMapperException {
-    for (String user : users) {
-      ensureUser(user);
-    }
-  }
-
   @XmlRootElement
   public static class MappingInfo {
     public String mappingName;

@@ -177,8 +177,6 @@ public class ReviewResource {
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       AllTopics allTopics = mapper.readValue(allTopicsJson, AllTopics.class);
-      // logger.info("Save reviews with messages " + allTopics.numMessages());
-      CodeMapperApplication.getPersistencyApi().ensureUsers(allTopics.allUsers());
       CodeMapperApplication.getReviewApi().saveReviews(mappingShortkey, allTopics);
     } catch (CodeMapperException | JsonProcessingException e) {
       e.printStackTrace();
