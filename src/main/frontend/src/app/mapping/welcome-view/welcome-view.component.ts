@@ -18,8 +18,10 @@
 
 import { Component } from '@angular/core';
 import { ServerInfo, EMPTY_SERVER_INFO } from '../data';
-import { AuthService, User } from '../auth.service';
+import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
+import { firstValueFrom, map, Observable } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-welcome-view',
@@ -27,13 +29,15 @@ import { ApiService } from '../api.service';
   styleUrls: ['./welcome-view.component.scss']
 })
 export class WelcomeViewComponent {
-  user : User | null = null;
   info : ServerInfo = EMPTY_SERVER_INFO;
   constructor(
     private auth : AuthService,
     private api : ApiService,
+    private snackbar : MatSnackBar,
   ) {
-    this.auth.userSubject.subscribe(user => this.user = user);
-    this.api.serverInfo().subscribe(info => this.info = info);
+    firstValueFrom(this.api.serverInfo()).then((info) => this.info = info);
+    if (auth.redirectUrl != null) {
+      this.snackbar.open("Please log in", "Ok", { duration: 3000 });
+    }
   }
 }

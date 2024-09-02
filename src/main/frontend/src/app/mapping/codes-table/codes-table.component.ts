@@ -41,6 +41,7 @@ export class CodesTableComponent {
   @Input() showTags : boolean = true;
   @Input() allTopics : AllTopics | null = null;
   @Input() reviewData : ReviewData | null = null;
+  @Input() userCanEdit : boolean = false;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Code[]> = new EventEmitter();
   dataSource = new MatTableDataSource<Code>();
@@ -148,7 +149,7 @@ export class CodesTableComponent {
           code: code,
           allTopicsObj: this.allTopicsObj,
           data: this.reviewData,
-          userIsEditor: this.auth.userIsEditor,
+          userIsEditor: this.userCanEdit,
           run: this.reviewRun,
         }
       });

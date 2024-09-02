@@ -75,7 +75,7 @@
       </table>
     </mat-tab>
 
-    <mat-tab label="User roles" *ngIf="user?.admin || role == 'Owner'">
+    <mat-tab label="User roles">
       <div class="toolbox">
         <mat-card *ngIf="user?.admin || role == 'Owner'">
           <mat-card-header>Set user role</mat-card-header>
@@ -100,25 +100,25 @@
           </mat-card-content>
         </mat-card>
       </div>
-      <mat-table [dataSource]="projectUsers">
+      <mat-table [dataSource]="userRoles">
         <tr mat-header-row *matHeaderRowDef="['username', 'email', 'role']"></tr>
         <tr mat-row *matRowDef="let user; columns: ['username', 'email', 'role'];"></tr>
         <ng-container matColumnDef="username">
             <th mat-header-cell *matHeaderCellDef>Username</th>
-            <td mat-cell *matCellDef="let user">
-                {{user.username}}
+            <td mat-cell *matCellDef="let userRole">
+                {{userRole.user.username}}
             </td>
         </ng-container>
         <ng-container matColumnDef="email">
             <th mat-header-cell *matHeaderCellDef>Email</th>
-            <td mat-cell *matCellDef="let user">
-                {{user.email}}
+            <td mat-cell *matCellDef="let userRole">
+                {{userRole.user.email}}
             </td>
         </ng-container>
         <ng-container matColumnDef="role">
             <th mat-header-cell *matHeaderCellDef>Role</th>
-            <td mat-cell *matCellDef="let user">
-              {{projectUserRoles[user.username].join(", ")}}
+            <td mat-cell *matCellDef="let userRole">
+              {{userRole.role?.toLowerCase() ?? "-"}}
             </td>
         </ng-container>
       </mat-table>

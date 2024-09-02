@@ -21,7 +21,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { Mapping, Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../data';
 import * as ops from '../mapping-ops';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
-import { AuthService } from '../auth.service';
 import { ApiService, Descendants } from '../api.service';
 import { compareCodes } from '../sort.pipe';
 
@@ -36,10 +35,10 @@ import { CodesTableComponent } from '../codes-table/codes-table.component';
   styleUrls: ['./codes.component.scss'],
 })
 export class CodesComponent {
-  @Input() mapping! : Mapping;
+  @Input({ required: true }) mapping! : Mapping;
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
-  @Input() canEdit : boolean = false;
+  @Input() userCanEdit : boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
 

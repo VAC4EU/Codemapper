@@ -17,13 +17,11 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, TemplateRef } from '@angular/core';
-import { PersistencyService, ProjectInfo } from '../persistency.service';
+import { PersistencyService, ProjectInfo, ProjectRole, ProjectsRoles } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
-
-const DEFAULT_VOCABULARIES = ["ICD10CM", "SNOMEDCT_US"];
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-projects-view',
@@ -31,26 +29,28 @@ const DEFAULT_VOCABULARIES = ["ICD10CM", "SNOMEDCT_US"];
   styleUrls: ['./projects-view.component.scss']
 })
 export class ProjectsViewComponent {
-  projects : ProjectInfo[] = [];
+
   newNames : { [key : string] : string } = {};
   user : User | null = null;
   dialogRef : MatDialogRef<any, any> | null = null;
+  roles : ProjectsRoles = {};
+  createProjectError : string | null = null;
+  projects : ProjectInfo[] = [];
+
   constructor(
     private persistency : PersistencyService,
     private auth : AuthService,
     private dialog : MatDialog,
     private snackbar : MatSnackBar,
-    private router : Router,
   ) {
     this.reloadProjects();
     this.auth.userSubject.subscribe((user) => this.user = user);
   }
 
-  reloadProjects() {
-    this.persistency.projectInfos().subscribe((projects) => {
-      this.projects = projects;
-      this.projects.sort((a, b) => a.name.localeCompare(b.name));
-    });
+  async reloadProjects() {
+    this.roles = await this.auth.roles;
+    this.projects = await firstValueFrom(this.persistency.getProjects());
+    this.projects.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   createProject(name : string) {
@@ -62,8 +62,12 @@ export class ProjectsViewComponent {
           this.dialogRef.close();
         }
       },
-      error: err => this.snackbar.open(err.message, "Ok"),
+      error: err => this.createProjectError = err.error,
     })
+  }
+
+  closeCreateProject() {
+    this.createProjectError = null;
   }
 
   openDialog(templateRef : TemplateRef<any>) {

@@ -1,8 +1,6 @@
-import { Component, TemplateRef } from '@angular/core';
+import { Component } from '@angular/core';
 import { AuthService, User } from '../auth.service';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { PersistencyService } from '../persistency.service';
 
 @Component({
   selector: 'app-user-view',
@@ -16,11 +14,15 @@ export class UserViewComponent {
 
   constructor(
     private auth : AuthService,
+    private snackbar : MatSnackBar,
   ) {
     this.auth.userSubject.subscribe((user) => this.user = user);
   }
 
   changePassword(oldPassword : string, newPassword : string) {
-    this.auth.changePassword(oldPassword, newPassword);
+    this.auth.changePassword(oldPassword, newPassword).subscribe({
+      next: () => this.snackbar.open("Password changed", "Ok", {duration: 2000}),
+      error: err => this.snackbar.open("Could not change password: " + err.error, "Ok", {duration: 2000}),
+    })
   }
 }

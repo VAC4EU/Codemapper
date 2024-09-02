@@ -34,7 +34,7 @@ import * as ops from '../mapping-ops';
 export class VocabulariesComponent {
   @Input() mapping : Mapping | null = null;
   @Output() run = new EventEmitter<ops.Operation>();
-  @Input() canEdit : boolean = false;
+  @Input() userCanEdit : boolean = false;
   @ViewChild('table') table! : VocabulariesTableComponent;
   vocabularies : Vocabulary[] = [];
 

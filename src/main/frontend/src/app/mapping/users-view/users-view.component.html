@@ -10,7 +10,6 @@
     <mat-tab-group>
 
         <mat-tab label="Users">
-
             <mat-card appearance="outlined">
                 <mat-card-header>Create new user</mat-card-header>
                 <mat-card-content>
@@ -37,7 +36,6 @@
                         color="primary">Create</button>
                 </mat-card-content>
             </mat-card>
-
             <mat-card appearance="outlined">
                 <mat-card-header>Set password</mat-card-header>
                 <mat-card-content>
@@ -63,6 +61,7 @@
                         color="primary">Set</button>
                 </mat-card-content>
             </mat-card>
+            <h3>All users</h3>
             <users-table [users]="users"></users-table>
         </mat-tab>
 
@@ -78,7 +77,7 @@
                             </mat-option>
                         </mat-select>
                     </mat-form-field>
-                    <mat-checkbox #setAdminAdmin>Admin</mat-checkbox>
+                    <mat-checkbox #setAdminAdmin>Is admin</mat-checkbox>
                     <button mat-raised-button [disabled]="!setAdminUsername.value"
                         (click)="setAdmin(setAdminUsername.value, setAdminAdmin.checked)" color="primary">Set</button>
                 </mat-card-content>

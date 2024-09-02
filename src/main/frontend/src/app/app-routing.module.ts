@@ -23,7 +23,7 @@ import { MappingViewComponent } from './mapping/mapping-view/mapping-view.compon
 import { ProjectsViewComponent } from './mapping/projects-view/projects-view.component';
 import { ProjectViewComponent } from './mapping/project-view/project-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
-import { AdminGuard, AuthGuard } from './mapping/auth.guard';
+import { adminGuard, authGuard } from './mapping/auth.guard';
 import { PendingChangesGuard } from './mapping/pending-changes.guard';
 import { LegacyMappingRedirectComponent } from './mapping/legacy-mapping-redirect/legacy-mapping-redirect.component';
 import { UserViewComponent } from './mapping/user-view/user-view.component';
@@ -43,41 +43,41 @@ const routes : Routes = [
   {
     path: "projects",
     title: () => Promise.resolve("CodeMapper: Your projects"),
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     component: ProjectsViewComponent,
   },
   {
     path: "project/:project",
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     component: ProjectViewComponent,
   },
   {
     path: "mapping",
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     canDeactivate: [PendingChangesGuard],
     component: MappingViewComponent,
   },
   {
     path: "mapping/:shortkey/:projectName/:mappingName",
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     canDeactivate: [PendingChangesGuard],
     component: MappingViewComponent,
   },
   {
     path: "account",
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     title: "Your account",
     component: UserViewComponent,
   },
   {
     path: "users",
-    canActivate: [AdminGuard],
+    canActivate: [adminGuard],
     title: "User administration",
     component: UsersViewComponent,
   },
   {
     path: "project/:projectName/event/:mappingName",
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     component: LegacyMappingRedirectComponent,
   },
   { path: '**', redirectTo: '/', pathMatch: 'full' }

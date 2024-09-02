@@ -74,7 +74,7 @@
       [mapping]="mapping"
       [allTopics]="allTopics"
       [vocabularies]="vocabularies"
-      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
+      [userCanEdit]="userCanEdit"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
@@ -84,7 +84,7 @@
       *ngIf="!mapping.isEmpty() && mapping.numVocabularies() > 0"
       [mapping]="mapping"
       [allTopics]="allTopics"
-      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
+      [userCanEdit]="userCanEdit"
       (run)="run($event)"
       (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
@@ -92,7 +92,7 @@
   <mat-tab label="Vocabularies" [disabled]="mapping.start == null">
     <vocabularies
       *ngIf="!mapping.isEmpty()"
-      [canEdit]="projectRole == 'Owner' || projectRole == 'Editor'"
+      [userCanEdit]="userCanEdit"
       [mapping]="mapping"
       (run)="run($event)"></vocabularies>
   </mat-tab>

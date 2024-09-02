@@ -17,6 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component } from '@angular/core';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-news-view',
@@ -24,5 +25,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./news-view.component.scss']
 })
 export class NewsViewComponent {
-
+  hasUser : boolean = false;
+  constructor(
+    private auth : AuthService,
+  ) {
+    this.auth.userSubject.subscribe(user => this.hasUser = user != null);
+  }
 }

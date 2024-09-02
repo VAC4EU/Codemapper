@@ -47,12 +47,13 @@ export class ConceptsTableComponent {
   @Input() disabled : boolean = false;
   @Input() showCodeTagIndication : boolean = false;
   @Input() filter : string = "";
+  @Input() userCanEdit : boolean = false;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Concept[]> = new EventEmitter();
+  @ViewChild(MatSort) sort! : MatSort;
   dataSource : MatTableDataSource<Concept> = new MatTableDataSource<Concept>();
   selection = new SelectionModel<Concept>(true, []);
   columns : string[] = [];
-  @ViewChild(MatSort) sort! : MatSort;
 
   // indirection to reviews to get updates in the review dialog
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
@@ -134,7 +135,7 @@ export class ConceptsTableComponent {
         cui,
         allTopicsObj: this.allTopicsObj,
         data: this.reviewData,
-        userIsEditor: this.auth.userIsEditor,
+        userIsEditor: this.userCanEdit,
         run: this.reviewRun,
       }
     });

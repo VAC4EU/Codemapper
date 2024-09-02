@@ -17,19 +17,19 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { of, firstValueFrom } from 'rxjs';
-import { Component, ChangeDetectorRef, NgZone, TemplateRef } from '@angular/core';
+import { Component, TemplateRef } from '@angular/core';
 import { Location } from '@angular/common';
 import { Title } from "@angular/platform-browser";
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { map } from 'rxjs';
 import { Indexing, Vocabularies, Mapping, Revision, ServerInfo, MappingMeta, MappingFormat, EMPTY_SERVER_INFO } from '../data';
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService, TypesInfo } from '../api.service';
-import { mappingInfoLink, PersistencyService, ProjectRole, slugify } from '../persistency.service';
+import { mappingInfoLink, PersistencyService, ProjectRole, slugify, userCanEdit } from '../persistency.service';
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
@@ -105,10 +105,11 @@ export class MappingViewComponent implements HasPendingChanges {
         console.log("Initial mapping", initial.mapping);
         this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
         this.setTitle();
-        this.persistency.getProjectRole(this.projectName).subscribe((perm) => {
-          if (perm != 'Owner') {
+        this.persistency.getProjectRole(this.projectName).subscribe((role) => {
+          if (role != 'Owner') {
             this.error = "you aren't project owner, you won't be able to save this new mapping";
           }
+          this.projectRole = role;
         });
       } else {
         this.error = "no mapping found";
@@ -123,6 +124,7 @@ export class MappingViewComponent implements HasPendingChanges {
         if (projectNameSlug != slugify(this.projectName) || mappingNameSlug != slugify(this.mappingName)) {
           this.location.go(mappingInfoLink(info).join('/'));
         }
+        this.persistency.getProjectRole(this.projectName).subscribe(role => this.projectRole = role)
         this.setTitle();
         let postOp : null | ops.Operation = null;
         let version, mapping;
@@ -147,7 +149,6 @@ export class MappingViewComponent implements HasPendingChanges {
         mapping.cleanupRecacheCheck()
         this.version = version;
         this.mapping = mapping;
-        this.persistency.getProjectRole(this.projectName).subscribe(role => this.projectRole = role)
         this.reloadReviews();
         this.reloadRevisions();
         if (postOp != null) this.run(postOp);
@@ -172,15 +173,19 @@ export class MappingViewComponent implements HasPendingChanges {
     this.updateMapping(this.mapping);
   }
 
+  get userCanEdit() {
+    return userCanEdit(this.projectRole);
+  }
+
   async reloadReviews() {
     if (this.mappingShortkey != null) {
       let allTopics0 = (await this.apiService.allTopics(this.mappingShortkey).toPromise())!;
-      let me = this.auth.userSubject.value!.username;
+      let user = await this.auth.user;
+      let me = user?.username ?? "anonymous";
       let cuis = Object.keys(this.mapping.concepts);
       this.allTopics = AllTopics.fromRaw(allTopics0, me, cuis)
     }
   }
-
 
   async reloadRevisions() {
     if (this.mappingShortkey != null) {

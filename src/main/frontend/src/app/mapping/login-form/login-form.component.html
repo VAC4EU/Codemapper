@@ -1,4 +1,4 @@
-<span class="login-form">
+<span *ngIf="!hasUser" class="login-form">
   <mat-form-field subscriptSizing="dynamic" class="input-form">
     <mat-label>Username</mat-label>
     <input matInput [formControl]="username" type="text" autocomplete="user">

@@ -28,6 +28,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./login-form.component.scss'],
 })
 export class LoginFormComponent {
+  hasUser : boolean = false;
   hide : boolean = true;
   error : string = "";
   username = new FormControl("");
@@ -37,7 +38,9 @@ export class LoginFormComponent {
     private auth : AuthService,
     private snackBar : MatSnackBar,
     public router : Router,
-  ) { }
+  ) {
+    this.auth.userSubject.subscribe(user => this.hasUser = user != null);
+  }
 
   login() {
     let username = this.username.getRawValue();

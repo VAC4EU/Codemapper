@@ -450,7 +450,7 @@ public class PersistencyApi {
   @XmlRootElement
   public static class ProjectInfo {
     public String name;
-    public ProjectPermission permission;
+    public ProjectPermission role;
   }
 
   public Collection<ProjectInfo> getProjectInfos(String username) throws CodeMapperException {
@@ -477,7 +477,7 @@ public class PersistencyApi {
               e -> {
                 ProjectInfo info = new ProjectInfo();
                 info.name = e.getKey();
-                info.permission = e.getValue();
+                info.role = e.getValue();
                 return info;
               })
           .collect(Collectors.toList());
@@ -512,7 +512,7 @@ public class PersistencyApi {
               e -> {
                 ProjectInfo info = new ProjectInfo();
                 info.name = e.getKey();
-                info.permission = e.getValue();
+                info.role = e.getValue();
                 return info;
               })
           .collect(Collectors.toList());

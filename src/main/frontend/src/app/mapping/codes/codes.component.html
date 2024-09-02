@@ -34,11 +34,11 @@
       {{selected.length}} selected code{{selected.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0 || !canEdit">Tag</button>
+      <button mat-stroked-button (click)="editTags(selected)" [disabled]="selected.length == 0 || !userCanEdit">Tag</button>
       <button mat-stroked-button (click)="enableCodes(selected)"
-        [disabled]="selected.length == 0 || !canEdit">Enable</button>
+        [disabled]="selected.length == 0 || !userCanEdit">Enable</button>
       <button mat-stroked-button (click)="disableCodes(selected)"
-        [disabled]="selected.length == 0 || !canEdit">Disable</button>
+        [disabled]="selected.length == 0 || !userCanEdit">Disable</button>
       <button mat-stroked-button (click)="showDescendants(selected)"
         [disabled]="selected.length == 0">Descendants</button>
     </mat-card-actions>
@@ -51,15 +51,24 @@
     <mat-card-actions>
       <!-- <button mat-stroked-button color="primary" (click)="selectAllCustomCodes()">Select</button> -->
       <button *ngIf="false" mat-stroked-button (click)="importCustomCodeDialog()" matTooltip="TODO">Import</button>
-      <button mat-stroked-button (click)="addCustomCodeDialog()" [disabled]="!canEdit">Create</button>
+      <button mat-stroked-button (click)="addCustomCodeDialog()" [disabled]="!userCanEdit">Create</button>
       <button mat-stroked-button (click)="editCustomCodeDialog()"
-        [disabled]="!oneOrMoreCustomCodes(selected) || !canEdit">Edit</button>
+        [disabled]="!oneOrMoreCustomCodes(selected) || !userCanEdit">Edit</button>
       <button mat-stroked-button color="warn" (click)="removeCustomCode(selected)"
-        [disabled]="!oneOrMoreCustomCodes(selected) || !canEdit">Delete</button>
+        [disabled]="!oneOrMoreCustomCodes(selected) || !userCanEdit">Delete</button>
     </mat-card-actions>
   </mat-card>
 </div>
 
-<codes-table [vocabularyId]="vocabularyId" [mapping]="mapping" [filter]="codesFilter" [codes]="codes" [showTags]="true"
-  [allTopics]="allTopics" [reviewData]="reviewData" (selected)="setSelected($event)"
-  (reviewRun)="reviewRun.emit($event)"></codes-table>
+<codes-table
+  [vocabularyId]="vocabularyId"
+  [mapping]="mapping"
+  [filter]="codesFilter"
+  [codes]="codes"
+  [showTags]="true"
+  [allTopics]="allTopics"
+  [userCanEdit]="userCanEdit"
+  [reviewData]="reviewData"
+  (selected)="setSelected($event)"
+  (reviewRun)="reviewRun.emit($event)">
+</codes-table>

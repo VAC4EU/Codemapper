@@ -27,7 +27,6 @@ import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';
-import { ProjectRole } from '../persistency.service';
 
 @Component({
   selector: 'concepts',
@@ -38,10 +37,10 @@ export class ConceptsComponent implements OnInit {
   @Input() mapping! : Mapping;
   @Input() vocabularies! : Vocabularies;
   @Input() allTopics : AllTopics = new AllTopics();
-  @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
+  @Input() userCanEdit : boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
-  @Input({ required: true }) canEdit : boolean = false;
+  @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
 
   selectedConcepts : Concept[] = [];
   codeSearchQueryControl = new FormControl('');

@@ -17,12 +17,12 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { firstValueFrom } from 'rxjs';
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
-import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, ProjectsRoles, ProjectUsers } from '../persistency.service';
+import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, UserRole } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
@@ -49,9 +49,8 @@ export class ProjectViewComponent {
   role : ProjectRole | null = null;
   selected = new SelectionModel<MappingInfo>(true, []);
   user : User | null = null;
-  projectUsers : User[] = [];
-  projectUserRoles : { [key : string] : string[] } = {};
-  allUsers : User[] = [];
+  userRoles : UserRole[] = [];
+  allUsers : User[] = []; // only admin, owner
   constructor(
     private api : ApiService,
     private persistency : PersistencyService,
@@ -69,23 +68,18 @@ export class ProjectViewComponent {
       this.title.setTitle(`CodeMapper: Project ${this.projectName}`);
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
-      this.reloadUsers();
+      this.auth.user.then((user) => this.user = user);
+      this.persistency.allUsers().subscribe(allUsers => {
+        this.allUsers = allUsers;
+        this.allUsers.sort(usernameCompare);
+      });
+      this.reloadUsersRoles();
     });
   }
-  async reloadUsers() {
-    this.auth.userSubject.subscribe(user => this.user = user);
-    this.persistency.getProjectRole(this.projectName).subscribe(role => this.role = role);
-    let allUsers : { [key : string] : User } = {};
-    try {
-      this.allUsers = await firstValueFrom(this.persistency.allUsers());
-      this.allUsers.sort(usernameCompare);
-      allUsers = Object.fromEntries(this.allUsers.map(u => [u.username, u]));
-    } catch (e) { }
-    this.projectUserRoles = await firstValueFrom(this.persistency.projectUsers(this.projectName));
-    this.projectUsers = Object.entries(this.projectUserRoles).map(([username, roles]) => {
-      return allUsers[username] ?? { username, email: "", isAdmin: false };
-    })
-    this.projectUsers.sort(usernameCompare);
+  async reloadUsersRoles() {
+    this.role = await firstValueFrom(this.persistency.getProjectRole(this.projectName));
+    this.userRoles = await firstValueFrom(this.persistency.projectUsers(this.projectName));
+    this.userRoles.sort((a, b) => usernameCompare(a.user, b.user));
   }
   isAllSelected() {
     const numSelected = this.selected.selected.length;
@@ -171,7 +165,7 @@ export class ProjectViewComponent {
   addUserRole(username : string, role : ProjectRole) {
     console.log("ROLE", role, ProjectRole);
     this.persistency.setUserRole(this.projectName, username, role).subscribe({
-      next: _ => this.reloadUsers(),
+      next: _ => this.reloadUsersRoles(),
       error: err => this.snackbar.open(err.message, "Ok"),
     });
   }

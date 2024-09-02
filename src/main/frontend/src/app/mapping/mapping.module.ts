@@ -80,7 +80,7 @@ import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
 
-const matSnackbarDefaultConfig: MatSnackBarConfig = {
+const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
   horizontalPosition: 'center',
 };

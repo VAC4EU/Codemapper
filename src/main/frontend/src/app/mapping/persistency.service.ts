@@ -30,17 +30,26 @@ export enum ProjectRole {
   Commentator = "Commentator"
 }
 
-export type ProjectsRoles = { [key : string] : ProjectRole | null };
+export function userCanEdit(role : ProjectRole | null) {
+  return role == ProjectRole.Owner || role == ProjectRole.Editor;
+}
 
-export interface ProjectInfo {
-  name : string;
-  permission : ProjectRole;
+export type ProjectsRoles = { [key : string] : ProjectRole[] }
+
+export type UserRole = {
+  user : User,
+  role : ProjectRole
 }
 
 export interface MappingInfo {
   projectName : string;
   mappingName : string;
   mappingShortkey : string;
+}
+
+export interface ProjectInfo {
+  name : string,
+  role : ProjectRole,
 }
 
 export function slugify(str : string) {
@@ -64,10 +73,6 @@ export class PersistencyService {
   private url : string = environment.apiUrl + '/persistency'
 
   constructor(private http : HttpClient) { }
-
-  projectInfos() {
-    return this.http.get<ProjectInfo[]>(this.url + '/projects');
-  }
 
   projectMappingInfos(project : string) {
     return this.http.get<MappingInfo[]>(this.url + `/projects/${project}/mappings`)
@@ -106,12 +111,16 @@ export class PersistencyService {
       }))
   }
 
-  getProjectsRoless() {
+  getProjectsRoles() {
     return this.http.get<ProjectsRoles>(this.url + "/user/project-permissions")
   }
 
   getProjectRole(projectName : string) {
-    return this.http.get<ProjectRole>(this.url + "/user/project-permission/" + projectName)
+    return this.http.get<ProjectRole | null>(this.url + "/user/project-permission/" + projectName)
+  }
+
+  getProjectUsers(projectName : string) {
+    return this.http.get<UserRole[]>(this.url + `/project/${projectName}/users`)
   }
 
   getRevisions(shortkey : string) {
@@ -135,7 +144,7 @@ export class PersistencyService {
   }
   projectUsers(projectName : string) {
     let url = this.url + `/projects/${projectName}/users`;
-    return this.http.get<ProjectUsers>(url)
+    return this.http.get<UserRole[]>(url)
   }
 
   createProject(name : string) : Observable<void> {
@@ -143,6 +152,10 @@ export class PersistencyService {
     let body = new URLSearchParams();
     body.append("name", name);
     return this.http.post<void>(url, body, urlEncodedOptions);
+  }
+
+  getProjects() {
+    return this.http.get<ProjectInfo[]>(this.url + "/projects")
   }
 
   allUsers() {
@@ -181,5 +194,3 @@ export class PersistencyService {
     return this.http.post<void>(url, body, urlEncodedOptions)
   }
 }
-
-export type ProjectUsers = { [key : string] : string[] }

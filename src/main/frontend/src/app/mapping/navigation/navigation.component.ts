@@ -16,14 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, Input, SimpleChanges } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { AuthService, User } from '../auth.service';
-import { ProjectInfo } from '../persistency.service';
-
-export const TESTS_PROJECT = "Tests";
-export const VAC4EU_PROJECT = "VAC4EU";
-
-const DEFAULT_PROJECTS : string[] = [TESTS_PROJECT, VAC4EU_PROJECT];
+import { ProjectsRoles } from '../persistency.service';
 
 @Component({
   selector: 'app-navigation',
@@ -32,23 +27,12 @@ const DEFAULT_PROJECTS : string[] = [TESTS_PROJECT, VAC4EU_PROJECT];
 })
 export class NavigationComponent {
   @Input() projectName : string | null = null;
-  projects! : Promise<ProjectInfo[]>;
   user : User | null = null;
+  roles : ProjectsRoles = {};
   public constructor(
     private auth : AuthService,
   ) {
-    this.updateProjects();
-    auth.userSubject.subscribe(user => this.user = user);
-  }
-  ngOnChanges(changes : SimpleChanges) : void {
-    this.updateProjects();
-  }
-  updateProjects() {
-    this.projects = this.auth.projects
-      .then(ps => {
-        let projects = ps.filter(p => DEFAULT_PROJECTS.includes(p.name) || p.name == this.projectName);
-        projects.sort();
-        return projects;
-      });
+    this.auth.userSubject.subscribe(user => this.user = user);
+    this.auth.rolesSubject.subscribe(roles => this.roles = roles);
   }
 }
