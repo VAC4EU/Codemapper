@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CsvImport, Indexing, Mapping, Start, StartType, ServerInfo, Vocabularies } from '../data';
+import { CsvImport, Indexing, Mapping, Start, StartType, ServerInfo, Vocabularies, Revision } from '../data';
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,6 +16,8 @@ export class MappingTabComponent {
   @Input() serverInfo! : ServerInfo;
   @Input() vocabularies! : Vocabularies;
   @Input() canDownload! : boolean;
+  @Input() revisions : Revision[] = [];
+  @Input() version : number = -1;
   @Output() run = new EventEmitter<ops.Operation>();
   @Input({ required: true }) projectRole : ProjectRole | null = null;
 

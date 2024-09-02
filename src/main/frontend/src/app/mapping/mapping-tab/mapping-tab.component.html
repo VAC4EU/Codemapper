@@ -1,10 +1,9 @@
 <div class="center-content spaced">
 
   <section *ngIf="projectRole != 'Commentator'">
-    <h3>Download</h3>
     <div class="toolbox">
       <mat-card appearance="outlined">
-        <mat-card-header>Download the mapping as a CSV file</mat-card-header>
+        <mat-card-header>Download the current mapping as a CSV file</mat-card-header>
         <mat-card-content class="column">
           <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
           <button [disabled]="!canDownload || !mappingShortkey" mat-raised-button
@@ -18,7 +17,19 @@
   </section>
 
   <section>
-    <h3>UMLS version</h3>
+    <h3>Versions</h3>
+      <history
+        *ngIf="mappingShortkey && mapping && !mapping.isEmpty()"
+        [mappingShortkey]="mappingShortkey"
+        [mapping]="mapping"
+        [revisions]="revisions"
+        [version]="version"
+        [projectRole]="projectRole">
+      </history>
+  </section>
+
+  <section>
+    <h3>UMLS</h3>
     <ul>
       <li>mapping based on UMLS version: <span class="version">{{mapping.meta.umlsVersion}}</span></li>
       <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
