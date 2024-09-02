@@ -20,7 +20,7 @@ import { Injectable } from '@angular/core';
 import { CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 export interface HasPendingChanges {
-  hasPendingChanges() : boolean;
+  get hasPendingChanges() : boolean;
 }
 
 @Injectable({
@@ -32,7 +32,7 @@ export class PendingChangesGuard implements CanDeactivate<HasPendingChanges> {
     next : ActivatedRouteSnapshot,
     state : RouterStateSnapshot
   ) : boolean {
-    return !component.hasPendingChanges()
+    return !component.hasPendingChanges
       || confirm('You have unsafed changes, which are lost when navigating away.')
   }
 }

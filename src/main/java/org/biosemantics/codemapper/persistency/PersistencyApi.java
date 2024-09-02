@@ -153,10 +153,10 @@ public class PersistencyApi {
       ResultSet result = statement.executeQuery();
       Collection<UserRole> users = new LinkedList<>();
       while (result.next()) {
-        String username = result.getString(0);
-        String email = result.getString(1);
-        boolean isAdmin = result.getBoolean(2);
-        String role0 = result.getString(3);
+        String username = result.getString(1);
+        String email = result.getString(2);
+        boolean isAdmin = result.getBoolean(3);
+        String role0 = result.getString(4);
         ProjectPermission role = ProjectPermission.fromChar(role0);
         User user = new User(username, email, isAdmin);
         users.add(new UserRole(user, role));

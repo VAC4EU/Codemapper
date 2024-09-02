@@ -177,7 +177,7 @@ public class AuthentificationApi {
     }
   }
 
-  public ChangePasswordResult changePassword(String username, String password, String newPassword)
+  public void changePassword(String username, String password, String newPassword)
       throws CodeMapperException {
     logger.info("Change password " + username);
 
@@ -190,9 +190,9 @@ public class AuthentificationApi {
       int result = statement.executeUpdate();
       switch (result) {
         case 0:
-          return new ChangePasswordResult(false, "Wrong current password");
+          throw CodeMapperException.user("Wrong current password");
         case 1:
-          return new ChangePasswordResult(true, null);
+          return;
         default:
           throw CodeMapperException.server(
               String.format("Too many rows (%d) updated for password change", result));

@@ -98,16 +98,16 @@ export class PersistencyService {
     return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
   }
 
-  legacyMapping(shortkey : string, serverInfo : ServerInfo) : Observable<[number, Mapping]> {
+  loadLegacyMapping(shortkey : string, serverInfo : ServerInfo) : Observable<Mapping> {
     return this.http.get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
-      .pipe(map((json) => [-1, Mapping.importV1(json, serverInfo)]));
+      .pipe(map((json) => Mapping.importV1(json, serverInfo)));
   }
 
-  latestRevisionMapping(shortkey : string, serverInfo : ServerInfo) : Observable<[number, Mapping]> {
+  loadLatestRevisionMapping(shortkey : string, serverInfo : ServerInfo) : Observable<{ version : number, mapping : Mapping }> {
     return this.http.get<Revision>(this.url + `/mapping/${shortkey}/latest-revision`)
       .pipe(map(rev => {
         let mapping = Mapping.importJSON(JSON.parse(rev.mapping), serverInfo);
-        return [rev.version, mapping];
+        return { version: rev.version, mapping };
       }))
   }
 
@@ -143,7 +143,7 @@ export class PersistencyService {
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
   projectUsers(projectName : string) {
-    let url = this.url + `/projects/${projectName}/users`;
+    let url = this.url + `/projects/${projectName}/user-roles`;
     return this.http.get<UserRole[]>(url)
   }
 

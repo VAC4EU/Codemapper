@@ -34,7 +34,7 @@ import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
 
-enum Tabs {
+export enum Tabs {
   Start = 0,
   Concepts = 1,
   Codes = 2,
@@ -59,10 +59,9 @@ const EMPTY_MAPPING_INFO : MappingMeta = {
 })
 export class MappingViewComponent implements HasPendingChanges {
   mappingShortkey : string | null = null; // null means mapping is not saved
-  mappingName : string = "??";
-  projectName : string = "??";
-  viewName! : string;
-  mapping : Mapping = new Mapping(EMPTY_MAPPING_INFO, null, {}, {}, {}); // initial value needed to avoid Expression has changed after it was checked
+  mappingName : string = "(unknown)";
+  projectName : string = "(unknown)";
+  mapping : Mapping | null = null;
   serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   version : number = -1;
   revisions : Revision[] = [];
@@ -82,104 +81,118 @@ export class MappingViewComponent implements HasPendingChanges {
     private title : Title,
     private dialog : MatDialog,
     private snackBar : MatSnackBar,
-    public auth : AuthService,
+    private auth : AuthService,
     private location : Location,
   ) { }
 
-  hasPendingChanges() {
-    return this.mapping.undoStack.length > 0;
-  }
-
-  async ngOnInit() {
-    let params = await firstValueFrom(this.route.params);
-    let vocabularies = await firstValueFrom(this.apiService.vocabularies());
-    this.vocabularies = Object.fromEntries(vocabularies.map(v => [v.id, v]));
-    this.serverInfo = await firstValueFrom(this.apiService.serverInfo());
-    this.mappingShortkey = params['shortkey'];
-    if (this.mappingShortkey == null) {
-      let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
-      if (initial && initial.mapping instanceof Mapping) {
-        this.saveRequired = true;
-        this.mappingName = initial.mappingName;
-        this.projectName = initial.projectName;
-        console.log("Initial mapping", initial.mapping);
-        this.setInitialMapping(initial.mapping as Mapping, initial.allTopics);
-        this.setTitle();
-        this.persistency.getProjectRole(this.projectName).subscribe((role) => {
-          if (role != 'Owner') {
-            this.error = "you aren't project owner, you won't be able to save this new mapping";
-          }
-          this.projectRole = role;
-        });
-      } else {
-        this.error = "no mapping found";
-      }
-    } else {
-      let mappingNameSlug = params['mappingName'];
-      let projectNameSlug = params['projectName'];
-      try {
-        let info = await firstValueFrom(this.persistency.mappingInfo(this.mappingShortkey));
-        this.mappingName = info.mappingName;
-        this.projectName = info.projectName;
-        if (projectNameSlug != slugify(this.projectName) || mappingNameSlug != slugify(this.mappingName)) {
-          this.location.go(mappingInfoLink(info).join('/'));
-        }
-        this.persistency.getProjectRole(this.projectName).subscribe(role => this.projectRole = role)
-        this.setTitle();
-        let postOp : null | ops.Operation = null;
-        let version, mapping;
-        try {
-          [version, mapping] = await firstValueFrom(
-            this.persistency.latestRevisionMapping(this.mappingShortkey, this.serverInfo));
-        } catch (err) {
-          console.log(err, typeof err);
-          if ((err as HttpErrorResponse).status == 404) {
-            [version, mapping] = await firstValueFrom(
-              this.persistency.legacyMapping(this.mappingShortkey, this.serverInfo));
-            let { conceptsCodes, vocabularies, messages } =
-              await this.apiService.remapData(mapping, this.vocabularies, this.mapping.meta);
-            let umlsVersion = this.serverInfo.umlsVersion;
-            postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
-            messages.unshift(`The mapping ${this.mappingName} was automatically imported from the old version of CodeMapper and remapped. Please save.`);
-            this.snackBar.open(messages.join("\n\n"), "Ok", { panelClass: 'remap-snackbar' });
-          } else {
-            throw err;
-          }
-        }
-        mapping.cleanupRecacheCheck()
-        this.version = version;
-        this.mapping = mapping;
-        this.reloadReviews();
-        this.reloadRevisions();
-        if (postOp != null) this.run(postOp);
-      } catch (err) {
-        console.error(this.error, err);
-      }
-    }
-  }
-
-  setTitle() {
-    this.title.setTitle(`CodeMapper: ${this.mappingName} (${this.projectName})`);
-  }
-
-  setInitialMapping(mapping : Mapping, allTopics : any) {
-    this.mapping = mapping;
-    if (allTopics) {
-      this.allTopics = allTopics;
-    }
-    if (mapping.start == null) {
-      this.selectedIndex = 0;
-    }
-    this.updateMapping(this.mapping);
+  get hasPendingChanges() : boolean {
+    return this.mapping != null && this.mapping.undoStack.length > 0;
   }
 
   get userCanEdit() {
     return userCanEdit(this.projectRole);
   }
 
+  async ngOnInit() {
+    let vocabularies = await firstValueFrom(this.apiService.vocabularies());
+    this.vocabularies = Object.fromEntries(vocabularies.map(v => [v.id, v]));
+    this.serverInfo = await firstValueFrom(this.apiService.serverInfo());
+
+    let params = await firstValueFrom(this.route.params);
+    let mappingNameSlug = params['mappingName'];
+    let projectNameSlug = params['projectName'];
+    this.mappingShortkey = params['shortkey'];
+
+    if (this.mappingShortkey == null) {
+      let initial = this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
+      if (initial && initial.mapping instanceof Mapping) {
+        await this.setInitialMapping(initial);
+        if (this.projectRole != ProjectRole.Owner) {
+          this.snackBar.open("You are not owner of the project, you will not be able to save this new mapping", "Ok");
+        }
+      } else {
+        this.snackBar.open("No mapping", "Ok");
+      }
+    } else {
+      try {
+        let info = await firstValueFrom(this.persistency.mappingInfo(this.mappingShortkey));
+        if (projectNameSlug != slugify(this.projectName) || mappingNameSlug != slugify(this.mappingName)) {
+          this.location.go(mappingInfoLink(info).join('/'));
+        }
+        this.setNames(info.projectName, info.mappingName);
+        this.persistency.getProjectRole(info.projectName).subscribe(role => this.projectRole = role);
+
+        let postOp : null | ops.Operation = null;
+        try {
+          ({ version: this.version, mapping: this.mapping } = await firstValueFrom(
+            this.persistency.loadLatestRevisionMapping(this.mappingShortkey, this.serverInfo)));
+        } catch (err) {
+          if ((err as HttpErrorResponse).status == 404) {
+            try {
+              let messages;
+              ({ version: this.version, mapping: this.mapping, postOp, messages } =
+                await this.loadLegacyMapping(this.mappingShortkey));
+              messages.unshift(`The mapping was automatically imported from the old version of CodeMapper and remapped. Please save.`);
+              this.snackBar.open(messages.join("\n\n"), "Ok", { panelClass: 'remap-snackbar' });
+            } catch (err) {
+              if ((err as HttpErrorResponse).status != 404) {
+                console.error("error while loading legacy mapping", err);
+              }
+              this.snackBar.open("Could not load mapping", "Ok");
+            }
+          } else {
+            console.error("Error while loading latest revision", err);
+            this.snackBar.open("Could not load mapping", "Ok");
+          }
+        }
+        this.mapping!.cleanupRecacheCheck();
+        this.reloadReviews();
+        this.reloadRevisions();
+        if (postOp != null) this.run(postOp);
+      } catch (err) {
+        console.error("Error while loading mapping info", err);
+        this.snackBar.open("Could not load mapping", "Ok");
+      }
+    }
+  }
+
+  setNames(projectName : string, mappingName : string) {
+    this.title.setTitle(`CodeMapper: ${mappingName} (${projectName})`);
+    this.projectName = projectName;
+    this.mappingName = mappingName;
+  }
+
+  async setInitialMapping(initial : any) {
+    console.log("Initial mapping", initial.mapping);
+    this.saveRequired = true;
+    this.mappingName = initial.mappingName;
+    this.projectName = initial.projectName;
+    this.mapping = initial.mapping as Mapping;
+    if (initial.allTopics) {
+      this.allTopics = initial.allTopics;
+    }
+    if (this.mapping.start == null) {
+      this.selectedIndex = 0;
+    }
+    this.updateMapping(this.mapping);
+    this.setNames(initial.projectName, initial.mappingName);
+    this.projectRole = await firstValueFrom(this.persistency.getProjectRole(this.projectName));
+  }
+
+  async loadLegacyMapping(mappingShortkey : string) {
+    this.version = -1;
+    let mapping = await firstValueFrom(
+      this.persistency.loadLegacyMapping(mappingShortkey, this.serverInfo));
+    let { conceptsCodes, vocabularies, messages } =
+      await this.apiService.remapData(mapping, this.vocabularies, mapping.meta);
+    let umlsVersion = this.serverInfo.umlsVersion;
+    let postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
+    return { version: -1, mapping, postOp, messages };
+  }
+
   async reloadReviews() {
-    if (this.mappingShortkey != null) {
-      let allTopics0 = (await this.apiService.allTopics(this.mappingShortkey).toPromise())!;
+    if (this.mapping && this.mappingShortkey != null) {
+      let allTopics0 = await firstValueFrom(this.apiService.allTopics(this.mappingShortkey));
       let user = await this.auth.user;
       let me = user?.username ?? "anonymous";
       let cuis = Object.keys(this.mapping.concepts);
@@ -189,11 +202,12 @@ export class MappingViewComponent implements HasPendingChanges {
 
   async reloadRevisions() {
     if (this.mappingShortkey != null) {
-      this.revisions = (await this.persistency.getRevisions(this.mappingShortkey).toPromise())!;
+      this.revisions = await firstValueFrom(this.persistency.getRevisions(this.mappingShortkey));
     }
   }
 
   run(op : ops.Operation) {
+    if (!this.mapping) return;
     this.mapping.run(op);
     op.afterRunCallback();
     this.updateMapping(this.mapping);
@@ -203,20 +217,22 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   redo() {
+    if (!this.mapping) return;
     this.mapping.redo();
     this.updateMapping(this.mapping);
   }
 
   undo() {
+    if (!this.mapping) return;
     this.mapping.undo();
     this.updateMapping(this.mapping);
   }
 
   updateMapping(mapping : Mapping) {
+    this.mapping = mapping.clone();
     if (this.allTopics != null) {
       this.allTopics.setConcepts(Object.keys(mapping.concepts));
     }
-    this.mapping = mapping.clone();
   }
 
   async reviewRun(op : ReviewOperation) {
@@ -246,6 +262,7 @@ export class MappingViewComponent implements HasPendingChanges {
         .pipe(map(m => m.mappingShortkey))
       : of(this.mappingShortkey)
     ).subscribe(mappingShortkey => {
+      if (!this.mapping) return;
       this.persistency.saveRevision(mappingShortkey, this.mapping, summary)
         .subscribe({
           next: async version => {
@@ -280,17 +297,17 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   undoTooltip() : string | undefined {
-    if (this.mapping.undoStack.length == 0) {
-      return;
+    if (this.mapping && this.mapping.undoStack.length > 0) {
+      return `Undo (${this.mapping.undoStack[0][0]})`
     }
-    return `Undo (${this.mapping.undoStack[0][0]})`
+    return;
   }
 
   redoTooltip() : string | undefined {
-    if (this.mapping.redoStack.length == 0) {
-      return;
+    if (this.mapping && this.mapping.redoStack.length > 0) {
+      return `Redo (${this.mapping.redoStack[0][0]})`
     }
-    return `Redo (${this.mapping.redoStack[0][0]})`
+    return;
   }
 
   titleTooltip() : string {
@@ -303,6 +320,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   async setStartIndexing(indexing : Indexing) {
+    if (!this.mapping) return;
     if (this.mapping.start === null) {
       let vocIds = Object.keys(this.mapping.vocabularies);
       await this.apiService.concepts(indexing.selected, vocIds, this.mapping.meta)

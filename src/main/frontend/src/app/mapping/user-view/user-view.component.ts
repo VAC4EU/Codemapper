@@ -21,8 +21,8 @@ export class UserViewComponent {
 
   changePassword(oldPassword : string, newPassword : string) {
     this.auth.changePassword(oldPassword, newPassword).subscribe({
-      next: () => this.snackbar.open("Password changed", "Ok", {duration: 2000}),
-      error: err => this.snackbar.open("Could not change password: " + err.error, "Ok", {duration: 2000}),
+      next: () => this.snackbar.open("Password changed", "Ok", { duration: 2000 }),
+      error: err => this.snackbar.open("Could not change password: " + err.error, "Ok", { duration: 2000 }),
     })
   }
 }

@@ -21,7 +21,6 @@ package org.biosemantics.codemapper.rest;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -31,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
-import org.biosemantics.codemapper.authentification.AuthentificationApi.ChangePasswordResult;
 import org.biosemantics.codemapper.authentification.AuthentificationApi.LoginResult;
 import org.biosemantics.codemapper.authentification.User;
 
@@ -61,7 +59,7 @@ public class AuthentificationResource {
       return api.login(username, password, request);
     } catch (CodeMapperException e) {
       e.printStackTrace();
-      throw new InternalServerErrorException(e);
+      throw e.asWebApplicationException();
     }
   }
 
@@ -75,15 +73,18 @@ public class AuthentificationResource {
   @POST
   @Path("change-password")
   @Produces(MediaType.APPLICATION_JSON)
-  public ChangePasswordResult changePassword(
+  public void changePassword(
       @FormParam("oldPassword") String oldPassword,
       @FormParam("newPassword") String newPassword,
       @Context User user) {
+    if (user == null) {
+      throw new UnauthorizedException();
+    }
     try {
-      return api.changePassword(user.getUsername(), oldPassword, newPassword);
+      api.changePassword(user.getUsername(), oldPassword, newPassword);
     } catch (CodeMapperException e) {
       e.printStackTrace();
-      throw new InternalServerErrorException(e);
+      throw e.asWebApplicationException();
     }
   }
 }

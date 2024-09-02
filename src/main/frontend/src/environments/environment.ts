@@ -19,9 +19,8 @@
 export const environment = {
   name: "environment.ts",
   production: false,
+  // apiUrl: "http://localhost:8080/codemapper-dev/rest",
   // apiUrl: 'https://app.vac4eu.org/codemapper-testing/rest',
   apiUrl: "http://localhost:8080/codemapper-testing/rest",
-  defaultVocabularies: ["ICD10CM", "SNOMEDCT_US"],
   peregrineUrl: "https://app.vac4eu.org/peregrine-codemapper/rest"
-  // apiUrl: "http://localhost:8080/codemapper-dev/rest",
 };

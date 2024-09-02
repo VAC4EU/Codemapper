@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -303,10 +302,7 @@ public class CodeMapperResource {
           .entity(output.toString())
           .build();
     } catch (CodeMapperException e) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .type(MediaType.TEXT_PLAIN)
-          .entity(e.getMessage())
-          .build();
+      throw e.asWebApplicationException();
     }
   }
 
@@ -381,10 +377,7 @@ public class CodeMapperResource {
           .build();
     } catch (CodeMapperException e) {
       System.out.println("ERROR " + e.getMessage());
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .type(MediaType.TEXT_PLAIN)
-          .entity(e.getMessage())
-          .build();
+      throw e.asWebApplicationException();
     }
   }
 
@@ -405,7 +398,7 @@ public class CodeMapperResource {
           .getOrDefault(codingSystem, new Descendants());
     } catch (CodeMapperException e) {
       logger.error("Cannot get descendants", e);
-      throw new InternalServerErrorException(e);
+      throw e.asWebApplicationException();
     }
   }
 }

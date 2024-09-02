@@ -5,7 +5,8 @@
   <app-navigation></app-navigation>
   CodeMapper: News
   <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin><login-form></login-form>
+  <app-loggedin></app-loggedin>
+  <login-form></login-form>
 </mat-toolbar>
 
 <section class="center-content">
