@@ -19,7 +19,7 @@ create table review_message (
   id serial primary key,
   topic_id int not null references review_topic(id),
   timestamp TIMESTAMP not null default CURRENT_TIMESTAMP,
-  author_id int references users(id), -- may be null for imported messages
+  author_id int references users(id), -- null for imported messages
   content text not null
 );
 
@@ -85,20 +85,20 @@ with
   nobody as (
     select null::bigint id
   ),
-  uuser as (
+  user1 as (
     select id from users u
     where u.username = review_new_message.username
   ),
   author as (
-    select coalesce(uuser.id, nobody.id) as id
-    from nobody left join uuser on true
+    select coalesce(user1.id, nobody.id) as id
+    from nobody left join user1 on true
   ),
   content as (
     select case
-      when exists (select from uuser)
-      then review_new_message.content
-      else review_new_message.username || ': ' || review_new_message.content
-    end as content
+      when exists (select from user1) then ''
+      else coalesce(review_new_message.username || ': ', '')
+    end || coalesce(review_new_message.content, '(no content)')
+    as content
   ),
   message as (
     insert into review_message (topic_id, author_id, content, timestamp)
