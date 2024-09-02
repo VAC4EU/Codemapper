@@ -477,11 +477,11 @@ export class Remap extends Operation {
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
     mapping.vocabularies = this.vocabularies;
+    if (customConcept) mapping.concepts[customConcept.id] = customConcept;
     mapping.setCustomCodes(customCodes);
     mapping.setCodesDisabled(disabled);
     mapping.setLost(lost);
     mapping.setTags(tags);
-    if (customConcept) mapping.concepts[customConcept.id] = customConcept;
     return;
   }
 }
