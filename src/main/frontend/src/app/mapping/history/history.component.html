@@ -1,11 +1,4 @@
 <div class="center-content">
-
-      <p>
-      The following versions of the mapping exist<span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">, use the button on the right to download them</span>.
-      <span *ngIf="revisions.length == 0">
-        (The mapping must be saved first.)
-      </span>
-      </p>
       <table id="versions-table">
         <thead>
           <tr>
@@ -23,7 +16,7 @@
             <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
             <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
             <td class="column-download">
-              <a *ngIf="projectRole == 'Owner' || projectRole == 'Editor'" href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
+              <a *ngIf="userCanDownload" href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
                 <mat-icon>download</mat-icon>
               </a>
             </td>

@@ -43,7 +43,8 @@
         [revisions]="revisions"
         [version]="version"
         [vocabularies]="vocabularies"
-        [canDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
+        [userCanDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
+        [userCanEdit]="userCanEdit"
         [projectRole]="projectRole"
         (run)="run($event)"></mapping-tab>
     </div>

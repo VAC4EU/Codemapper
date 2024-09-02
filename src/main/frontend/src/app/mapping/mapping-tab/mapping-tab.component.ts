@@ -15,7 +15,8 @@ export class MappingTabComponent {
   @Input() mapping! : Mapping;
   @Input() serverInfo! : ServerInfo;
   @Input() vocabularies! : Vocabularies;
-  @Input() canDownload! : boolean;
+  @Input() userCanDownload : boolean = false;
+  @Input() userCanEdit : boolean = false;
   @Input() revisions : Revision[] = [];
   @Input() version : number = -1;
   @Output() run = new EventEmitter<ops.Operation>();

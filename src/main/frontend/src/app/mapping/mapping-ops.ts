@@ -30,10 +30,6 @@ function expect(ok : boolean, message : string = "", ...rest : any) {
   }
 }
 
-function objectKeysEq(o1 : any, o2 : any) : boolean {
-  return setEq(new Set(Object.keys(o1)), new Set(Object.keys(o2)));
-}
-
 function arraySetEq<T>(a1 : T[], a2 : T[]) : boolean {
   return setEq(new Set(a1), new Set(a2));
 }

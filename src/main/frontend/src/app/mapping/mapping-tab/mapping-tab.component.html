@@ -1,97 +1,98 @@
 <div class="center-content spaced">
 
-  <section *ngIf="projectRole != 'Commentator'">
-    <div class="toolbox">
-      <mat-card appearance="outlined">
-        <mat-card-header>Download the current mapping as a CSV file</mat-card-header>
-        <mat-card-content class="column">
-          <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
-          <button [disabled]="!canDownload || !mappingShortkey" mat-raised-button
-            (click)="download(mappingShortkey!, includeDescendants.checked)">
-            Download
-          </button>
-          <p *ngIf="!canDownload || !mappingShortkey">(The mapping must be saved before.)</p>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  </section>
+  <mat-accordion>
+    <mat-expansion-panel expanded>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Download</mat-panel-title>
+        <mat-panel-description>Download the current mapping as a CSV file</mat-panel-description>
+      </mat-expansion-panel-header>
+      <div class="download-content">
+        <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
+        <button [disabled]="!userCanDownload || !mappingShortkey" mat-raised-button color="primary"
+          (click)="download(mappingShortkey!, includeDescendants.checked)">
+          <mat-icon>download</mat-icon>
+          Download
+        </button>
+        <p *ngIf="!userCanDownload || !mappingShortkey">(The mapping must be saved before.)</p>
+      </div>
+    </mat-expansion-panel>
 
-  <section>
-    <h3>Versions</h3>
-      <history
-        *ngIf="mappingShortkey && mapping && !mapping.isEmpty()"
-        [mappingShortkey]="mappingShortkey"
-        [mapping]="mapping"
-        [revisions]="revisions"
-        [version]="version"
-        [projectRole]="projectRole">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Versions</mat-panel-title>
+        <mat-panel-description>
+          All versions of the mapping
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">Use the button on the right to download them.</span>
+      <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
+      <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [mappingShortkey]="mappingShortkey"
+        [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">
       </history>
-  </section>
+    </mat-expansion-panel>
 
-  <section>
-    <h3>UMLS</h3>
-    <ul>
-      <li>mapping based on UMLS version: <span class="version">{{mapping.meta.umlsVersion}}</span></li>
-      <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
-    </ul>
-    <div class="toolbox">
-      <mat-card appearance="outlined">
-        <mat-card-header>Remap the mapping</mat-card-header>
-        <mat-card-content>
-          <p>
-            When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
-            remap the mapping to update the concept codes using the latest version of the UMLS.
-          </p>
-          <div *ngIf="projectRole == 'Editor' || projectRole == 'Owner'">
-            <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack"
-              (click)="remap()" mat-raised-button color="primary">
-              Remap
-            </button>
-            <p *ngIf="mapping.undoStack.length">The mapping must be saved before.</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  </section>
-
-  <section>
-    <h3>Start</h3>
-    <div *ngIf="isIndexing(mapping.start)">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>UMLS</mat-panel-title>
+        <mat-panel-description>
+          UMLS versions in the mapping and CodeMapper
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <ul>
+        <li>mapping based on UMLS version: <span class="version">{{mapping.meta.umlsVersion}}</span></li>
+        <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
+      </ul>
       <p>
-        The mapping was started with the following textual description and selected concepts:
+        When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
+        remap the mapping to update the concept codes using the latest version of the UMLS.
       </p>
-      <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
-    </div>
-    <div *ngIf="isCsvImport(mapping.start)">
-      <p>
-        The mapping was started by importing a mapping from the following CSV data:
-      </p>
-      <pre class="csv-import">{{mapping.start.csvContent}}</pre>
-    </div>
-  </section>
+      <button 
+        (click)="remap()" mat-raised-button color="primary">
+        Remap
+      </button>
+      <p *ngIf="mapping.undoStack.length">The mapping must be saved before.</p>
+    </mat-expansion-panel>
 
-  <section>
-    <h3>Allowed tags</h3>
-    <p *ngIf="mapping.meta.allowedTags.length == 0">None.</p>
-    <ul>
-      <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
-    </ul>
-  </section>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Start</mat-panel-title>
+        <mat-panel-description>The start of the mapping</mat-panel-description>
+      </mat-expansion-panel-header>
+      <div *ngIf="isIndexing(mapping.start)">
+        <p>
+          The mapping was started with the following textual description and selected concepts:
+        </p>
+        <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
+      </div>
+      <div *ngIf="isCsvImport(mapping.start)">
+        <p>
+          The mapping was started by importing a mapping from the following CSV data:
+        </p>
+        <pre class="csv-import">{{mapping.start.csvContent}}</pre>
+      </div>
+    </mat-expansion-panel>
 
-  <section>
-    <h3>Ignored semantic types</h3>
-    <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
-    <ul>
-      <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
-    </ul>
-  </section>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Configuration</mat-panel-title>
+        <mat-panel-description>Configurations of the mapping</mat-panel-description>
+      </mat-expansion-panel-header>
+      <h5>Allowed tags</h5>
+      <p *ngIf="mapping.meta.allowedTags.length == 0">None.</p>
+      <ul>
+        <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
+      </ul>
 
-  <section>
-    <h3>Ignored term types</h3>
-    <p *ngIf="mapping.meta.ignoreTermTypes.length == 0">None.</p>
-    <ul>
-      <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
-    </ul>
-  </section>
-
+      <h5>Ignored semantic types</h5>
+      <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
+      <ul>
+        <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
+      </ul>
+      <h5>Ignored term types</h5>
+      <p *ngIf="mapping.meta.ignoreTermTypes.length == 0">None.</p>
+      <ul>
+        <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
+      </ul>
+    </mat-expansion-panel>
+  </mat-accordion>
 </div>

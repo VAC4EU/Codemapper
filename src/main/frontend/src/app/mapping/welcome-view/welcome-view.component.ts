@@ -37,7 +37,7 @@ export class WelcomeViewComponent {
   ) {
     firstValueFrom(this.api.serverInfo()).then((info) => this.info = info);
     if (auth.redirectUrl != null) {
-      this.snackbar.open("Please log in", "Ok", { duration: 3000 });
+      this.snackbar.open("Please log in", "Ok", { duration: 2000 });
     }
   }
 }

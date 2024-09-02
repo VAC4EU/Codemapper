@@ -79,6 +79,7 @@ import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
 import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
+import {MatExpansionModule} from '@angular/material/expansion';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -149,6 +150,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     MatTooltipModule,
     MatSnackBarModule,
     MatSortModule,
+    MatExpansionModule,
     NgFor,
     NgIf,
     NoopAnimationsModule,

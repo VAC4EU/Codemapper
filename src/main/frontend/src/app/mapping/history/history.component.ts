@@ -33,6 +33,7 @@ export class HistoryComponent {
   @Input({ required: true }) revisions! : Revision[];
   @Input({ required: true }) version! : number;
   @Input({ required: true }) projectRole : ProjectRole | null = null;
+  @Input() userCanDownload : boolean = false;
 
   constructor(
     public apiService : ApiService,
