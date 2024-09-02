@@ -63,14 +63,30 @@ public class ReviewApi {
   public void newMessage(
       String mappingShortkey, int topicId, String content, String user, String timestamp)
       throws CodeMapperException {
+    Connection connection;
+    try {
+      connection = connectionPool.getConnection();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot get connection to create message", e);
+    }
+    newMessage(connection, mappingShortkey, topicId, content, user, timestamp);
+  }
+
+  private void newMessage(
+      Connection connection,
+      String mappingShortkey,
+      int topicId,
+      String content,
+      String user,
+      String timestamp)
+      throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
     logger.info(
         String.format("new message %s %d %s %s", mappingShortkey, topicId, content, timestamp));
     String query = "SELECT * FROM review_new_message(?, ?, ?, ?::TIMESTAMP)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setInt(ix++, topicId);
       statement.setString(ix++, content);
@@ -112,14 +128,33 @@ public class ReviewApi {
       String user,
       String timestamp)
       throws CodeMapperException {
+
+    Connection connection;
+    try {
+      connection = connectionPool.getConnection();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot get connection to create message", e);
+    }
+    return newTopic(connection, mappingShortkey, cui, sab, code, heading, user, timestamp);
+  }
+
+  private int newTopic(
+      Connection connection,
+      String mappingShortkey,
+      String cui,
+      String sab,
+      String code,
+      String heading,
+      String user,
+      String timestamp)
+      throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
     logger.info(
         String.format("new topic %s %s %s %s %s", mappingShortkey, cui, heading, user, timestamp));
     String query = "SELECT * FROM review_new_topic_shortkey(?, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setString(ix++, mappingShortkey);
       statement.setString(ix++, cui);
@@ -252,6 +287,18 @@ public class ReviewApi {
 
   public void resolveTopic(int topicId, String username, String timestamp)
       throws CodeMapperException {
+
+    Connection connection;
+    try {
+      connection = connectionPool.getConnection();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot get connection to create message", e);
+    }
+    resolveTopic(connection, topicId, username, timestamp);
+  }
+
+  private void resolveTopic(Connection connection, int topicId, String username, String timestamp)
+      throws CodeMapperException {
     if (topicId == 0 || username == "") {
       throw CodeMapperException.user("invalid parameters to resolve topic");
     }
@@ -260,8 +307,7 @@ public class ReviewApi {
       timestamp = now();
     }
     String query = "SELECT * FROM review_resolve_topic(?, ?::TEXT, ?::TIMESTAMP)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setInt(1, topicId);
       statement.setString(2, username);
       statement.setString(3, timestamp);
@@ -341,36 +387,46 @@ public class ReviewApi {
   }
 
   public void saveReviews(String mappingShortkey, AllTopics allTopics) throws CodeMapperException {
+
+    Connection connection;
+    try {
+      connection = connectionPool.getConnection();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot get connection to create message", e);
+    }
     for (String cui : allTopics.byConcept.keySet()) {
       for (Topic top : allTopics.byConcept.get(cui).values()) {
-        saveTopic(mappingShortkey, cui, null, null, top);
+        saveTopic(connection, mappingShortkey, cui, null, null, top);
       }
     }
     for (String sab : allTopics.byCode.keySet()) {
       for (String code : allTopics.byCode.get(sab).keySet()) {
         for (Topic top : allTopics.byCode.get(sab).get(code).values()) {
-          saveTopic(mappingShortkey, null, sab, code, top);
+          saveTopic(connection, mappingShortkey, null, sab, code, top);
         }
       }
     }
     for (Topic top : allTopics.general.values()) {
-      saveTopic(mappingShortkey, null, null, null, top);
+      saveTopic(connection, mappingShortkey, null, null, null, top);
     }
   }
 
-  private void saveTopic(String mappingShortkey, String cui, String sab, String code, Topic top)
+  private void saveTopic(
+      Connection connection, String mappingShortkey, String cui, String sab, String code, Topic top)
       throws CodeMapperException {
 
     String timestamp = top.created.timestamp;
     if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-    int id = newTopic(mappingShortkey, cui, sab, code, top.heading, top.created.user, timestamp);
+    int id =
+        newTopic(
+            connection, mappingShortkey, cui, sab, code, top.heading, top.created.user, timestamp);
     for (Message msg : top.messages) {
       timestamp = msg.timestamp;
       if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-      newMessage(mappingShortkey, id, msg.content, msg.username, timestamp);
+      newMessage(connection, mappingShortkey, id, msg.content, msg.username, timestamp);
     }
     if (top.resolved != null) {
-      resolveTopic(id, top.resolved.user, top.resolved.timestamp);
+      resolveTopic(connection, id, top.resolved.user, top.resolved.timestamp);
     }
   }
 }
