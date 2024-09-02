@@ -76,7 +76,10 @@ public class ReviewApi {
       statement.setString(ix++, content);
       statement.setString(ix++, user);
       statement.setString(ix++, timestamp);
-      statement.executeQuery();
+      ResultSet set = statement.executeQuery();
+      if (!set.next()) {
+    	  throw CodeMapperException.server("could not save message");
+      }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create message", e);
     }
@@ -126,7 +129,7 @@ public class ReviewApi {
       statement.setString(ix++, timestamp);
       ResultSet set = statement.executeQuery();
       if (!set.next()) {
-        throw CodeMapperException.server("Could save message");
+        throw CodeMapperException.server("Could not save message");
       }
       return set.getInt(1);
     } catch (SQLException e) {

@@ -120,12 +120,15 @@ drop function if exists review_new_topic;
 create function review_new_topic(project text, casedef text, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
 returns table (topic_id int)
 as $$
+  with
+  nobody as (select null::bigint id),
+  user0 as (select id from users u where u.username = review_new_topic.username),
+  user1 as (select coalesce(user0.id, nobody.id) as id from nobody left join user0 on true)
   insert into review_topic (case_definition_id, cui, sab, code, heading, created_by, created_at)
   select pc.case_definition_id, review_new_topic.cui, review_new_topic.sab, review_new_topic.code, review_new_topic.heading, u.id, review_new_topic.t
-  from projects_case_definitions pc, users u
+  from projects_case_definitions pc, user1 u
   where pc.project_name = review_new_topic.project 
   and pc.case_definition_name = review_new_topic.casedef
-  and u.username = review_new_topic.username
   returning id
 $$ language sql;
 
@@ -134,11 +137,14 @@ drop function if exists review_new_topic_shortkey;
 create function review_new_topic_shortkey(mapping_shortkey SHORTKEY, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
 returns table (topic_id int)
 as $$
+  with
+  nobody as (select null::bigint id),
+  user0 as (select id from users u where u.username = review_new_topic_shortkey.username),
+  user1 as (select coalesce(user0.id, nobody.id) as id from nobody left join user0 on true)
   insert into review_topic (case_definition_id, cui, sab, code, heading, created_by, created_at)
   select cd.id, review_new_topic_shortkey.cui, review_new_topic_shortkey.sab, review_new_topic_shortkey.code, review_new_topic_shortkey.heading, u.id, review_new_topic_shortkey.t
-  from case_definitions cd, users u
+  from case_definitions cd, user1 u
   where cd.shortkey = review_new_topic_shortkey.mapping_shortkey
-  and u.username = review_new_topic_shortkey.username
   returning id
 $$ language sql;
 

@@ -3,7 +3,7 @@
   <mat-card appearance="outlined">
     <mat-card-content matTooltip="Enter a string to filter the concepts displayed in the table by concept name or tag.">
       <mat-form-field>
-        <mat-label>Filter concepts</mat-label>
+        <mat-label>Filter {{this.numConcepts}} concepts</mat-label>
         <input matInput [(ngModel)]="conceptsFilter" placeholder="">
         <button mat-icon-button matSuffix (click)="conceptsFilter = ''">
           <mat-icon>backspace</mat-icon>

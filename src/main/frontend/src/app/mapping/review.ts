@@ -30,13 +30,13 @@ export class ReviewData {
 }
 
 export interface Action {
-  user : string;
+  user : string | null;
   timestamp : string;
 }
 
 export interface Message {
   id : number;
-  username : string;
+  username : string | null;
   timestamp : string;
   content : string;
   isRead : boolean;

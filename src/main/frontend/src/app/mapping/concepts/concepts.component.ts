@@ -53,6 +53,10 @@ export class ConceptsComponent implements OnInit {
     private api : ApiService,
   ) { }
 
+  get numConcepts() : number {
+    return Object.keys(this.mapping.concepts).length;
+  }
+
   openDialog(templateRef : TemplateRef<any>) {
     this.dialogRef = this.dialog.open(templateRef, {
       width: '700px'

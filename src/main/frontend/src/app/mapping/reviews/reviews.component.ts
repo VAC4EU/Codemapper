@@ -85,11 +85,15 @@ export class ReviewsComponent {
       this.editMessage = null;
     }
   }
-  displayUsername(username : string) {
-    if (username == this.username) {
-      return "me";
+  displayUsername(username : string | null) {
+    if (username) {
+      if (username == this.username) {
+        return "me";
+      } else {
+        return username;
+      }
     } else {
-      return username;
+      return "(unknown)"
     }
   }
 }
