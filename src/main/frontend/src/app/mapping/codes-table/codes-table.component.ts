@@ -44,9 +44,9 @@ export class CodesTableComponent {
   @Input() userCanEdit : boolean = false;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Code[]> = new EventEmitter();
-  dataSource = new MatTableDataSource<Code>();
   @ViewChild(MatSort) sort! : MatSort;
 
+  dataSource = new MatTableDataSource<Code>();
   columns : string[] = [];
   selectedCodes = new SelectionModel<Code>(true, []);
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
