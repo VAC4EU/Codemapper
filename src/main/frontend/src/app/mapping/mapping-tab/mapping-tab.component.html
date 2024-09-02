@@ -46,7 +46,7 @@
         When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
         remap the mapping to update the concept codes using the latest version of the UMLS.
       </p>
-      <button 
+      <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack"
         (click)="remap()" mat-raised-button color="primary">
         Remap
       </button>
@@ -77,18 +77,18 @@
         <mat-panel-title>Configuration</mat-panel-title>
         <mat-panel-description>Configurations of the mapping</mat-panel-description>
       </mat-expansion-panel-header>
-      <h5>Allowed tags</h5>
+      <h4>Allowed tags</h4>
       <p *ngIf="mapping.meta.allowedTags.length == 0">None.</p>
-      <ul>
+      <ul class="tags-list">
         <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
       </ul>
 
-      <h5>Ignored semantic types</h5>
+      <h4>Ignored semantic types</h4>
       <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
       <ul>
         <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
       </ul>
-      <h5>Ignored term types</h5>
+      <h4>Ignored term types</h4>
       <p *ngIf="mapping.meta.ignoreTermTypes.length == 0">None.</p>
       <ul>
         <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
