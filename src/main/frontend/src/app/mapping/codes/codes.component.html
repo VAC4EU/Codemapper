@@ -3,7 +3,7 @@
   <mat-card appearance="outlined">
     <mat-card-content matTooltip="Enter a string to filter the codes displayed in the table by code name or tag.">
       <mat-form-field>
-        <mat-label>Filter codes</mat-label>
+        <mat-label>Filter {{numCodes(vocabularyId)}} codes</mat-label>
         <input matInput [(ngModel)]="codesFilter" placeholder="">
         <button mat-icon-button matSuffix (click)="codesFilter = ''">
           <mat-icon>backspace</mat-icon>

@@ -11,13 +11,30 @@
     <mat-icon class="marker">chevron_right</mat-icon>Welcome &amp; info
   </a>
   <a
+    *ngIf="user?.admin"
+    routerLink="/users"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button"
+    mat-menu-item>
+    <mat-icon class="marker">chevron_right</mat-icon>Users
+  </a>
+  <a
+    routerLink="/news"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button"
+    mat-menu-item>
+    <mat-icon class="marker">chevron_right</mat-icon>News
+  </a>
+  <a
     *ngIf="user"
     routerLink="/projects"
     routerLinkActive="active"
     [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button"
     mat-menu-item>
-    <mat-icon class="marker">chevron_right</mat-icon>All projects
+    <mat-icon class="marker">chevron_right</mat-icon>Projects
   </a>
   <a
     *ngFor="let entry of roles| keyvalue"
@@ -27,23 +44,6 @@
     [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button"
     mat-menu-item>
-    <mat-icon class="list">arrow_right</mat-icon><mat-icon class="marker">chevron_right</mat-icon>Project: {{entry.key}}
-  </a>
-  <a
-    *ngIf="user?.admin"
-    routerLink="/users"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
-    mat-menu-item>
-    <mat-icon class="marker">chevron_right</mat-icon>User administration
-  </a>
-  <a
-    routerLink="/news"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
-    mat-menu-item>
-    <mat-icon class="marker">chevron_right</mat-icon>News
+    <mat-icon class="list">arrow_right</mat-icon><mat-icon class="marker">chevron_right</mat-icon>{{entry.key}}
   </a>
 </mat-menu>

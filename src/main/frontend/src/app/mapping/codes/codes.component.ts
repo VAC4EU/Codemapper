@@ -221,6 +221,10 @@ export class CodesComponent {
 
   importCustomCodeDialog() {
   }
+
+  numCodes(voc : VocabularyId) : number {
+    return Object.keys(this.mapping.codes[voc]).length
+  }
 }
 
 function codesParents(descs : Descendants) : { codes : Code[], codeParents : { [key : CodeId] : Set<CodeId> } } {
