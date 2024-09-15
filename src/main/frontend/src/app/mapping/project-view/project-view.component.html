@@ -1,6 +1,6 @@
 <menu-banner [projectName]="projectName">
   <!-- <mat-icon>folder_open</mat-icon> -->
-  Project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
+  CodeMapper project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
 </menu-banner>
 
 <div class="center-content spaced">
@@ -77,8 +77,8 @@
     <mat-tab label="Members">
       <div class="toolbox">
         <mat-card *ngIf="user?.admin || role == 'Owner'">
-          <mat-card-header>Set user role</mat-card-header>
-          <mat-card-content>
+          <mat-card-header><h4>Set user role</h4></mat-card-header>
+          <mat-card-content class="column">
             <mat-form-field>
               <mat-label>User</mat-label>
               <mat-select #addUserRoleName>

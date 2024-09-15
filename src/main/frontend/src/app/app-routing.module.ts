@@ -32,17 +32,17 @@ import { UsersViewComponent } from './mapping/users-view/users-view.component';
 const routes : Routes = [
   {
     path: "",
-    title: () => Promise.resolve("CodeMapper: Welcome"),
+    title: "CodeMapper",
     component: WelcomeViewComponent,
   },
   {
     path: "news",
-    title: () => Promise.resolve("CodeMapper: News"),
+    title: "CodeMapper: News",
     component: NewsViewComponent,
   },
   {
     path: "projects",
-    title: () => Promise.resolve("CodeMapper: Your projects"),
+    title: "CodeMapper: Projects",
     canActivate: [authGuard],
     component: ProjectsViewComponent,
   },
@@ -66,13 +66,13 @@ const routes : Routes = [
   {
     path: "account",
     canActivate: [authGuard],
-    title: "Your account",
+    title: "CodeMapper: Your account",
     component: UserViewComponent,
   },
   {
     path: "users",
     canActivate: [adminGuard],
-    title: "Users",
+    title: "CodeMapper: Users",
     component: UsersViewComponent,
   },
   {

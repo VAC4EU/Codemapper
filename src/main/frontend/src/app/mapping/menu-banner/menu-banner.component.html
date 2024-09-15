@@ -1,12 +1,14 @@
 
 <mat-toolbar>
     <span>
-        <a routerLink="/"><img class="logo" src="assets/logo.png" alt="CodeMapper logo" /></a>
-        <ng-content></ng-content>
+        <app-navigation [projectName]="projectName">
+            <img class="logo" src="assets/logo.png" alt="CodeMapper logo" />
+            <mat-icon>menu</mat-icon>
+        </app-navigation>
+        <span class="content"><ng-content></ng-content></span>
     </span>
     <span>
         <ng-content select="[onTheRight]"></ng-content>
-        <app-navigation [projectName]="projectName"></app-navigation>
     </span>
 </mat-toolbar>
 

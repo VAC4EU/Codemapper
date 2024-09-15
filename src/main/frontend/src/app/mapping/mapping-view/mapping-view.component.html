@@ -1,7 +1,7 @@
 <menu-banner [projectName]="projectName" omitSpacer="true">
   <span matTooltip="{{titleTooltip()}}">
     <!-- <mat-icon>schema</mat-icon> -->
-    Mapping<span *ngIf="mapping">:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+    CodeMapper mapping: <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
     (you are {{projectRole?.toLowerCase() ?? "not a member"}})</span>
   </span>
   <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>

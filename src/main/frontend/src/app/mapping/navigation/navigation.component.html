@@ -1,11 +1,11 @@
-<a mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Access your projects, mappings and anything else">
-  <mat-icon>menu</mat-icon>
+<a mat-button [matMenuTriggerFor]="menu" matTooltip="Menu - access your projects, mappings and anything else">
+  <ng-content></ng-content>
 </a>
 <mat-menu #menu="matMenu">
   <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="navigation-button"
     mat-menu-item>
     <!-- <mat-icon>home</mat-icon> -->
-    Welcome
+    Home
   </a>
   <a routerLink="/news" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="navigation-button"
     mat-menu-item>
@@ -20,7 +20,7 @@
   <a *ngIf="user" routerLink="/account" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button" mat-menu-item>
     <!-- <mat-icon>person</mat-icon> -->
-    Account &ndash; {{user.username}}
+    Account: {{user.username}}
   </a>
   <a *ngIf="user" routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button" mat-menu-item>

@@ -1,11 +1,11 @@
-:host ::ng-deep .mat-icon {
-    margin-right: 1ex;
+app-navigation mat-icon {
+    transform: scale(1.18) translateY(0.23ex);
 }
 
 .logo {
-    margin-bottom: -0.6ex;
-    height: 1.4em;
-    margin-right: 0.3ex;
+    width: 6ex;
+    margin-bottom: -0.7ex;
+    margin-right: 0.4ex;
 }
 
 mat-toolbar {

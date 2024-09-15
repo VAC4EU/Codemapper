@@ -3,7 +3,7 @@
    
 <menu-banner>
   <!-- <mat-icon>notifications</mat-icon> -->
-  News
+  CodeMapper: News
 </menu-banner>
 
 <section class="center-content">

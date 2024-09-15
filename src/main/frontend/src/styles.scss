@@ -91,8 +91,7 @@ mat-icon.text-align {
 
 // Manipulate initial background color
 .login-form .input-form {
-.mdc-text-field--filled:not(.mdc-text-field--disabled), .mat-mdc-input-element, .mat-mdc-form-field-focus-overlay {
-    background-color: white !important;
+  .mdc-text-field--filled:not(.mdc-text-field--disabled), .mat-mdc-input-element, .mat-mdc-form-field-focus-overlay {
   }
 }
 
