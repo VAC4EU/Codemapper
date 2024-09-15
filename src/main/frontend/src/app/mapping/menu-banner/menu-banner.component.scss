@@ -1,0 +1,16 @@
+:host ::ng-deep .mat-icon {
+    margin-right: 1ex;
+}
+
+.logo {
+    margin-bottom: -0.6ex;
+    height: 1.4em;
+    margin-right: 0.3ex;
+}
+
+mat-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}

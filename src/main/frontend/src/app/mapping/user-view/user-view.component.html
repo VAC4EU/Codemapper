@@ -6,7 +6,9 @@
 <div class="center-content">
     <div class="toolbox">
         <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header><h4>Change password</h4></mat-card-header>
+            <mat-card-header>
+                <h4>Change password</h4>
+            </mat-card-header>
             <mat-card-content>
                 <mat-form-field subscriptSizing="dynamic" class="input-form">
                     <mat-label>Old password</mat-label>
@@ -19,20 +21,14 @@
                         <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                     </button>
                 </mat-form-field>
-                <button mat-stroked-button (click)="changePassword(oldPassword.value, newPassword.value)">Change</button>
-            </mat-card-content>
-        </mat-card>
-        <mat-card appearance="outlined">
-            <mat-card-header><h4>Account information</h4></mat-card-header>
-            <mat-card-content *ngIf="user != null">
-                <table>
-                    <tr><td>Username</td><td>{{user.username}}</td></tr>
-                    <tr><td>Email</td><td>{{user.email || "(unknown)"}}</td></tr>
-                </table>
+                <button mat-stroked-button
+                    (click)="changePassword(oldPassword.value, newPassword.value)">Change</button>
             </mat-card-content>
         </mat-card>
         <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header><h4>Logout</h4></mat-card-header>
+            <mat-card-header>
+                <h4>Logout</h4>
+            </mat-card-header>
             <mat-card-content>
                 <button mat-stroked-button (click)="logout()" matTooltip="Logout" class="logout-button" type="button">
                     Logout
@@ -41,4 +37,17 @@
             </mat-card-content>
         </mat-card>
     </div>
+    <section *ngIf="user != null">
+        <h4>Account information</h4>
+        <table>
+            <tr>
+                <td>Username</td>
+                <td>{{user.username}}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{user.email || "(unknown)"}}</td>
+            </tr>
+        </table>
+    </section>
 </div>

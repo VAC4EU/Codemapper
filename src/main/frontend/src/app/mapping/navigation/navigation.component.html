@@ -1,64 +1,38 @@
-<a mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Access your projects and mappings">
+<a mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Access your projects, mappings and anything else">
   <mat-icon>menu</mat-icon>
 </a>
 <mat-menu #menu="matMenu">
-  <a
-    routerLink="/"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="navigation-button"
     mat-menu-item>
     <!-- <mat-icon>home</mat-icon> -->
     Welcome
   </a>
-  <a
-    *ngIf="user?.admin"
-    routerLink="/users"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
-    mat-menu-item>
-    <!-- <mat-icon>groups</mat-icon> -->
-    Users
-  </a>
-  <a
-    routerLink="/news"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
+  <a routerLink="/news" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="navigation-button"
     mat-menu-item>
     <!-- <mat-icon>notifications</mat-icon> -->
     News
   </a>
-  <a
-    *ngIf="user"
-    routerLink="/account"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
-    mat-menu-item>
-    <!-- <mat-icon>person</mat-icon> -->
-    Account ({{user.username}})
+  <a *ngIf="user?.admin" routerLink="/users" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button" mat-menu-item>
+    <!-- <mat-icon>groups</mat-icon> -->
+    Users
   </a>
-  <a
-    *ngIf="user"
-    routerLink="/projects"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button"
-    mat-menu-item>
+  <a *ngIf="user" routerLink="/account" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button" mat-menu-item>
+    <!-- <mat-icon>person</mat-icon> -->
+    Account &ndash; {{user.username}}
+  </a>
+  <a *ngIf="user" routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+    class="navigation-button" mat-menu-item>
     <!-- <mat-icon>dataset</mat-icon> -->
     Projects
   </a>
-  <a
-    *ngFor="let entry of roles| keyvalue"
-    [class]='{active: entry.key == projectName}'
-    routerLink="/project/{{entry.key}}"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button project-link"
-    mat-menu-item>
-    <!-- <mat-icon class="list">folder_open</mat-icon> -->
-    {{entry.key}}
-  </a>
+  <ul class="projects">
+    <li *ngFor="let entry of roles| keyvalue">
+      <a [class]='{active: entry.key == projectName}' routerLink="/project/{{entry.key}}" routerLinkActive="active"
+        [routerLinkActiveOptions]="{exact: true}" class="navigation-button project-link" mat-menu-item>
+        {{entry.key}}
+      </a>
+    </li>
+  </ul>
 </mat-menu>
