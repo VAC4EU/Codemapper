@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { AuthService, User } from '../auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-view',
@@ -15,8 +16,18 @@ export class UserViewComponent {
   constructor(
     private auth : AuthService,
     private snackbar : MatSnackBar,
+    public router : Router,
   ) {
     this.auth.userSubject.subscribe((user) => this.user = user);
+  }
+
+  logout() {
+    if (confirm("Really want to logout?")) {
+      this.auth.logout()
+        .subscribe(() => {
+          this.router.navigate(['login']);
+        });
+    }
   }
 
   changePassword(oldPassword : string, newPassword : string) {

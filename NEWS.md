@@ -1,13 +1,10 @@
 
 [//]: # (pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html)
-
-<mat-toolbar>
-  <app-navigation></app-navigation>
+   
+<menu-banner>
+  <!-- <mat-icon>notifications</mat-icon> -->
   CodeMapper: News
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-  <login-form></login-form>
-</mat-toolbar>
+</menu-banner>
 
 <section class="center-content">
 

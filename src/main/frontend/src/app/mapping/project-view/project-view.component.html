@@ -1,9 +1,8 @@
-<mat-toolbar>
-  <app-navigation [projectName]="projectName"></app-navigation>
-  <span>Project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})</span>
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-</mat-toolbar>
+<menu-banner [projectName]="projectName">
+  <!-- <mat-icon>folder_open</mat-icon> -->
+  Codemapper project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
+</menu-banner>
+
 <div class="center-content spaced">
 
   <mat-tab-group>

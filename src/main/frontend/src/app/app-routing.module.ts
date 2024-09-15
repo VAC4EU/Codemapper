@@ -72,7 +72,7 @@ const routes : Routes = [
   {
     path: "users",
     canActivate: [adminGuard],
-    title: "User administration",
+    title: "Users",
     component: UsersViewComponent,
   },
   {

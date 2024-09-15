@@ -1,5 +1,11 @@
-<mat-toolbar>
-  <app-navigation [projectName]="projectName"></app-navigation>
+<menu-banner [projectName]="projectName" omitSpacer="true">
+  <span matTooltip="{{titleTooltip()}}">
+    <!-- <mat-icon>schema</mat-icon> -->
+    Codemapper mapping<span *ngIf="mapping">:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+    (you are {{projectRole?.toLowerCase() ?? "not a member"}})</span>
+  </span>
+  <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
+  <span class="menu-spacer"></span>
   <ng-container *ngIf="mapping != null">
     <button
       (click)="undo()"
@@ -24,13 +30,7 @@
       </button>
     </span>
   </ng-container>
-  <span matTooltip="{{titleTooltip()}}">
-    Mapping<span *ngIf="mapping">:&nbsp;<span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
-    (you are {{projectRole?.toLowerCase() ?? "not a member"}})</span>
-  </span><mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
-  <span class="menu-spacer"></span>
-  <app-loggedin></app-loggedin>
-</mat-toolbar>
+</menu-banner>
 
 <mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
 

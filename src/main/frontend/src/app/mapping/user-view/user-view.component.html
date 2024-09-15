@@ -1,16 +1,12 @@
-<mat-toolbar>
-    <app-navigation></app-navigation>
-    <span>
-        Hi, {{user?.username ?? "?"}}!
-    </span>
-    <span class="menu-spacer"></span>
-    <app-loggedin></app-loggedin>
-</mat-toolbar>
+<menu-banner>
+    <!-- <mat-icon>person</mat-icon> -->
+    Hi, {{user?.username ?? "?"}}!
+</menu-banner>
 
 <div class="center-content">
     <div class="toolbox">
-        <mat-card *ngIf="user != null" appearance="outlined">
-            <mat-card-header>Change password</mat-card-header>
+        <mat-card *ngIf="user" appearance="outlined">
+            <mat-card-header><h4>Change password</h4></mat-card-header>
             <mat-card-content>
                 <mat-form-field subscriptSizing="dynamic" class="input-form">
                     <mat-label>Old password</mat-label>
@@ -23,8 +19,25 @@
                         <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                     </button>
                 </mat-form-field>
-                <button mat-raised-button (click)="changePassword(oldPassword.value, newPassword.value)"
-                    color="primary">Change</button>
+                <button mat-stroked-button (click)="changePassword(oldPassword.value, newPassword.value)">Change</button>
+            </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined">
+            <mat-card-header><h4>Account information</h4></mat-card-header>
+            <mat-card-content *ngIf="user != null">
+                <table>
+                    <tr><td>Username</td><td>{{user.username}}</td></tr>
+                    <tr><td>Email</td><td>{{user.email || "(unknown)"}}</td></tr>
+                </table>
+            </mat-card-content>
+        </mat-card>
+        <mat-card *ngIf="user" appearance="outlined">
+            <mat-card-header><h4>Logout</h4></mat-card-header>
+            <mat-card-content>
+                <button mat-stroked-button (click)="logout()" matTooltip="Logout" class="logout-button" type="button">
+                    Logout
+                    <mat-icon>logout</mat-icon>
+                </button>
             </mat-card-content>
         </mat-card>
     </div>

@@ -64,7 +64,6 @@ import { ReviewsComponent } from './reviews/reviews.component';
 import { NavigationComponent } from './navigation/navigation.component';
 import { ProjectsViewComponent } from './projects-view/projects-view.component';
 import { LoginFormComponent } from './login-form/login-form.component';
-import { LoggedinComponent } from './loggedin/loggedin.component';
 import { NewsViewComponent } from './news-view/news-view.component';
 import { WelcomeViewComponent } from './welcome-view/welcome-view.component';
 import { IndexerComponent } from './indexer/indexer.component';
@@ -80,6 +79,7 @@ import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
 import {MatExpansionModule} from '@angular/material/expansion';
+import { MenuBannerComponent } from './menu-banner/menu-banner.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -108,7 +108,6 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     NavigationComponent,
     ProjectsViewComponent,
     LoginFormComponent,
-    LoggedinComponent,
     NewsViewComponent,
     WelcomeViewComponent,
     IndexerComponent,
@@ -122,6 +121,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     UserViewComponent,
     UsersViewComponent,
     UsersTableComponent,
+    MenuBannerComponent,
   ],
   imports: [
     HttpClientModule,
