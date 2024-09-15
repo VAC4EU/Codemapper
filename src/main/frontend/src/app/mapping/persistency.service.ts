@@ -62,7 +62,7 @@ export function slugify(str : string) {
 }
 
 export function mappingInfoLink(mapping : MappingInfo) : string[] {
-  return ["/mapping", mapping.mappingShortkey, slugify(mapping.projectName), slugify(mapping.mappingName)]
+  return ["/mapping", slugify(mapping.projectName), slugify(mapping.mappingName), mapping.mappingShortkey]
 }
 
 @Injectable({

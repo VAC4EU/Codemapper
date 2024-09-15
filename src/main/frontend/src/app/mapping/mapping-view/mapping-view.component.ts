@@ -116,7 +116,8 @@ export class MappingViewComponent implements HasPendingChanges {
     } else {
       try {
         let info = await firstValueFrom(this.persistency.mappingInfo(this.mappingShortkey));
-        if (projectNameSlug != slugify(this.projectName) || mappingNameSlug != slugify(this.mappingName)) {
+        if (projectNameSlug != slugify(info.projectName) || mappingNameSlug != slugify(info.mappingName)) {
+          console.log("redirect", projectNameSlug, slugify(this.projectName), mappingNameSlug, slugify(this.mappingName));
           this.location.go(mappingInfoLink(info).join('/'));
         }
         this.setNames(info.projectName, info.mappingName);
