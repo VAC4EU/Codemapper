@@ -138,4 +138,10 @@ export class AuthService {
     body.set('newPassword', newPassword);
     return this.http.post<void>(this.url + '/change-password', body, urlEncodedOptions)
   }
+
+  changeEmail(newEmail : string) {
+    let body = new URLSearchParams();
+    body.set('email', newEmail);
+    return this.http.post<void>(this.url + '/change-email', body, urlEncodedOptions)
+  }
 }

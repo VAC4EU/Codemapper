@@ -78,7 +78,7 @@ import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
 import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
-import {MatExpansionModule} from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MenuBannerComponent } from './menu-banner/menu-banner.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {

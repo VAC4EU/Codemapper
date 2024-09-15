@@ -87,4 +87,22 @@ public class AuthentificationResource {
       throw e.asWebApplicationException();
     }
   }
+
+  @POST
+  @Path("change-email")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void changeEmail(
+      @FormParam("email") String email,
+      @Context User user) {
+    if (user == null) {
+      throw new UnauthorizedException();
+    }
+    try {
+      api.changeEmail(user.getUsername(), email);
+      user.setEmail(email); // update session
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw e.asWebApplicationException();
+    }
+  }
 }

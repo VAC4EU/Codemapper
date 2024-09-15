@@ -190,12 +190,36 @@ public class AuthentificationApi {
       int result = statement.executeUpdate();
       switch (result) {
         case 0:
-          throw CodeMapperException.user("Wrong current password");
+          throw CodeMapperException.user("Wrong current password or no such user");
         case 1:
           return;
         default:
           throw CodeMapperException.server(
               String.format("Too many rows (%d) updated for password change", result));
+      }
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot change password", e);
+    }
+  }
+
+  public void changeEmail(String username, String email)
+      throws CodeMapperException {
+    logger.info("Change password " + username);
+
+    String query = "UPDATE users SET email = ? WHERE username = ?";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, email);
+      statement.setString(2, username);
+      int result = statement.executeUpdate();
+      switch (result) {
+        case 0:
+          throw CodeMapperException.user("No such user");
+        case 1:
+          return;
+        default:
+          throw CodeMapperException.server(
+              String.format("Too many rows (%d) updated for email change", result));
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot change password", e);

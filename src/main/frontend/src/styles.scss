@@ -97,10 +97,19 @@ mat-icon.text-align {
 }
 
 mat-form-field {
-    margin-right: 1ex;
+    // margin-right: 1ex;
 }
 
 .column {
     display: flex !important;
     flex-direction: column;
+}
+
+.form-column {
+    display: flex !important;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 3ex;
 }

@@ -36,4 +36,14 @@ export class UserViewComponent {
       error: err => this.snackbar.open("Could not change password: " + err.error, "Ok", { duration: 2000 }),
     })
   }
+
+  changeEmail(newEmail : string) {
+    this.auth.changeEmail(newEmail).subscribe({
+      next: () => {
+        this.auth.reloadUser();
+        this.snackbar.open("Email changed", "Ok", { duration: 2000 })
+      },
+      error: err => this.snackbar.open("Could not change email: " + err.error, "Ok", { duration: 2000 }),
+    })
+  }
 }
