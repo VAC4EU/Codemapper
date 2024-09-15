@@ -250,7 +250,6 @@ public class CodeMapperResource {
   public Response getMappingCSV(
       @Context HttpServletRequest request,
       @Context User user,
-      @QueryParam("url") final String url0,
       @QueryParam("mapping") final String mappingShortkey,
       @QueryParam("includeDescendants") final boolean includeDescendants,
       @DefaultValue("-1") @QueryParam("version") Integer version) {
@@ -259,7 +258,7 @@ public class CodeMapperResource {
           AuthentificationApi.assertMappingProjectRolesImplies(
               user, mappingShortkey, ProjectPermission.Editor);
       logger.debug(String.format("Download mapping as CSV %s (%s)", mappingShortkey, user));
-      String url = url0 == null ? "(unknown URL)" : url0;
+      String url = CodeMapperApplication.getCodeMapperURL() + "/mapping/" + mappingShortkey;
       PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
       final MappingRevision revision =
           version == -1
@@ -267,11 +266,7 @@ public class CodeMapperResource {
               : persistencyApi.getRevision(info.mappingShortkey, version);
       String filename =
           String.format(
-              "%s - %s v%d.%s",
-              info.projectName,
-              info.mappingName,
-              revision.getVersion(),
-              WriteCsvApi.FILE_EXTENSION);
+              "%s v%d.%s", info.slugifyName(), revision.getVersion(), WriteCsvApi.FILE_EXTENSION);
       String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
       OutputStream output = new ByteArrayOutputStream();
       Mapping mapping = new Mapping();
@@ -314,11 +309,11 @@ public class CodeMapperResource {
       @Context HttpServletRequest request,
       @Context User user,
       @QueryParam("project") final String project,
-      @QueryParam("url") final String url,
       @QueryParam("mappings") final List<String> mappingShortkeys,
       @QueryParam("includeDescendants") final boolean includeDescendants) {
     boolean ignoreMappingFailures = false;
     logger.debug(String.format("Download project as CSV %s", project));
+    String url = CodeMapperApplication.getCodeMapperURL() + "/project/" + project;
     DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
     String formattedTime = ZonedDateTime.now(ZoneOffset.UTC).withNano(0).format(formatter);
     String filename = String.format("%s %s.%s", project, formattedTime, WriteCsvApi.FILE_EXTENSION);

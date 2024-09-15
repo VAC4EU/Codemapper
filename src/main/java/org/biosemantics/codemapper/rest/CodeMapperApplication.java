@@ -175,7 +175,7 @@ public class CodeMapperApplication extends ResourceConfig {
                 propertiesConfig.getProperty(DEFAULT_IGNORE_SEMANTIC_TYPES).split(",\\s*")));
     defaultIgnoreSemanticTypes.remove("");
 
-    String url = propertiesConfig.getProperty(CODEMAPPER_URL);
+    String url = properties.getProperty(CODEMAPPER_URL);
     String contactEmail = propertiesConfig.getProperty(CODEMAPPER_CONTACT_EMAIL);
     String projectVersion = propertiesConfig.getProperty(CODEMAPPER_PROJECT_VERSION);
     ServerInfo versionInfo =
@@ -210,6 +210,10 @@ public class CodeMapperApplication extends ResourceConfig {
 
     GeneralDescender umlsDescender = new UmlsDescender(umlsConnectionPool);
     descendersApi = new DescendantsApi(umlsDescender, nonUmls);
+  }
+
+  public static String getCodeMapperURL() {
+    return umlsApi.getServerInfo().getUrl();
   }
 
   public static DataSource getConnectionPool(String prefix) throws SQLException {

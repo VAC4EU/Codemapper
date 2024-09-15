@@ -52,7 +52,7 @@ export interface ProjectInfo {
   role : ProjectRole,
 }
 
-export function slugify(str : string) {
+function slugify(str : string) {
   return str
     .toLowerCase()
     .replace(/^\s+|\s+$/g, '')
@@ -61,8 +61,12 @@ export function slugify(str : string) {
     .replace(/-+/g, '-');
 }
 
-export function mappingInfoLink(mapping : MappingInfo) : string[] {
-  return ["/mapping", slugify(mapping.projectName), slugify(mapping.mappingName), mapping.mappingShortkey]
+export function slugifyMappingInfo(info : MappingInfo) : string {
+  return `${slugify(info.projectName)}-${slugify(info.mappingName)}-${info.mappingShortkey}`
+}
+
+export function mappingInfoLink(info : MappingInfo) : string[] {
+  return ["/mapping", slugifyMappingInfo(info)]
 }
 
 @Injectable({

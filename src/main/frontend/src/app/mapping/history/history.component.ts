@@ -48,7 +48,6 @@ export class HistoryComponent {
     url.searchParams.set('mapping', this.mappingShortkey);
     url.searchParams.set('version', "" + version);
     url.searchParams.set('includeDescendants', "true");
-    url.searchParams.set('url', window.location.href);
     return url;
   }
 }

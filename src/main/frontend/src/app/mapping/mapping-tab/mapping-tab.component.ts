@@ -54,7 +54,6 @@ export class MappingTabComponent {
     let url = new URL(this.api.downloadMappingUrl);
     url.searchParams.set('mapping', mappingShortkey);
     url.searchParams.set('includeDescendants', "" + includeDescendants);
-    url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');
   }
 }

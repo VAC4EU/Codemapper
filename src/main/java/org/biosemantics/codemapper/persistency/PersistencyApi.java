@@ -361,6 +361,22 @@ public class PersistencyApi {
     public String mappingName;
     public String mappingShortkey;
     public String projectName;
+
+    public String slugify() {
+      return String.format("%s-%s", slugifyName(), mappingShortkey);
+    }
+
+    public String slugifyName() {
+      return String.format("%s-%s", slugify(projectName), slugify(mappingName));
+    }
+
+    public static String slugify(String str) {
+      return str.toLowerCase()
+          .replaceAll("^s+|s+$", "")
+          .replaceAll("[_ ]", "-")
+          .replaceAll("[^a-z0-9-]", "")
+          .replaceAll("-+", "-");
+    }
   }
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {

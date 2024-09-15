@@ -202,8 +202,7 @@ public class AuthentificationApi {
     }
   }
 
-  public void changeEmail(String username, String email)
-      throws CodeMapperException {
+  public void changeEmail(String username, String email) throws CodeMapperException {
     logger.info("Change password " + username);
 
     String query = "UPDATE users SET email = ? WHERE username = ?";

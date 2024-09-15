@@ -91,9 +91,7 @@ public class AuthentificationResource {
   @POST
   @Path("change-email")
   @Produces(MediaType.APPLICATION_JSON)
-  public void changeEmail(
-      @FormParam("email") String email,
-      @Context User user) {
+  public void changeEmail(@FormParam("email") String email, @Context User user) {
     if (user == null) {
       throw new UnauthorizedException();
     }

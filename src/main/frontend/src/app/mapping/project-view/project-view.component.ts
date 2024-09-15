@@ -159,7 +159,6 @@ export class ProjectViewComponent {
       url.searchParams.append("mappings", mapping.mappingShortkey);
     }
     url.searchParams.set('includeDescendants', "" + includeDescendants);
-    url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');
   }
   addUserRole(username : string, role : ProjectRole) {

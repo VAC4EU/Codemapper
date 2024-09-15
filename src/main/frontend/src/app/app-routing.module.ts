@@ -58,7 +58,7 @@ const routes : Routes = [
     component: MappingViewComponent,
   },
   {
-    path: "mapping/:projectName/:mappingName/:shortkey",
+    path: "mapping/:name",
     canActivate: [authGuard],
     canDeactivate: [PendingChangesGuard],
     component: MappingViewComponent,
