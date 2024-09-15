@@ -52,7 +52,7 @@ export class MappingTabComponent {
 
   download(mappingShortkey : string, includeDescendants : boolean) {
     let url = new URL(this.api.downloadMappingUrl);
-    url.searchParams.set('mappingShortkey', mappingShortkey);
+    url.searchParams.set('mapping', mappingShortkey);
     url.searchParams.set('includeDescendants', "" + includeDescendants);
     url.searchParams.set('url', window.location.href);
     window.open(url, '_blank');

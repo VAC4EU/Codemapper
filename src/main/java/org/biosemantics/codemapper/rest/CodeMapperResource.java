@@ -250,15 +250,16 @@ public class CodeMapperResource {
   public Response getMappingCSV(
       @Context HttpServletRequest request,
       @Context User user,
-      @QueryParam("mappingShortkey") final String mappingShortkey,
-      @DefaultValue("-1") @QueryParam("version") Integer version,
-      @QueryParam("url") final String url,
-      @QueryParam("includeDescendants") final boolean includeDescendants) {
+      @QueryParam("url") final String url0,
+      @QueryParam("mapping") final String mappingShortkey,
+      @QueryParam("includeDescendants") final boolean includeDescendants,
+      @DefaultValue("-1") @QueryParam("version") Integer version) {
     try {
       MappingInfo info =
           AuthentificationApi.assertMappingProjectRolesImplies(
               user, mappingShortkey, ProjectPermission.Editor);
       logger.debug(String.format("Download mapping as CSV %s (%s)", mappingShortkey, user));
+      String url = url0 == null ? "(unknown URL)" : url0;
       PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
       final MappingRevision revision =
           version == -1
