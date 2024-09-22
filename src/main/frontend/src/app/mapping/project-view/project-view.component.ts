@@ -74,6 +74,7 @@ export class ProjectViewComponent {
         this.allUsers.sort(usernameCompare);
       });
       this.reloadUsersRoles();
+      this.selected.clear();
     });
   }
   async reloadUsersRoles() {
@@ -92,6 +93,9 @@ export class ProjectViewComponent {
     } else {
       this.mappings.forEach(row => this.selected.select(row));
     }
+  }
+  allSelectedHaveRevision() {
+    return this.selected.selected.every(i => i.version != null)
   }
   async newMapping(projectName : string, mappingName : string, umlsVersion : string) {
     if (!projectName || !mappingName) {

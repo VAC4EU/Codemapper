@@ -361,6 +361,7 @@ public class PersistencyApi {
     public String mappingName;
     public String mappingShortkey;
     public String projectName;
+    public String version;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -502,10 +503,12 @@ public class PersistencyApi {
 
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.shortkey, cd.name "
+        "SELECT cd.shortkey, cd.name, r.version "
             + "FROM projects p "
             + "INNER JOIN case_definitions cd "
             + "ON cd.project_id = p.id "
+            + "LEFT JOIN case_definition_latest_revision r "
+            + "ON r.case_definition_id = cd.id "
             + "WHERE p.name = ?";
 
     try (Connection connection = connectionPool.getConnection();
@@ -517,6 +520,7 @@ public class PersistencyApi {
         MappingInfo mapping = new MappingInfo();
         mapping.mappingShortkey = set.getString(1);
         mapping.mappingName = set.getString(2);
+        mapping.version = set.getString(3);
         mapping.projectName = project;
         mappings.add(mapping);
       }

@@ -126,6 +126,18 @@ create table case_definition_revisions (
   constraint case_definition_version UNIQUE (case_definition_id, version)
 );
 
+drop view if exists case_definition_latest_revision;
+create view case_definition_latest_revision
+as
+  select rev.*
+  from case_definition_revisions as rev
+  join (
+    select case_definition_id, max(version) as version
+    from case_definition_revisions
+    group by case_definition_id
+  ) as latest
+  on rev.case_definition_id = latest.case_definition_id and rev.version = latest.version;
+
 drop table if exists cached_descendants;
 create table cached_descendants (
   id int generated always as identity,

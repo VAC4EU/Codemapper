@@ -36,9 +36,9 @@
               <button mat-raised-button [disabled]="role != 'Owner' || selected.selected.length != 1"
                 (click)="openDialog(renameDialog)">Rename</button>
             </span>
-            <span matTooltip="Download all mappings of the project">
+            <span matTooltip="Download selected mappings (only mappings with revisions)">
               <button mat-raised-button (click)="openDialog(downloadDialog)"
-                [disabled]="selected.selected.length == 0 || !(role == 'Owner' || role == 'Editor')">
+                [disabled]="!(role == 'Owner' || role == 'Editor') || selected.selected.length == 0 || !allSelectedHaveRevision()">
                 Download <mat-icon>download</mat-icon>
               </button>
             </span>
@@ -68,7 +68,9 @@
           <td mat-cell *matCellDef="let mapping">
             <a [routerLink]="mappingLink(mapping)" mat-menu-item>
               {{mapping.mappingName}}
+              <mat-icon *ngIf="mapping.version == null" class="revision-icon" matTooltip="Mapping has no revision yet, please open, review and save">warning</mat-icon>
             </a>
+            
           </td>
         </ng-container>
       </table>

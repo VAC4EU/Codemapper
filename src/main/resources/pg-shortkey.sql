@@ -10,18 +10,24 @@ EXCEPTION
 END $$;
 
 CREATE OR REPLACE FUNCTION shortkey_generate()
-RETURNS SHORTKEY as $$
+RETURNS SHORTKEY AS $$
 DECLARE
-  gkey TEXT;
+  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  n INTEGER := 11;
 BEGIN
-  -- 8 bytes gives a collision p = .5 after 5.1 x 10^9 values
-  gkey := encode(gen_random_bytes(8), 'base64');
-  gkey := lower(gkey);
-  gkey := replace(gkey, '/', '-');  -- url safe replacement
-  gkey := replace(gkey, '+', '-');  -- url safe replacement
-  RETURN rtrim(gkey, '=');          -- cut off padding
-END
-$$ language 'plpgsql';
+  IF n < 0 THEN
+    RAISE EXCEPTION 'Length must be greater than zero';
+  END IF;
+
+  RETURN array_to_string(
+    ARRAY(
+      SELECT substr(chars, ceil(random() * char_length(chars))::int, 1)
+      FROM generate_series(1, n)
+    ),
+    ''
+  );
+END;
+$$ LANGUAGE plpgsql VOLATILE;
 
 CREATE OR REPLACE FUNCTION shortkey_trigger()
 RETURNS TRIGGER AS $$

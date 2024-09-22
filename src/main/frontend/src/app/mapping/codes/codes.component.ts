@@ -117,7 +117,7 @@ export class CodesComponent {
     let options = {
       data: {
         tag,
-        heading: `code${codes.length == 1 ? '' : 's'} ${codes.map(c => c.term).join(', ')}`,
+        heading: `${codes.length} code${codes.length == 1 ? '' : 's'}`,
         allowedTags: this.mapping.meta.allowedTags,
       },
       width: '40em',

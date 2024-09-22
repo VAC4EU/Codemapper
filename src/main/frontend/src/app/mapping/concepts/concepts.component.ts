@@ -187,7 +187,7 @@ export class ConceptsComponent implements OnInit {
     let codeConcepts = {
       data: {
         tag: tag,
-        heading: `concept${concepts.length == 1 ? '' : 's'} ${concepts.map(c => c.name).join(', ')}`,
+        heading: `${concepts.length} concept${concepts.length == 1 ? '' : 's'}`,
         allowedTags: this.mapping.meta.allowedTags
       },
       width: '40em',

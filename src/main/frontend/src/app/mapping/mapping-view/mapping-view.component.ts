@@ -349,6 +349,7 @@ export class MappingViewComponent implements HasPendingChanges {
                   projectName: this.projectName,
                   mappingName: this.mappingName,
                   mappingShortkey,
+                  version: null,
                 })
               );
             }

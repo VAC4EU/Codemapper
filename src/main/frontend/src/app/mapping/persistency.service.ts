@@ -45,6 +45,7 @@ export interface MappingInfo {
   projectName : string;
   mappingName : string;
   mappingShortkey : string;
+  version : string | null;
 }
 
 export interface ProjectInfo {

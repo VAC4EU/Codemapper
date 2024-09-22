@@ -4,6 +4,7 @@
 <menu-banner>
   <!-- <mat-icon>notifications</mat-icon> -->
   CodeMapper: News
+  <login-form onTheRight></login-form>
 </menu-banner>
 
 <section class="center-content">
