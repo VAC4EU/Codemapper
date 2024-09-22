@@ -25,9 +25,6 @@
   <profiles>
     <profile>
       <id>dev</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <code-mapper.properties>code-mapper-dev.properties</code-mapper.properties>
         <final.name>codemapper-dev</final.name>
