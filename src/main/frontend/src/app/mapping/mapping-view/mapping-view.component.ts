@@ -179,14 +179,18 @@ export class MappingViewComponent implements HasPendingChanges {
                 panelClass: 'remap-snackbar',
               });
             } catch (err) {
+              let msg = "";
               if ((err as HttpErrorResponse).status != 404) {
                 console.error('error while loading legacy mapping', err);
+                msg = ` (${(err as any).error})`;
               }
-              this.snackBar.open('Could not load mapping', 'Ok');
+              this.snackBar.open("Could not load mapping" + msg, 'Ok');
+              return;
             }
           } else {
             console.error('Error while loading latest revision', err);
             this.snackBar.open('Could not load mapping', 'Ok');
+            return;
           }
         }
         this.mapping!.cleanupRecacheCheck();

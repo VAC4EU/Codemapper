@@ -116,8 +116,9 @@ public class PersistencyResource {
       AuthentificationApi.assertMappingProjectRolesImplies(
           user, mappingShortkey, ProjectPermission.Commentator);
       String stateJson = api.getCaseDefinition(mappingShortkey);
-      if (stateJson != null && !stateJson.isEmpty()) return stateJson;
-      else throw new NotFoundException();
+      if (stateJson == null) throw new NotFoundException();
+      if (stateJson.isEmpty()) throw new InternalServerErrorException("invalid mapping state");
+      return stateJson;
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition");
       e.printStackTrace();
