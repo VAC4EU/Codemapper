@@ -1,100 +1,119 @@
--- see UPGRADE-UMLS.md in the root directory on usage
 
-DROP TABLE IF EXISTS mrdef;
-CREATE TABLE mrdef (
-  cui char(8) NOT NULL,
-  aui varchar(9) NOT NULL,
-  atui varchar(11) NOT NULL,
-  satui varchar(50),
-  sab varchar(40) NOT NULL,
-  def text NOT NULL,
-  suppress char(1) NOT NULL,
-  cvf bigint,
-  dummy char(1)
+-- from https://www.nlm.nih.gov/research/umls/implementation_resources/community/dbloadscripts/pgsql_all_tables_sql.zip
+
+-- sed 's|@META@|/path/to/umls/YEAR/META|' umls-tables.sql|psql umlsYEAR
+
+DROP TABLE MRCONSO;
+CREATE TABLE MRCONSO (
+	CUI	char(8) NOT NULL,
+	LAT	char(3) NOT NULL,
+	TS	char(1) NOT NULL,
+	LUI	char(9) NOT NULL,
+	STT	varchar(3) NOT NULL,
+	SUI	char(9) NOT NULL,
+	ISPREF	char(1) NOT NULL,
+	AUI	varchar(9) NOT NULL,
+	SAUI	varchar(50),
+	SCUI	varchar(100),
+	SDUI	varchar(50),
+	SAB	varchar(20) NOT NULL,
+	TTY	varchar(20) NOT NULL,
+	CODE	varchar(100) NOT NULL,
+	STR	text NOT NULL,
+	SRL	int NOT NULL,
+	SUPPRESS char(1) NOT NULL,
+	CVF	int,
+	dummy	char(1)
 );
-DROP TABLE IF EXISTS mrsab;
-CREATE TABLE mrsab (
-  vcui char(8),
-  rcui char(8),
-  vsab varchar(40) NOT NULL,
-  rsab varchar(40) NOT NULL,
-  son text NOT NULL,
-  sf varchar(40) NOT NULL,
-  sver varchar(40),
-  vstart char(8),
-  vend char(8),
-  imeta varchar(10) NOT NULL,
-  rmeta varchar(10),
-  slc text,
-  scc text,
-  srl bigint NOT NULL,
-  tfr bigint,
-  cfr bigint,
-  cxty varchar(50),
-  ttyl varchar(400),
-  atnl text,
-  lat varchar(3),
-  cenc varchar(40) NOT NULL,
-  curver char(1) NOT NULL,
-  sabin char(1) NOT NULL,
-  ssn text NOT NULL,
-  scit text NOT NULL,
-  dummy char(1)
+COPY MRCONSO from '@META@/MRCONSO.RRF' with delimiter as '|' null as '';
+alter table mrconso drop column dummy;
+
+DROP TABLE MRDEF;
+CREATE TABLE MRDEF (
+	CUI	char(8) NOT NULL,
+	AUI	varchar(9) NOT NULL,
+	ATUI	varchar(11) NOT NULL,
+	SATUI	varchar(50),
+	SAB	varchar(20) NOT NULL,
+	DEF	text NOT NULL,
+	SUPPRESS	char(1) NOT NULL,
+	CVF	int,
+	dummy char(1)
 );
-DROP TABLE IF EXISTS mrsty;
-CREATE TABLE mrsty (
-  cui char(8) NOT NULL,
-  tui varchar(4) NOT NULL,
-  stn varchar(100), --  NOT NULL
-  sty varchar(50),  --  NOT NULL
-  atui varchar(11), --  NOT NULL
-  cvf bigint,
-  dummy char(1)
+COPY MRDEF from '@META@/MRDEF.RRF' with delimiter as '|' null as '';
+alter table mrdef drop column dummy;
+
+DROP TABLE MRHIER;
+CREATE TABLE MRHIER (
+	CUI	char(8) NOT NULL,
+	AUI	varchar(9) NOT NULL,
+	CXN	int NOT NULL,
+	PAUI	varchar(9),
+	SAB	varchar(20) NOT NULL,
+	RELA	varchar(100),
+	PTR	text,
+	HCD	varchar(51),
+	CVF	int,
+	dummy char(1)
 );
-DROP TABLE IF EXISTS mrrel;
-CREATE TABLE mrrel (
-  cui1 char(8), --  NOT NULL
-  aui1 varchar(9),
-  stype1 varchar(50), --  NOT NULL
-  rel varchar(4) NOT NULL,
-  cui2 character(8) NOT NULL,
-  aui2 varchar(9),
-  stype2 varchar(50), --  NOT NULL
-  rela varchar(100),
-  rui varchar(10) NOT NULL,
-  srui varchar(50),
-  sab varchar(40), --  NOT NULL
-  sl varchar(40), --  NOT NULL
-  rg varchar(10),
-  dir varchar(1),
-  suppress char(1) NOT NULL,
-  cvf bigint,
-  dummy char(1)
+COPY MRHIER from '@META@/MRHIER.RRF' with delimiter as '|' null as '';
+ALTER TABLE mrhier DROP COLUMN dummy;
+
+DROP TABLE MRSAB;
+CREATE TABLE MRSAB (
+	VCUI	char(8),
+	RCUI	char(8),
+	VSAB	varchar(24) NOT NULL,
+	RSAB	varchar(20) NOT NULL,
+	SON	text NOT NULL,
+	SF	varchar(20) NOT NULL,
+	SVER	varchar(20),
+	VSTART	char(10),
+	VEND	char(10),
+	IMETA	varchar(10) NOT NULL,
+	RMETA	varchar(10),
+	SLC	text,
+	SCC	text,
+	SRL	int NOT NULL,
+	TFR	int,
+	CFR	int,
+	CXTY	varchar(50),
+	TTYL	varchar(200),
+	ATNL	text,
+	LAT	char(3),
+	CENC	varchar(20) NOT NULL,
+	CURVER	char(1) NOT NULL,
+	SABIN	char(1) NOT NULL,
+	SSN	text NOT NULL,
+	SCIT	text NOT NULL,
+	dummy char(1)
 );
-DROP TABLE IF EXISTS mrconso;
-CREATE TABLE mrconso (
-  cui      char(8) NOT NULL,
-  lat      char(3) NOT NULL,
-  ts       char(1) NOT NULL,
-  lui      char(9) NOT NULL,
-  stt      varchar(3) NOT NULL,
-  sui      char(9) NOT NULL,
-  ispref   char(1) NOT NULL,
-  aui      varchar(9) NOT NULL,
-  saui     text,
-  scui     text,
-  sdui     text,
-  sab      text NOT NULL,
-  tty      text NOT NULL,
-  code     text NOT NULL,
-  str      text NOT NULL,
-  srl      int NOT NULL,
-  suppress char(1) NOT NULL,
-  cvf      int,
-  dummy    char(1)
+COPY MRSAB from '@META@/MRSAB.RRF' with delimiter as '|' null as '';
+alter table mrsab drop column dummy;
+
+DROP TABLE IF EXISTS MRSTY;
+CREATE TABLE MRSTY (
+	CUI	char(8) NOT NULL,
+	TUI	char(4) NOT NULL,
+	STN	varchar(100) NOT NULL,
+	STY	varchar(50) NOT NULL,
+	ATUI	varchar(11) NOT NULL,
+	CVF	int,
+	dummy char(1)
 );
-drop table if exists transitiveclosure;
-create table transitiveclosure (
-sup char(9) not null,
-sub char(9) not null
+COPY MRSTY from '@META@/MRSTY.RRF' with delimiter as '|' null as '';
+alter table mrsty drop column dummy;
+
+DROP TABLE IF EXISTS MRCUI;
+CREATE TABLE MRCUI (
+	CUI1	char(8) NOT NULL,
+	VER	varchar(10) NOT NULL,
+	REL	varchar(4) NOT NULL,
+	RELA	varchar(100),
+	MAPREASON	text,
+	CUI2	char(8),
+	MAPIN	char(1),
+	dummy char(1)
 );
+copy MRCUI from '@META@/MRCUI.RRF' with delimiter as '|' null as '';
+alter table mrcui drop column dummy;

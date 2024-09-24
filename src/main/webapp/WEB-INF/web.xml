@@ -11,49 +11,6 @@ id="CodeMapper" version="3.0">
       <max-age>31536000</max-age>
     </cookie-config>
   </session-config>
-  <filter>
-    <filter-name>noCache</filter-name>
-    <filter-class>com.samaxes.filter.NoCacheFilter</filter-class>
-  </filter>
-  <filter>
-	<filter-name>javamelody</filter-name>
-	<filter-class>net.bull.javamelody.MonitoringFilter</filter-class>
-	<init-param>
-		<param-name>authorized-users</param-name>
-		<param-value>b.becker:Codemapper2020</param-value>
-	</init-param>
-  </filter>
-  <filter-mapping>
-    <filter-name>noCache</filter-name>
-    <url-pattern>/index.html</url-pattern>
-    <url-pattern>/style.css</url-pattern>
-    <url-pattern>/js/*</url-pattern>
-    <url-pattern>/partials/*</url-pattern>
-  </filter-mapping>
-  <filter>
-    <filter-name>cors</filter-name>
-    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
-    <init-param>
-        <param-name>cors.allowed.origins</param-name>
-        <param-value>https://vac4eu.org,https://app.vac4eu.org,http://vac4euorgdev.wpengine.com,https://vac4euorgdev.wpengine.com</param-value>
-    </init-param>
-    <init-param>
-        <param-name>cors.allowed.methods</param-name>
-        <param-value>GET,POST,HEAD,OPTIONS,PUT</param-value>
-    </init-param>
-    <init-param>
-        <param-name>cors.allowed.headers</param-name>
-        <param-value>Content-Type,X-Requested-With,Accept,Accept-Encoding,Accept-Language,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Connection,Host,authorization</param-value>
-    </init-param>
-    <init-param>
-        <param-name>cors.exposed.headers</param-name>
-        <param-value>Access-Control-Allow-Origin,Access-Control-Allow-Credentials</param-value>
-    </init-param>
-  </filter>
-  <filter-mapping>
-    <filter-name>cors</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
   <welcome-file-list>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>

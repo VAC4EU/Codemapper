@@ -14,3 +14,26 @@ WebContent
 /code-mapper-production.properties
 /code-mapper-dev.properties
 /src/main/resources/code-mapper.properties
+/ui-2023/dist-ui-2023-testing/
+/code-mapper-testing.properties
+/non-umls-vocabularies/mrconso.csv
+/AESI-import/AESI-dedup/
+/AESI-import/AESI-final/
+/AESI-import/AESI-norm/
+/AESI-import/AESI & Covariate definition forms & Algorithms/
+/AESI-import/AESI
+/non-umls-vocabularies/ICD10DA/ICD10DA-codes.csv
+/non-umls-vocabularies/ICD10DA/ICD10DA.csv
+/non-umls-vocabularies/ICD10DA/ICD10DA_*.csv
+/non-umls-vocabularies/ICD10DA/SKSComplete.txt
+/non-umls-vocabularies/MEDCODEID/MEDCODEID-codes.csv
+/non-umls-vocabularies/MEDCODEID/MEDCODEID.csv
+/non-umls-vocabularies/MEDCODEID/MEDCODEID_*.csv
+/non-umls-vocabularies/RCD2/RCD2-codes.csv
+/non-umls-vocabularies/RCD2/RCD2.csv
+/non-umls-vocabularies/RCD2/RCD2_*.csv
+/non-umls-vocabularies/TEST/TESTold.csv
+/non-umls-vocabularies/TEST/TEST_*.csv
+/non-umls-vocabularies/TEST/TESTold_*.csv
+/non-umls-vocabularies/export/*.csv
+/AESI-import/table.csv

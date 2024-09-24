@@ -1,0 +1,9 @@
+<h1 mat-dialog-title>Standard vocabularies</h1>
+<div mat-dialog-content>
+  <vocabularies-table #table [vocabularies]="data.vocabularies" [showFilter]="true">
+  </vocabularies-table>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button [mat-dialog-close]="table.selection.selected" color="primary" cdkFocusInitial>Add selected ({{table.selection.selected.length}})</button>
+</div>

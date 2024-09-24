@@ -1,0 +1,82 @@
+.reviews {
+    padding: 0.5em;
+}
+.num-new-messages {
+    font-weight: bold;
+}
+.new-message {
+    font-weight: bold;
+}
+.message {
+    margin-top: .2em;
+}
+.topic.new, .post-message {
+  // min-width: 150px;
+  // max-width: 500px;
+  // display: flex;
+  // flex-direction: row;
+  // align-items: flex-start;
+  // gap: 1ex;
+}
+.post-message {
+    display: grid;
+}
+.post-message > mat-form-field, .topic.new > div > mat-form-field {
+    // width: 100%;
+}
+.topic-heading {
+    font-weight: normal;
+    margin: .2em .2em .2em .2em;
+    cursor: pointer;
+}
+.topic-heading-heading {
+    text-decoration: underline;
+}
+textarea.review-message:focus, textarea.review-message.filled {
+    height: 6em;
+}
+.topic {
+    padding: .5em;
+    // background: #dfdfdf;
+    // border: 1px solid #9a9996;
+}
+.topic.new {
+    /* 	margin-top: 0; */
+}
+.topic.existing {
+    margin-bottom: 2em;
+}
+.resolved h3 {
+    opacity: 0.55;
+}
+.messages {
+    margin: 0 0 0 0;
+}
+.review-message {
+    // vertical-align: top;
+    // margin-top: .2ex;
+}
+.message-content.newline {
+    display: block;
+}
+.message-content {
+    white-space: pre-wrap;
+    width: 100%;
+    max-width: 55em;
+}
+.message-author {
+    font-style: italic;
+}
+// .post-message > *, .topic.new > * {
+//     display: block;
+//     margin: 3px;
+// }
+
+.example-topic {
+    font-family:monospace;
+}
+
+.edit-button {
+    font-size: medium;
+    align-content: end;
+}

@@ -1,0 +1,33 @@
+<h1 mat-dialog-title>Custom code</h1>
+<div mat-dialog-content class="form-fields">
+  <mat-form-field>
+    <mat-label>Code*</mat-label>
+    <input
+      [(ngModel)]="data.code.id"
+      [readonly]="!data.idEditable"
+      matInput>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Term*</mat-label>
+    <input matInput [(ngModel)]="data.code.term">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Concept*</mat-label>
+    <mat-select [(ngModel)]="data.code.concept">
+      <mat-option *ngFor="let concept of data.concepts" value={{concept.id}}>
+        {{concept.name}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button
+    [disabled]="!isValid()"
+    [mat-dialog-close]="data.code"
+    mat-raised-button
+    color="primary"
+    cdkFocusInitial>
+    {{data.operation}}
+  </button>
+</div>

@@ -1,0 +1,19 @@
+.navigation-button > mat-icon.marker {
+    display: none;
+    margin-right: 0;
+}
+
+.navigation-button.active {
+    text-decoration: underline;
+}
+
+mat-icon.list {
+    margin-right: 4px;
+}
+
+.project-link {
+}
+
+ul.projects {
+    margin-top: 0;
+}
