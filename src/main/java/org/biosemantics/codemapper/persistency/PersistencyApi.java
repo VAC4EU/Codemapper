@@ -394,10 +394,10 @@ public class PersistencyApi {
       return null;
     }
 
-    public String abbr() {
+    public String withoutDefinition() {
       ParsedMappingName parsed = parseName();
       if (parsed != null) {
-        return parsed.abbreviation;
+        return parsed.withoutDefinition();
       } else {
         return mappingName;
       }

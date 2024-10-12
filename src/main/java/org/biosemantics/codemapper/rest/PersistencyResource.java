@@ -83,8 +83,7 @@ public class PersistencyResource {
       @Context HttpServletRequest request,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(
-          user, projectName, ProjectPermission.Commentator);
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       return api.getUserRoles(projectName);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -99,7 +98,7 @@ public class PersistencyResource {
   public List<MappingInfo> getCaseDefinitionNames(
       @PathParam("project") String project, @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Commentator);
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer);
       return api.getMappingInfos(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
@@ -115,7 +114,7 @@ public class PersistencyResource {
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       String stateJson = api.getCaseDefinition(mappingShortkey);
       if (stateJson == null) throw new NotFoundException();
       if (stateJson.isEmpty()) throw new InternalServerErrorException("invalid mapping state");
@@ -134,7 +133,7 @@ public class PersistencyResource {
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     try {
       return AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -148,8 +147,7 @@ public class PersistencyResource {
       @PathParam("mappingName") String mappingName,
       @Context User user) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(
-          user, projectName, ProjectPermission.Commentator);
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       return api.getMappingInfoByOldName(projectName, mappingName);
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -165,7 +163,7 @@ public class PersistencyResource {
     logger.info(String.format("Get latest revision %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       MappingRevision mappingJson = api.getLatestRevision(mappingShortkey);
       if (mappingJson != null) return mappingJson;
       else throw new NotFoundException();
@@ -185,7 +183,7 @@ public class PersistencyResource {
 
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       return api.getRevisions(mappingShortkey);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition revisions");

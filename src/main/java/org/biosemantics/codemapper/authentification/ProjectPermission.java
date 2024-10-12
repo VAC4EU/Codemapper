@@ -21,7 +21,7 @@ package org.biosemantics.codemapper.authentification;
 public enum ProjectPermission {
   Owner,
   Editor,
-  Commentator;
+  Reviewer;
 
   public static ProjectPermission fromName(String s) {
     switch (s) {
@@ -29,8 +29,8 @@ public enum ProjectPermission {
         return Owner;
       case "Editor":
         return Editor;
-      case "Commentator":
-        return Commentator;
+      case "Reviewer":
+        return Reviewer;
       default:
         return null;
     }
@@ -42,8 +42,8 @@ public enum ProjectPermission {
         return Owner;
       case "E":
         return Editor;
-      case "C":
-        return Commentator;
+      case "R":
+        return Reviewer;
       default:
         return null;
     }
@@ -51,8 +51,8 @@ public enum ProjectPermission {
 
   public String toChar() {
     switch (this) {
-      case Commentator:
-        return "C";
+      case Reviewer:
+        return "R";
       case Editor:
         return "E";
       case Owner:
@@ -65,11 +65,11 @@ public enum ProjectPermission {
   public boolean implies(ProjectPermission perm) {
     switch (this) {
       case Owner:
-        return perm.equals(Owner) || perm.equals(Editor) || perm.equals(Commentator);
+        return perm.equals(Owner) || perm.equals(Editor) || perm.equals(Reviewer);
       case Editor:
-        return perm.equals(Editor) || perm.equals(Commentator);
-      case Commentator:
-        return perm.equals(Commentator);
+        return perm.equals(Editor) || perm.equals(Reviewer);
+      case Reviewer:
+        return perm.equals(Reviewer);
     }
     return false;
   }

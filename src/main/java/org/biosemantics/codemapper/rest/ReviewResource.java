@@ -54,7 +54,7 @@ public class ReviewResource {
       @PathParam("mappingShortkey") String mappingShortkey) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       return CodeMapperApplication.getReviewApi().getAll(mappingShortkey, user.getUsername());
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -75,7 +75,7 @@ public class ReviewResource {
       @FormParam("heading") String heading) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       return CodeMapperApplication.getReviewApi()
           .newTopic(mappingShortkey, cui, sab, code, heading, user.getUsername(), null);
     } catch (CodeMapperException e) {
@@ -95,7 +95,7 @@ public class ReviewResource {
       @FormParam("content") String content) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
@@ -123,7 +123,7 @@ public class ReviewResource {
       @FormParam("content") String content) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
@@ -157,7 +157,7 @@ public class ReviewResource {
           CodeMapperApplication.getPersistencyApi().getProjectPermissions(user.getUsername());
       ProjectPermission perm = permissions.get(mapping.projectName);
       String createdBy = CodeMapperApplication.getReviewApi().getTopicCreatedBy(topicId);
-      if (!perm.implies(ProjectPermission.Commentator)
+      if (!perm.implies(ProjectPermission.Reviewer)
           && createdBy != null
           && !user.getUsername().equals(createdBy)) {
         throw new ForbiddenException();
@@ -180,7 +180,7 @@ public class ReviewResource {
       @PathParam("topicId") int topicId) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
@@ -202,7 +202,7 @@ public class ReviewResource {
       @FormParam("allTopics") String allTopicsJson) {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Commentator);
+          user, mappingShortkey, ProjectPermission.Reviewer);
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       AllTopics allTopics = mapper.readValue(allTopicsJson, AllTopics.class);

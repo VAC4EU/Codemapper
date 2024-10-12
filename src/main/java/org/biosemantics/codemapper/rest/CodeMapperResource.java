@@ -257,8 +257,7 @@ public class CodeMapperResource {
       @QueryParam("includeDescendants") final boolean includeDescendants,
       @QueryParam("compatibilityFormat") final boolean compatibilityFormat) {
     try {
-      AuthentificationApi.assertProjectRolesImplies(
-          user, projectName, ProjectPermission.Commentator);
+      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       logger.debug(String.format("Download code lists as CSV %s", projectName));
       OutputStream output = new ByteArrayOutputStream();
       List<MappingConfig> mappingConfigs = new LinkedList<>();
@@ -283,13 +282,12 @@ public class CodeMapperResource {
       }
       String mappingStr;
       if (mappings.size() == 1) {
-        mappingStr = mappings.get(0).info.abbr();
+        mappingStr = mappings.get(0).info.withoutDefinition();
       } else {
         mappingStr = mappings.size() + " mappings";
       }
       String filename =
-          String.format(
-              "CodeMapper %s - %s.%s", projectName, mappingStr, WriteCsvApi.FILE_EXTENSION);
+          String.format("%s - %s.%s", projectName, mappingStr, WriteCsvApi.FILE_EXTENSION);
       String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
       return Response.ok()
           .header("Content-Disposition", contentDisposition)

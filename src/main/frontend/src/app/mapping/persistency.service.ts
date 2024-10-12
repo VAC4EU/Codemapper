@@ -27,7 +27,7 @@ import { User } from './auth.service';
 export enum ProjectRole {
   Owner = "Owner",
   Editor = "Editor",
-  Commentator = "Commentator"
+  Reviewer = "Reviewer"
 }
 
 export function roleAtLeast(have : ProjectRole | null, need : ProjectRole) : boolean {
@@ -39,8 +39,8 @@ export function roleAtLeast(have : ProjectRole | null, need : ProjectRole) : boo
         return have == ProjectRole.Owner;
       case ProjectRole.Editor:
         return have == ProjectRole.Owner || have == ProjectRole.Editor;
-      case ProjectRole.Commentator:
-        return have == ProjectRole.Owner || have == ProjectRole.Editor || have == ProjectRole.Commentator;
+      case ProjectRole.Reviewer:
+        return have == ProjectRole.Owner || have == ProjectRole.Editor || have == ProjectRole.Reviewer;
     }
   }
 }
@@ -50,7 +50,7 @@ export function userCanEdit(role : ProjectRole | null) : boolean {
 }
 
 export function userCanDownload(role : ProjectRole | null) : boolean {
-  return roleAtLeast(role, ProjectRole.Commentator)
+  return roleAtLeast(role, ProjectRole.Reviewer)
 }
 
 export function userCanCreate(role : ProjectRole | null) : boolean {
