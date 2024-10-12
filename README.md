@@ -105,20 +105,3 @@ databases can be created using the script
 
 Access to the external service Snowstorm and UTS are configured through the
 `.properties` file.
-
-## Management
-
-CodeMapper includes a Django web application to administer CodeMapper projects and users (see folder `codemapper_manager/`).
-
-The Python script [src/main/tools/manage.py](src/main/tools/manage.py) is used for
-managing a running CodeMapper instance. It allows to
-
-- Create users
-- Create projects
-- Assign users to projects
-- Copd and move mappings
-
-Use `./manage.py --help` for a full description of functionality and options.
-
-Several other scripts are available for post-processing mappings. Please refer to the
-[src/main/tools/README.md](src/main/tools/README.md) for details.

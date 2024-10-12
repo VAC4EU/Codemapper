@@ -253,7 +253,7 @@ public class CodeMapperResource {
       @Context HttpServletRequest request,
       @Context User user,
       @QueryParam("project") final String projectName,
-      @QueryParam("mappingConfigs") final List<String> rawMappingConfigs,
+      @QueryParam("mappings") final List<String> rawMappingConfigs,
       @QueryParam("includeDescendants") final boolean includeDescendants,
       @QueryParam("compatibilityFormat") final boolean compatibilityFormat) {
     try {

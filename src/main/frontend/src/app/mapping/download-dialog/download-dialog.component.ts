@@ -22,7 +22,7 @@ export class DownloadDialogComponent {
     let url = new URL(this.api.codeListsUrl);
     url.searchParams.set('project', this.data.projectName);
     for (let mappingConfig of this.data.mappingConfigs) {
-      url.searchParams.append('mappingConfigs', mappingConfig);
+      url.searchParams.append('mappings', mappingConfig);
     }
     url.searchParams.set('includeDescendants', '' + includeDescendants);
     url.searchParams.set('compatibilityFormat', '' + compatibilityFormat);
