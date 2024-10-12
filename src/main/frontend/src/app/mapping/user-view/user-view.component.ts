@@ -21,15 +21,6 @@ export class UserViewComponent {
     this.auth.userSubject.subscribe((user) => this.user = user);
   }
 
-  logout() {
-    if (confirm("Really want to logout?")) {
-      this.auth.logout()
-        .subscribe(() => {
-          this.router.navigate(['login']);
-        });
-    }
-  }
-
   changePassword(oldPassword : string, newPassword : string) {
     this.auth.changePassword(oldPassword, newPassword).subscribe({
       next: () => this.snackbar.open("Password changed", "Ok", { duration: 2000 }),

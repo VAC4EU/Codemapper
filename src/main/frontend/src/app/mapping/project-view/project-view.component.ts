@@ -22,7 +22,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
 import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
-import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, UserRole } from '../persistency.service';
+import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, UserRole, roleAtLeast as roleAtLeast, userCanDownload, userCanRename, userCanCreate } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { ApiService } from '../api.service';
 import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
@@ -50,7 +50,7 @@ export class ProjectViewComponent {
   selected = new SelectionModel<MappingInfo>(true, []);
   user : User | null = null;
   userRoles : UserRole[] = [];
-  allUsers : User[] = []; // only admin, owner
+  allUsers : User[] = []; // only available for admin, owner
   constructor(
     private api : ApiService,
     private persistency : PersistencyService,
@@ -61,6 +61,15 @@ export class ProjectViewComponent {
     private auth : AuthService,
     private snackbar : MatSnackBar,
   ) { }
+  get userCanDownload() {
+    return userCanDownload(this.role);
+  }
+  get userCanRename() {
+    return userCanRename(this.role);
+  }
+  get userCanCreate() {
+    return userCanCreate(this.role);
+  }
   ngOnInit() {
     this.api.serverInfo().subscribe(info => this.serverInfo = info);
     this.route.params.subscribe(params => {
@@ -156,21 +165,15 @@ export class ProjectViewComponent {
     mapping.mappingName = newName;
     console.log("renamed");
   }
-  download(project : string, includeDescendants : boolean, mappings : MappingInfo[]) {
-    let url = new URL(this.api.downloadProjectUrl);
-    url.searchParams.set('project', project);
-    for (let mapping of mappings) {
-      url.searchParams.append("mappings", mapping.mappingShortkey);
-    }
-    url.searchParams.set('includeDescendants', "" + includeDescendants);
-    window.open(url, '_blank');
-  }
   addUserRole(username : string, role : ProjectRole) {
     console.log("ROLE", role, ProjectRole);
     this.persistency.setUserRole(this.projectName, username, role).subscribe({
       next: _ => this.reloadUsersRoles(),
       error: err => this.snackbar.open(err.message, "Ok"),
     });
+  }
+  selectedMappingConfigs() : string[] {
+    return this.selected.selected.map(info => info.mappingShortkey)
   }
   rolesDomain() : string[] {
     return Object.keys(ProjectRole)

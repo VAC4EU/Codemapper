@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -159,7 +160,7 @@ public class ReviewResource {
       if (!perm.implies(ProjectPermission.Commentator)
           && createdBy != null
           && !user.getUsername().equals(createdBy)) {
-        throw new UnauthorizedException();
+        throw new ForbiddenException();
       }
       CodeMapperApplication.getReviewApi().resolveTopic(topicId, user.getUsername(), null);
       CodeMapperApplication.getReviewApi().resetReadMarkers(topicId);

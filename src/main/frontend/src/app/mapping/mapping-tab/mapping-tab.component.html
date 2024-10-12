@@ -4,15 +4,11 @@
     <mat-expansion-panel expanded>
       <mat-expansion-panel-header>
         <mat-panel-title>Download</mat-panel-title>
-        <mat-panel-description>Download the current mapping as a CSV file</mat-panel-description>
+        <mat-panel-description>Download the code list as a CSV file</mat-panel-description>
       </mat-expansion-panel-header>
       <div class="download-content">
-        <mat-checkbox #includeDescendants checked=true>Include descendant codes</mat-checkbox>
-        <button [disabled]="!userCanDownload || !mappingShortkey" mat-raised-button color="primary"
-          (click)="download(mappingShortkey!, includeDescendants.checked)">
-          <mat-icon>download</mat-icon>
-          Download
-        </button>
+        <app-download [projectName]="projectName" [mappingConfigs]="[mappingShortkey!]" [disabled]="!userCanDownload || !mappingShortkey">
+        </app-download>
         <p *ngIf="!userCanDownload || !mappingShortkey">(The mapping must be saved before.)</p>
       </div>
     </mat-expansion-panel>
@@ -26,7 +22,7 @@
       </mat-expansion-panel-header>
       <span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">Use the button on the right to download them.</span>
       <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
-      <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [mappingShortkey]="mappingShortkey"
+      <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [mappingShortkey]="mappingShortkey"
         [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">
       </history>
     </mat-expansion-panel>
@@ -96,3 +92,9 @@
     </mat-expansion-panel>
   </mat-accordion>
 </div>
+
+<ng-template #downloadDialog>
+  <h2 matDialogTitle>Download selected mappings</h2>
+  <app-download [projectName]="projectName" [mappingConfigs]="[mappingShortkey!]">
+  </app-download>
+</ng-template>

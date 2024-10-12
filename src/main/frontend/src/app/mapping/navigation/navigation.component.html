@@ -17,11 +17,6 @@
     <!-- <mat-icon>groups</mat-icon> -->
     Users
   </a>
-  <a *ngIf="user" routerLink="/account" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button" mat-menu-item>
-    <!-- <mat-icon>person</mat-icon> -->
-    Account: {{user.username}}
-  </a>
   <a *ngIf="user" routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button" mat-menu-item>
     <!-- <mat-icon>dataset</mat-icon> -->

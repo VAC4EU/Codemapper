@@ -47,9 +47,11 @@ export class ReviewsComponent {
   toggleTopicShowMessages(topicId : string) {
     this.data.topicShowMessages[topicId] = !this.data.topicShowMessages[topicId];
   }
-  newTopic(heading : string) {
+  newTopic(key : string) {
+    let heading = this.data.newTopicHeading[key];
     if (heading) {
       this.run.emit(new NewTopic(this.cui, this.voc, this.code, heading, this.data));
+      this.data.newTopicHeading[key] = "";
     }
   }
   markAsRead(topicId : string) {

@@ -28,44 +28,54 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.xml.bind.annotation.XmlRootElement;
+import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
+import org.biosemantics.codemapper.persistency.PersistencyApi.ParsedMappingName;
 
 public class WriteCsvApi {
   static final String NO_CODE = "-";
 
   public static final String FILE_EXTENSION = "csv";
   public static final String MIME_TYPE = "text/csv";
-  static final String[] MAPPING_HEADERS = {"Mapping"};
   static final String[] HEADERS = {
-    "Coding system", "Code", "Code name", "Concept", "Concept name", "Tags", "Origin"
+    "mapping", "coding_system", "code", "code_name", "concept", "concept_name", "tag", "origin"
   };
-
-  public void writeMappingCSV(OutputStream output, Mapping mapping, String url) throws IOException {
-    writeMappingHeader(output, mapping.info, url, mapping.revision.getVersion());
-    writeHeaders(output, false);
-    PreparedMapping prepared = prepare(mapping.info, mapping.data, mapping.descendants);
-    writePrepared(output, prepared, false);
-  }
+  static final String[] COMPATIBILITY_HEADERS = {
+    "event_definition",
+    "coding_system",
+    "code",
+    "code_name",
+    "concept",
+    "concept_name",
+    "tags",
+    "origin",
+    "system",
+    "event_abbreviation",
+    "type"
+  };
 
   public void writeProjectCSV(
       OutputStream output,
       String project,
       Collection<Mapping> mappings,
-      String formattedTime,
-      String url)
-      throws IOException {
-    writeProjectHeader(output, project, mappings, formattedTime, url);
-    writeHeaders(output, true);
+      boolean compatibilityFormat)
+      throws IOException, CodeMapperException {
+    Collection<PreparedMapping> prepareds = new LinkedList<>();
     for (Mapping mapping : mappings) {
-      PreparedMapping prepared = prepare(mapping.info, mapping.data, mapping.descendants);
-      writePrepared(output, prepared, true);
+      prepareds.add(prepare(mapping));
+    }
+    if (!compatibilityFormat) {
+      writeProjectHeader(output, project, prepareds);
+    }
+    writeHeaders(output, compatibilityFormat);
+    for (PreparedMapping prepared : prepareds) {
+      writePrepared(output, prepared, compatibilityFormat);
     }
   }
 
@@ -74,15 +84,14 @@ public class WriteCsvApi {
     MappingRevision revision;
     MappingData data;
     Map<String, Descendants> descendants;
-
-    String meta() {
-      return String.format("%s@v%d", info.mappingName, revision.getVersion());
-    }
+    boolean includeDescendants;
   }
 
   @XmlRootElement
   public static class PreparedMapping {
-    public String mappingName;
+    public Mapping mapping;
+	public ParsedMappingName parsedName;
+	public String mappingID;
     public Map<String, Map<String, PreparedConcept>> data =
         new HashMap<>(); // voc -> cui -> forConcept
     public Map<String, Set<String>> disablad = new HashMap<>(); // voc -> set(code)
@@ -108,21 +117,27 @@ public class WriteCsvApi {
     public String comments;
   }
 
-  PreparedMapping prepare(
-      MappingInfo info, MappingData mapping, Map<String, Descendants> descendants) {
+  PreparedMapping prepare(Mapping mapping) {
     PreparedMapping prepared = new PreparedMapping();
-    prepared.mappingName = info.mappingName;
-    for (String voc : mapping.getVocabularies().keySet()) {
+    prepared.mapping = mapping;
+    prepared.parsedName = mapping.info.parseName();
+    if (prepared.parsedName != null) {
+    	prepared.mappingID = prepared.parsedName.abbreviaton;
+    } else {
+    	prepared.mappingID = prepared.mapping.info.mappingName;
+    }
+    for (String voc : mapping.data.getVocabularies().keySet()) {
       Map<String, PreparedConcept> vocData =
           prepared.data.computeIfAbsent(voc, key -> new HashMap<>());
-      for (String cui : mapping.getConcepts().keySet()) {
+      for (String cui : mapping.data.getConcepts().keySet()) {
         PreparedConcept concept = new PreparedConcept();
-        concept.concept = mapping.getConcepts().get(cui);
+        concept.concept = mapping.data.getConcepts().get(cui);
         for (String code0 : concept.concept.getCodes().getOrDefault(voc, new LinkedList<>())) {
-          Code code1 = mapping.getCodes().get(voc).get(code0);
+          Code code1 = mapping.data.getCodes().get(voc).get(code0);
           if (code1.isEnabled()) {
             Collection<Code> codeDescendants =
-                descendants
+                mapping
+                    .descendants
                     .getOrDefault(voc, new Descendants())
                     .getOrDefault(code0, new LinkedList<>());
             PreparedCode code = new PreparedCode();
@@ -139,7 +154,7 @@ public class WriteCsvApi {
     return prepared;
   }
 
-  void writePrepared(OutputStream output, PreparedMapping prepared, boolean writeMappingName)
+  void writePrepared(OutputStream output, PreparedMapping prepared, boolean compatibilityFormat)
       throws IOException {
     for (String voc : prepared.data.keySet()) {
       Set<String> disabled = prepared.disablad.getOrDefault(voc, new HashSet<>());
@@ -157,17 +172,17 @@ public class WriteCsvApi {
           if (tag == null) {
             tag = concept.concept.getTag();
           }
-          writeRow(
+          writeCodeRow(
               output,
-              writeMappingName,
-              prepared.mappingName,
               voc,
               code.code.getId(),
               code.code.getTerm(),
               concept.concept.getId(),
               concept.concept.getName(),
               tag,
-              "");
+              "",
+              compatibilityFormat,
+              prepared);
           writtenCodes.add(code0);
           wroteCode = true;
           for (Code code1 : code.descendants) {
@@ -175,17 +190,17 @@ public class WriteCsvApi {
             if (writtenCodes.contains(code1.getId())) continue;
             if (conceptCodes.contains(code1.getId())) continue;
             String origin = String.format("Desc: code %s", code0);
-            writeRow(
+            writeCodeRow(
                 output,
-                writeMappingName,
-                prepared.mappingName,
                 voc,
                 code1.getId(),
                 code1.getTerm(),
                 "-",
                 "-",
                 tag,
-                origin);
+                origin,
+                compatibilityFormat,
+                prepared);
             writtenCodes.add(code1.getId());
           }
         }
@@ -194,52 +209,65 @@ public class WriteCsvApi {
           if (writtenCodes.contains(code.getId())) continue;
           if (conceptCodes.contains(code.getId())) continue;
           String origin = String.format("Desc: concept %s", cui);
-          writeRow(
+          writeCodeRow(
               output,
-              writeMappingName,
-              prepared.mappingName,
               voc,
               code.getId(),
               code.getTerm(),
               "-",
               "-",
               concept.concept.getTag(),
-              origin);
+              origin,
+              compatibilityFormat,
+              prepared);
           writtenCodes.add(code.getId());
         }
         if (!wroteCode) {
-          writeRow(
+          writeCodeRow(
               output,
-              writeMappingName,
-              prepared.mappingName,
               voc,
               NO_CODE,
               "",
               cui,
               concept.concept.getName(),
               concept.concept.getTag(),
-              "Concept without codes in " + voc);
+              "Concept without codes in " + voc,
+              compatibilityFormat,
+              prepared);
         }
       }
     }
   }
 
-  void writeRow(
+  void writeCodeRow(
       OutputStream output,
-      boolean writeMappingName,
-      String mapping,
       String voc,
       String code,
       String term,
       String concept,
       String conceptName,
       String tag,
-      String origin)
+      String origin,
+      boolean compatibilityFormat,
+      PreparedMapping prepared)
       throws IOException {
-    if (writeMappingName) {
-      writeRawRow(output, mapping, voc, code, term, concept, conceptName, tag, origin);
+  	ParsedMappingName parsed = prepared.parsedName;
+    if (compatibilityFormat) {
+      writeRawRow(
+          output,
+          parsed != null ? parsed.definition : "",
+          voc,
+          code,
+          term,
+          concept,
+          conceptName,
+          tag,
+          origin,
+          parsed != null ? parsed.system : "",
+		  prepared.mappingID,
+		  parsed != null ? parsed.type : "");
     } else {
-      writeRawRow(output, voc, code, term, concept, conceptName, tag, origin);
+      writeRawRow(output, prepared.mappingID, voc, code, term, concept, conceptName, tag, origin);
     }
   }
 
@@ -260,40 +288,52 @@ public class WriteCsvApi {
     output.write(line.getBytes());
   }
 
-  private void writeMappingHeader(OutputStream output, MappingInfo info, String url, int version)
-      throws IOException {
-    String meta =
-        String.format(
-            "# Mapping: %s, version: %d, project: %s, created with CodeMapper: %s\n",
-            info.mappingName, version, info.projectName, url);
-    output.write(meta.getBytes());
-  }
-
   public void writeProjectHeader(
-      OutputStream output,
-      String project,
-      Collection<Mapping> mappings,
-      String formattedTime,
-      String url)
+      OutputStream output, String project, Collection<PreparedMapping> prepareds)
       throws IOException {
-    String mappingMetas = mappings.stream().map(Mapping::meta).collect(Collectors.joining(", "));
+    String url = CodeMapperApplication.getCodeMapperURL() + "/project/" + project;
     String meta =
         String.format(
-            "# Project: %s, timestamp: %s, created with CodeMapper: %s, mappings: %s\n",
-            project, formattedTime, url, mappingMetas);
+            "# CodeMapper project: %s, exported-mappings: %d, url: %s\n",
+            project, prepareds.size(), url);
     output.write(meta.getBytes());
+    for (PreparedMapping prepared : prepareds) {
+      url =
+          CodeMapperApplication.getCodeMapperURL()
+              + "/mapping/"
+              + prepared.mapping.info.mappingShortkey;
+      String descendants = prepared.mapping.includeDescendants ? "true" : "false";
+      String infos = "";
+      if (prepared.parsedName != null) {
+	      if (prepared.parsedName.definition != null) {
+	        infos +=
+	            String.format(" definition: \"%s\",", prepared.parsedName.definition.replaceAll("\"", ""));
+	      }
+	      if (prepared.parsedName.system != null) {
+	        infos += String.format(" system: %s,", prepared.parsedName.system);
+	      }
+	      if (prepared.parsedName.type != null) {
+	        infos += String.format(" type: %s,", prepared.parsedName.type);
+      }
+      }
+      meta =
+          String.format(
+              "# mapping: %s,%s version: %d, descendants: %s, url: %s\n",
+              prepared.mappingID,
+              infos,
+              prepared.mapping.revision.getVersion(),
+              descendants,
+              url);
+      output.write(meta.getBytes());
+    }
   }
 
-  void writeHeaders(OutputStream output, boolean writeMappingName) throws IOException {
-    String[] headers;
-    if (writeMappingName) {
-      headers =
-          Stream.concat(Arrays.stream(MAPPING_HEADERS), Arrays.stream(HEADERS))
-              .toArray(String[]::new);
+  void writeHeaders(OutputStream output, boolean compatibilityFormat) throws IOException {
+    if (compatibilityFormat) {
+      writeRawRow(output, COMPATIBILITY_HEADERS);
     } else {
-      headers = HEADERS;
+      writeRawRow(output, HEADERS);
     }
-    writeRawRow(output, headers);
   }
 
   /** Auxiliary to format an array of tags in the export file. */

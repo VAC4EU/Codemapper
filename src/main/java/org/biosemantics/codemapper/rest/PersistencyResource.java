@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -370,7 +371,7 @@ public class PersistencyResource {
       // admins and project owners
       try {
         AuthentificationApi.assertAdmin(user);
-      } catch (UnauthorizedException e) {
+      } catch (ForbiddenException e) {
         AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
       }
       ProjectPermission role = null;

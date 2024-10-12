@@ -43,6 +43,7 @@ import {
   PersistencyService,
   ProjectRole,
   slugifyMappingInfo,
+  userCanDownload,
   userCanEdit,
 } from '../persistency.service';
 import { AuthService } from '../auth.service';
@@ -113,6 +114,10 @@ export class MappingViewComponent implements HasPendingChanges {
     return userCanEdit(this.projectRole);
   }
 
+  get userCanDownload() {
+    return userCanDownload(this.projectRole);
+  }
+
   async ngOnInit() {
     let vocabularies = await firstValueFrom(this.apiService.vocabularies());
     this.vocabularies = Object.fromEntries(vocabularies.map((v) => [v.id, v]));
@@ -173,7 +178,7 @@ export class MappingViewComponent implements HasPendingChanges {
                 messages,
               } = await this.loadLegacyMapping(this.mappingShortkey));
               messages.unshift(
-                `The mapping was automatically imported from the old version of CodeMapper and remapped. Please save.`
+                `The mapping was automatically imported from the old version of CodeMapper and remapped. Please review and save.`
               );
               this.snackBar.open(messages.join('\n\n'), 'Ok', {
                 panelClass: 'remap-snackbar',

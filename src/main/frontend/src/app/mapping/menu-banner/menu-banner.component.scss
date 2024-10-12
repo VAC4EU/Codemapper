@@ -14,3 +14,8 @@ mat-toolbar {
     flex-wrap: wrap;
     justify-content: space-between;
 }
+
+.on-the-right {
+    display: flex;
+    flex-direction: row;
+}

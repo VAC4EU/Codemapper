@@ -15,13 +15,18 @@
             <td><span class="author">{{rev.author}}</span></td>
             <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
             <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>
-            <td class="column-download">
-              <a *ngIf="userCanDownload" href="{{downloadUrl(rev.version)}}" target="_blank" mat-icon-button matTooltip="Download CSV with descendant codes">
-                <mat-icon>download</mat-icon>
-              </a>
+            <td class="column-download" matTooltip="Download the code lists at this revision of the mapping">
+              <button *ngIf="userCanDownload" mat-icon-button (click)="openDownloadDialog(rev.version, downloadDialog)"><mat-icon>download</mat-icon></button>
             </td>
           </tr>
         </tbody>
       </table>
-
 </div>
+
+<ng-template #downloadDialog>
+  <h2 matDialogTitle>Download mapping at version {{downloadVersion}}</h2>
+  <mat-dialog-content>
+  <app-download [projectName]="projectName" [mappingConfigs]="[selectedMappingConfig()]">
+  </app-download>
+  </mat-dialog-content>
+</ng-template>

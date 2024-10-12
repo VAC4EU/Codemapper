@@ -19,6 +19,7 @@
 package org.biosemantics.codemapper.rest;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -78,7 +79,7 @@ public class AuthentificationResource {
       @FormParam("newPassword") String newPassword,
       @Context User user) {
     if (user == null) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
     try {
       api.changePassword(user.getUsername(), oldPassword, newPassword);
@@ -93,7 +94,7 @@ public class AuthentificationResource {
   @Produces(MediaType.APPLICATION_JSON)
   public void changeEmail(@FormParam("email") String email, @Context User user) {
     if (user == null) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
     try {
       api.changeEmail(user.getUsername(), email);

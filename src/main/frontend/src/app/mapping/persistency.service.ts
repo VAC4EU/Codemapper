@@ -30,8 +30,35 @@ export enum ProjectRole {
   Commentator = "Commentator"
 }
 
-export function userCanEdit(role : ProjectRole | null) {
-  return role == ProjectRole.Owner || role == ProjectRole.Editor;
+export function roleAtLeast(have : ProjectRole | null, need : ProjectRole) : boolean {
+  if (have == null) {
+    return false;
+  } else {
+    switch (need) {
+      case ProjectRole.Owner:
+        return have == ProjectRole.Owner;
+      case ProjectRole.Editor:
+        return have == ProjectRole.Owner || have == ProjectRole.Editor;
+      case ProjectRole.Commentator:
+        return have == ProjectRole.Owner || have == ProjectRole.Editor || have == ProjectRole.Commentator;
+    }
+  }
+}
+
+export function userCanEdit(role : ProjectRole | null) : boolean {
+  return roleAtLeast(role, ProjectRole.Editor)
+}
+
+export function userCanDownload(role : ProjectRole | null) : boolean {
+  return roleAtLeast(role, ProjectRole.Commentator)
+}
+
+export function userCanCreate(role : ProjectRole | null) : boolean {
+  return roleAtLeast(role, ProjectRole.Owner)
+}
+
+export function userCanRename(role : ProjectRole | null) : boolean {
+  return roleAtLeast(role, ProjectRole.Owner)
 }
 
 export type ProjectsRoles = { [key : string] : ProjectRole[] }

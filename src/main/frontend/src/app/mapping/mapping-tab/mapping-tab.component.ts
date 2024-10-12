@@ -4,6 +4,7 @@ import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProjectRole } from '../persistency.service';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'mapping-tab',
@@ -11,6 +12,7 @@ import { ProjectRole } from '../persistency.service';
   styleUrls: ['./mapping-tab.component.scss']
 })
 export class MappingTabComponent {
+  @Input({ required: true }) projectName! : string;
   @Input() mappingShortkey! : string | null;
   @Input() mapping! : Mapping;
   @Input() serverInfo! : ServerInfo;
@@ -24,6 +26,7 @@ export class MappingTabComponent {
 
   constructor(
     private api : ApiService,
+    public dialog : MatDialog,
     private snackBar : MatSnackBar,
   ) { }
 
@@ -48,12 +51,5 @@ export class MappingTabComponent {
     } else {
       console.error("unknown UMLS version");
     }
-  }
-
-  download(mappingShortkey : string, includeDescendants : boolean) {
-    let url = new URL(this.api.downloadMappingUrl);
-    url.searchParams.set('mapping', mappingShortkey);
-    url.searchParams.set('includeDescendants', "" + includeDescendants);
-    window.open(url, '_blank');
   }
 }

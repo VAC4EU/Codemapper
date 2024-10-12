@@ -16,11 +16,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input } from '@angular/core';
+import { Input, TemplateRef } from '@angular/core';
 import { Component } from '@angular/core';
 import { Mapping, Revision } from '../data';
 import { ApiService } from '../api.service';
 import { ProjectRole } from '../persistency.service';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'history',
@@ -28,6 +29,7 @@ import { ProjectRole } from '../persistency.service';
   styleUrls: ['./history.component.scss']
 })
 export class HistoryComponent {
+  @Input({ required: true }) projectName! : string;
   @Input({ required: true }) mappingShortkey! : string;
   @Input({ required: true }) mapping! : Mapping;
   @Input({ required: true }) revisions! : Revision[];
@@ -35,19 +37,25 @@ export class HistoryComponent {
   @Input({ required: true }) projectRole : ProjectRole | null = null;
   @Input() userCanDownload : boolean = false;
 
+  downloadVersion! : number;
+
   constructor(
     public apiService : ApiService,
+    private dialog : MatDialog,
   ) { }
 
   firstLine(summary : string) : string {
     return summary.split('\n')[0] ?? ""
   }
 
-  downloadUrl(version : number) {
-    let url = new URL(this.apiService.downloadMappingUrl);
-    url.searchParams.set('mapping', this.mappingShortkey);
-    url.searchParams.set('version', "" + version);
-    url.searchParams.set('includeDescendants', "true");
-    return url;
+  openDownloadDialog(version : number, templateRef : TemplateRef<any>) {
+    this.downloadVersion = version;
+    this.dialog.open(templateRef, {
+      width: '700px',
+    });
+  }
+
+  selectedMappingConfig() {
+    return `${this.mappingShortkey}@v${this.downloadVersion}`;
   }
 }

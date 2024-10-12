@@ -1,6 +1,6 @@
 <menu-banner [projectName]="projectName">
   <!-- <mat-icon>folder_open</mat-icon> -->
-  CodeMapper project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
+  Project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
 </menu-banner>
 
 <div class="center-content spaced">
@@ -15,12 +15,12 @@
           </mat-card-header>
           <mat-card-actions>
             <span matTooltip="Create a new mapping (only for project owners)">
-              <button (click)="openDialog(createMapping)" [disabled]="role != 'Owner'" mat-raised-button>
+              <button (click)="openDialog(createMapping)" [disabled]="!userCanCreate" mat-raised-button>
                 Create
               </button>
             </span>
             <span matTooltip="Import a mapping from a CSV file (only for project owners)">
-              <button (click)="importNew(projectName)" [disabled]="role != 'Owner'" mat-raised-button>
+              <button (click)="importNew(projectName)" [disabled]="!userCanCreate" mat-raised-button>
                 Import CSV
               </button>
             </span>
@@ -33,12 +33,12 @@
           </mat-card-header>
           <mat-card-actions>
             <span matTooltip="Rename one selected mapping (only for project owners)">
-              <button mat-raised-button [disabled]="role != 'Owner' || selected.selected.length != 1"
+              <button mat-raised-button [disabled]="!userCanRename || selected.selected.length != 1"
                 (click)="openDialog(renameDialog)">Rename</button>
             </span>
             <span matTooltip="Download selected mappings (only mappings with revisions)">
               <button mat-raised-button (click)="openDialog(downloadDialog)"
-                [disabled]="!(role == 'Owner' || role == 'Editor') || selected.selected.length == 0 || !allSelectedHaveRevision()">
+                [disabled]="!userCanDownload || selected.selected.length == 0 || !allSelectedHaveRevision()">
                 Download <mat-icon>download</mat-icon>
               </button>
             </span>
@@ -68,9 +68,10 @@
           <td mat-cell *matCellDef="let mapping">
             <a [routerLink]="mappingLink(mapping)" mat-menu-item>
               {{mapping.mappingName}}
-              <mat-icon *ngIf="mapping.version == null" class="revision-icon" matTooltip="Mapping has no revision yet, please open, review and save">warning</mat-icon>
+              <mat-icon *ngIf="mapping.version == null" class="revision-icon"
+                matTooltip="Mapping has no revision yet, please open, review and save">warning</mat-icon>
             </a>
-            
+
           </td>
         </ng-container>
       </table>
@@ -79,7 +80,9 @@
     <mat-tab label="Members">
       <div class="toolbox">
         <mat-card *ngIf="user?.admin || role == 'Owner'">
-          <mat-card-header><h4>Set user role</h4></mat-card-header>
+          <mat-card-header>
+            <h4>Set user role</h4>
+          </mat-card-header>
           <mat-card-content class="column">
             <mat-form-field>
               <mat-label>User</mat-label>
@@ -105,27 +108,35 @@
         <tr mat-header-row *matHeaderRowDef="['username', 'email', 'role']"></tr>
         <tr mat-row *matRowDef="let user; columns: ['username', 'email', 'role'];"></tr>
         <ng-container matColumnDef="username">
-            <th mat-header-cell *matHeaderCellDef>Username</th>
-            <td mat-cell *matCellDef="let userRole">
-                {{userRole.user.username}}
-            </td>
+          <th mat-header-cell *matHeaderCellDef>Username</th>
+          <td mat-cell *matCellDef="let userRole">
+            {{userRole.user.username}}
+          </td>
         </ng-container>
         <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef>Email</th>
-            <td mat-cell *matCellDef="let userRole">
-                {{userRole.user.email}}
-            </td>
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let userRole">
+            {{userRole.user.email}}
+          </td>
         </ng-container>
         <ng-container matColumnDef="role">
-            <th mat-header-cell *matHeaderCellDef>Role</th>
-            <td mat-cell *matCellDef="let userRole">
-              {{userRole.role?.toLowerCase() ?? "-"}}
-            </td>
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let userRole">
+            {{userRole.role?.toLowerCase() ?? "-"}}
+          </td>
         </ng-container>
       </mat-table>
     </mat-tab>
   </mat-tab-group>
 </div>
+
+<ng-template #downloadDialog>
+  <h2 matDialogTitle>Download selected mappings</h2>
+  <mat-dialog-content>
+    <app-download [projectName]="projectName" [mappingConfigs]="selectedMappingConfigs()">
+    </app-download>
+  </mat-dialog-content>
+</ng-template>
 
 <ng-template #createMapping>
   <h2 matDialogTitle>Create mapping</h2>
@@ -154,18 +165,5 @@
     <button mat-button matDialogClose>Cancel</button>
     <button mat-raised-button [disabled]="!newName.value || selected.selected.length != 1"
       (click)="renameMapping(selected.selected[0], newName.value)" matDialogClose color="primary">Ok</button>
-  </mat-dialog-actions>
-</ng-template>
-
-<ng-template #downloadDialog>
-  <h2 matDialogTitle>Download mapping</h2>
-  <mat-dialog-content>
-    <p>Download selected mapping as a CSV file.</p>
-    <mat-checkbox #includeDescendants>Include descendant codes</mat-checkbox>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button matDialogClose>Cancel</button>
-    <button mat-raised-button (click)="download(projectName, includeDescendants.checked, selected.selected)"
-      matDialogClose color="primary">Download</button>
   </mat-dialog-actions>
 </ng-template>

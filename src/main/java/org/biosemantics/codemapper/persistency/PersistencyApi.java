@@ -40,6 +40,7 @@ import org.biosemantics.codemapper.Comment;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
+import org.biosemantics.codemapper.rest.CodeMapperResource;
 
 public class PersistencyApi {
 
@@ -368,16 +369,44 @@ public class PersistencyApi {
     }
 
     public String slugifyName() {
-      return String.format("%s-%s", slugify(projectName), slugify(mappingName));
+      return String.format("%s-%s", CodeMapperResource.slugify(projectName), CodeMapperResource.slugify(mappingName));
     }
 
-    public static String slugify(String str) {
-      return str.toLowerCase()
-          .replaceAll("^s+|s+$", "")
-          .replaceAll("[_ ]", "-")
-          .replaceAll("[^a-z0-9-]", "")
-          .replaceAll("-+", "-");
-    }
+	public ParsedMappingName parseName() {
+    	ParsedMappingName parsed = new ParsedMappingName();
+	    String[] parts = this.mappingName.split("_");
+	    if (parts.length == 3) {
+	    	parsed.system = parts[0];
+	    	parsed.abbreviaton = parts[1];
+	    	parsed.type = parts[2];
+	    	parsed.definition = null;
+	    	return parsed;
+	    }
+	    if (parts.length == 4) {
+	    	parsed.system = parts[0];
+	    	parsed.abbreviaton = parts[1];
+	    	parsed.type = parts[2];
+	    	parsed.definition = parts[3];
+	    	return parsed;
+	    }
+	    return null;
+	}
+
+	public String abbr() {
+		ParsedMappingName parsed = parseName();
+		if (parsed != null) {
+			return parsed.abbreviaton;
+		} else {
+			return mappingName;
+		}
+	}
+  }
+  
+  public static class ParsedMappingName {
+	  public String abbreviaton;
+	  public String system;
+	  public String type;
+	  public String definition;
   }
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {

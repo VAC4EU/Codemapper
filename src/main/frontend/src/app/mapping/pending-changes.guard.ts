@@ -33,6 +33,6 @@ export class PendingChangesGuard implements CanDeactivate<HasPendingChanges> {
     state : RouterStateSnapshot
   ) : boolean {
     return !component.hasPendingChanges
-      || confirm('You have unsafed changes, which are lost when navigating away.')
+      || confirm('You have unsaved changes, which are lost when you navigate away')
   }
 }

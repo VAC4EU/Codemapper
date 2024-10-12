@@ -50,7 +50,7 @@
     </mat-card-header>
     <mat-card-actions class="dense">
       <mat-form-field>
-        <input #query matInput type="text" placeholder="Code or concept query" [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
+        <input #query matInput type="text" placeholder="Code or concept query" [readonly]="!userCanEdit" [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
         <mat-autocomplete #auto="matAutocomplete">
           <mat-option *ngFor="let option of codeConcepts" (click)="selectAutocompleteCode(option, query.value)">
             {{option.name}}

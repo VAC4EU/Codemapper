@@ -1,10 +1,28 @@
 <menu-banner>
     <!-- <mat-icon>person</mat-icon> -->
-    CodeMapper: Hi, {{user?.username ?? "(unknown)"}}!
+    CodeMapper: Account
 </menu-banner>
 
 <div class="center-content">
     <div class="toolbox">
+
+        <mat-card *ngIf="user" appearance="outlined">
+            <mat-card-header>
+                <h4>Account information</h4>
+            </mat-card-header>
+            <mat-card-content class="form-column">
+                <table>
+                    <tr>
+                        <td>Username:</td>
+                        <td>{{user.username}}</td>
+                    </tr>
+                    <tr>
+                        <td>Email:</td>
+                        <td>{{user.email || "(unknown, please change)"}}</td>
+                    </tr>
+                </table>
+            </mat-card-content>
+        </mat-card>
         <mat-card *ngIf="user" appearance="outlined">
             <mat-card-header>
                 <h4>Change password</h4>
@@ -38,29 +56,5 @@
                     (click)="changeEmail(newEmail.value)">Change</button>
             </mat-card-content>
         </mat-card>
-        <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header>
-                <h4>Logout</h4>
-            </mat-card-header>
-            <mat-card-content class="column">
-                <button mat-stroked-button (click)="logout()" matTooltip="Logout" class="logout-button" type="button">
-                    Logout
-                    <mat-icon>logout</mat-icon>
-                </button>
-            </mat-card-content>
-        </mat-card>
     </div>
-    <section *ngIf="user != null">
-        <h4>Account information</h4>
-        <table>
-            <tr>
-                <td>Username</td>
-                <td>{{user.username}}</td>
-            </tr>
-            <tr>
-                <td>Email</td>
-                <td>{{user.email || "(unknown)"}}</td>
-            </tr>
-        </table>
-    </section>
 </div>

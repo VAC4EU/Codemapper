@@ -28,13 +28,13 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
-import org.biosemantics.codemapper.rest.UnauthorizedException;
 
 public class AuthentificationApi {
 
@@ -226,7 +226,7 @@ public class AuthentificationApi {
   }
 
   public static void assertAuthentificated(User user) {
-    if (user == null) throw new UnauthorizedException();
+    if (user == null) throw new ForbiddenException("not logged in");
   }
 
   /**
@@ -248,7 +248,7 @@ public class AuthentificationApi {
         return;
       }
     }
-    throw new UnauthorizedException();
+    throw new ForbiddenException("no access to project");
   }
 
   public static MappingInfo assertMappingProjectRolesImplies(
@@ -260,7 +260,7 @@ public class AuthentificationApi {
 
   public static void assertAdmin(User user) {
     if (user == null || !user.isAdmin()) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException("not admin");
     }
   }
 }

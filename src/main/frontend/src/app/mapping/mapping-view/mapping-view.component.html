@@ -1,7 +1,7 @@
 <menu-banner [projectName]="projectName" omitSpacer="true">
   <span matTooltip="{{titleTooltip()}}">
     <!-- <mat-icon>schema</mat-icon> -->
-    CodeMapper mapping: <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
+    Mapping: <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
     (you are {{projectRole?.toLowerCase() ?? "not a member"}})</span>
   </span>
   <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
@@ -36,13 +36,14 @@
   <mat-tab label="Mapping">
     <div *ngIf="mapping.start != null">
       <mapping-tab
+        [projectName]="projectName"
         [mapping]="mapping"
         [mappingShortkey]="mappingShortkey"
         [serverInfo]="serverInfo"
         [revisions]="revisions"
         [version]="version"
         [vocabularies]="vocabularies"
-        [userCanDownload]="!!(mappingShortkey && !saveRequired && mapping.undoStack.length == 0)"
+        [userCanDownload]="userCanDownload && !!mappingShortkey && !saveRequired && mapping.undoStack.length == 0"
         [userCanEdit]="userCanEdit"
         [projectRole]="projectRole"
         (run)="run($event)"></mapping-tab>
