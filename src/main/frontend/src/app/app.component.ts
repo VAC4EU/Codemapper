@@ -18,6 +18,8 @@
 
 import { Component, Injectable } from '@angular/core';
 import { LoadingService } from './loading.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { NavigationEnd, Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -28,6 +30,16 @@ import { LoadingService } from './loading.service';
   providedIn: 'root'
 })
 export class AppComponent {
-  title = 'ui-2023';
-  constructor(public loadingService : LoadingService) { }
+  title = 'CodeMapper';
+  constructor(
+    public loadingService : LoadingService,
+    private router : Router,
+    private snackbar : MatSnackBar,
+  ) {
+    router.events.forEach(ev => {
+      if (ev instanceof NavigationEnd) {
+        snackbar.dismiss();
+      }
+    })
+  }
 }

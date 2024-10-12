@@ -16,23 +16,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Injectable } from '@angular/core';
-import { CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot, CanDeactivateFn } from '@angular/router';
 
 export interface HasPendingChanges {
   get hasPendingChanges() : boolean;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
-export class PendingChangesGuard implements CanDeactivate<HasPendingChanges> {
-  canDeactivate(
-    component : HasPendingChanges,
-    next : ActivatedRouteSnapshot,
-    state : RouterStateSnapshot
-  ) : boolean {
-    return !component.hasPendingChanges
-      || confirm('You have unsaved changes, which are lost when you navigate away')
-  }
+export const pendingChangesGuard : CanDeactivateFn<HasPendingChanges> = async (component : HasPendingChanges, _currentRoute : ActivatedRouteSnapshot, _currentState : RouterStateSnapshot, _nextState : RouterStateSnapshot) => {
+  return !component.hasPendingChanges
+    || confirm('You have unsaved changes, which are lost when you navigate away');
 }

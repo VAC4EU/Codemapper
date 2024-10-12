@@ -24,67 +24,67 @@ import { ProjectsViewComponent } from './mapping/projects-view/projects-view.com
 import { ProjectViewComponent } from './mapping/project-view/project-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
 import { adminGuard, authGuard } from './mapping/auth.guard';
-import { PendingChangesGuard } from './mapping/pending-changes.guard';
+import { pendingChangesGuard } from './mapping/pending-changes.guard';
 import { LegacyMappingRedirectComponent } from './mapping/legacy-mapping-redirect/legacy-mapping-redirect.component';
 import { UserViewComponent } from './mapping/user-view/user-view.component';
 import { UsersViewComponent } from './mapping/users-view/users-view.component';
 
-const routes : Routes = [
+let routes : Routes = [
   {
-    path: "",
-    title: "CodeMapper",
+    path: '',
+    title: 'CodeMapper',
     component: WelcomeViewComponent,
   },
   {
-    path: "news",
-    title: "CodeMapper: News",
+    path: 'news',
+    title: 'CodeMapper: News',
     component: NewsViewComponent,
   },
   {
-    path: "projects",
-    title: "CodeMapper: Projects",
+    path: 'projects',
+    title: 'CodeMapper: Projects',
     canActivate: [authGuard],
     component: ProjectsViewComponent,
   },
   {
-    path: "project/:project",
+    path: 'project/:project',
     canActivate: [authGuard],
     component: ProjectViewComponent,
   },
   {
-    path: "mapping",
+    path: 'mapping',
     canActivate: [authGuard],
-    canDeactivate: [PendingChangesGuard],
+    canDeactivate: [pendingChangesGuard],
     component: MappingViewComponent,
   },
   {
-    path: "mapping/:name",
+    path: 'mapping/:name',
     canActivate: [authGuard],
-    canDeactivate: [PendingChangesGuard],
+    canDeactivate: [pendingChangesGuard],
     component: MappingViewComponent,
   },
   {
-    path: "account",
+    path: 'account',
     canActivate: [authGuard],
-    title: "CodeMapper: Your account",
+    title: 'CodeMapper: Your account',
     component: UserViewComponent,
   },
   {
-    path: "users",
+    path: 'users',
     canActivate: [adminGuard],
-    title: "CodeMapper: Users",
+    title: 'CodeMapper: Users',
     component: UsersViewComponent,
   },
   {
-    path: "project/:projectName/event/:mappingName",
+    path: 'project/:projectName/event/:mappingName',
     canActivate: [authGuard],
     component: LegacyMappingRedirectComponent,
   },
-  { path: '**', redirectTo: '/', pathMatch: 'full' }
+  { path: '**', redirectTo: '/', pathMatch: 'full' },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
 export class AppRoutingModule { }

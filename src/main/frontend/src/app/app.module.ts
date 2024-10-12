@@ -29,7 +29,6 @@ import { MappingModule } from './mapping/mapping.module';
 
 import { LoadingService } from './loading.service';
 import { LoadingInterceptor } from './loading.interceptor';
-import { PendingChangesGuard } from './mapping/pending-changes.guard';
 
 export const myCustomTooltipDefaults : MatTooltipDefaultOptions = {
   showDelay: 500,
@@ -55,7 +54,6 @@ export let urlEncodedOptions = {
   ],
   providers: [
     LoadingService,
-    PendingChangesGuard,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: LoadingInterceptor,

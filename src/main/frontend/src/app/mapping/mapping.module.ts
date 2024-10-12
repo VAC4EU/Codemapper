@@ -86,6 +86,7 @@ import { DownloadDialogComponent } from './download-dialog/download-dialog.compo
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
   horizontalPosition: 'center',
+  duration: 5000,
 };
 
 @NgModule({
