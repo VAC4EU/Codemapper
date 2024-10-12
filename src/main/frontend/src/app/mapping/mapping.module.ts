@@ -80,8 +80,8 @@ import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MenuBannerComponent } from './menu-banner/menu-banner.component';
-import { DownloadComponent } from './download/download.component';
 import { UserLogoutComponent } from './user-logout/user-logout.component';
+import { DownloadDialogComponent } from './download-dialog/download-dialog.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -124,8 +124,8 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     UsersViewComponent,
     UsersTableComponent,
     MenuBannerComponent,
-    DownloadComponent,
     UserLogoutComponent,
+    DownloadDialogComponent,
   ],
   imports: [
     HttpClientModule,

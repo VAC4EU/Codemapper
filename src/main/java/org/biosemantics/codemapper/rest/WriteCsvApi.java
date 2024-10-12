@@ -44,7 +44,7 @@ public class WriteCsvApi {
   public static final String FILE_EXTENSION = "csv";
   public static final String MIME_TYPE = "text/csv";
   static final String[] HEADERS = {
-    "mapping", "coding_system", "code", "code_name", "concept", "concept_name", "tag", "origin"
+    "mapping", "vocabulary", "code", "code_name", "concept", "concept_name", "tag", "origin"
   };
   static final String[] COMPATIBILITY_HEADERS = {
     "event_definition",

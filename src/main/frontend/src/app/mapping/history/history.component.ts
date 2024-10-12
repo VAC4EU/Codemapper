@@ -22,6 +22,7 @@ import { Mapping, Revision } from '../data';
 import { ApiService } from '../api.service';
 import { ProjectRole } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
+import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
 
 @Component({
   selector: 'history',
@@ -48,11 +49,12 @@ export class HistoryComponent {
     return summary.split('\n')[0] ?? ""
   }
 
-  openDownloadDialog(version : number, templateRef : TemplateRef<any>) {
-    this.downloadVersion = version;
-    this.dialog.open(templateRef, {
-      width: '700px',
-    });
+  openDownloadDialog(version : number) {
+    let data = {
+      projectName: this.projectName,
+      mappingConfigs: [`${this.mappingShortkey}@${version}`],
+    };
+    this.dialog.open(DownloadDialogComponent, { data })
   }
 
   selectedMappingConfig() {

@@ -1,6 +1,14 @@
 <menu-banner [projectName]="projectName">
   <!-- <mat-icon>folder_open</mat-icon> -->
   Project: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
+  <span onTheRight>
+    <span matTooltip="Download selected mappings (select only mappings with revisions)">
+      <button mat-icon-button (click)="openDownloadDialog(selected.selected)"
+        [disabled]="!userCanDownload || selected.selected.length == 0 || !allSelectedHaveRevision()">
+        <mat-icon>download</mat-icon>
+      </button>
+    </span>
+  </span>
 </menu-banner>
 
 <div class="center-content spaced">
@@ -35,12 +43,6 @@
             <span matTooltip="Rename one selected mapping (only for project owners)">
               <button mat-raised-button [disabled]="!userCanRename || selected.selected.length != 1"
                 (click)="openDialog(renameDialog)">Rename</button>
-            </span>
-            <span matTooltip="Download selected mappings (only mappings with revisions)">
-              <button mat-raised-button (click)="openDialog(downloadDialog)"
-                [disabled]="!userCanDownload || selected.selected.length == 0 || !allSelectedHaveRevision()">
-                Download <mat-icon>download</mat-icon>
-              </button>
             </span>
           </mat-card-actions>
         </mat-card>
@@ -129,14 +131,6 @@
     </mat-tab>
   </mat-tab-group>
 </div>
-
-<ng-template #downloadDialog>
-  <h2 matDialogTitle>Download selected mappings</h2>
-  <mat-dialog-content>
-    <app-download [projectName]="projectName" [mappingConfigs]="selectedMappingConfigs()">
-    </app-download>
-  </mat-dialog-content>
-</ng-template>
 
 <ng-template #createMapping>
   <h2 matDialogTitle>Create mapping</h2>

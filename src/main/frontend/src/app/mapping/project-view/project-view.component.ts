@@ -29,6 +29,7 @@ import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
 
 function usernameCompare(a : User | string, b : User | string) {
   let a1 = typeof a == 'string' ? a : a.username;
@@ -156,6 +157,13 @@ export class ProjectViewComponent {
   }
   openDialog(templateRef : TemplateRef<any>) {
     this.dialog.open(templateRef, { width: '700px' });
+  }
+  openDownloadDialog(mappings : MappingInfo[]) {
+    let data = {
+      projectName: this.projectName,
+      mappingConfigs: mappings.map(i => i.mappingShortkey),
+    };
+    this.dialog.open(DownloadDialogComponent, { data })
   }
   mappingLink(mapping : MappingInfo) {
     return mappingInfoLink(mapping)

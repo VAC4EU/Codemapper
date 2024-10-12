@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>Download code list</h1>
+<div class="inputs" mat-dialog-content>
+    <mat-checkbox #includeDescendants matTooltip="For each code, include all codes that are more specific">
+        Include descendant codes
+    </mat-checkbox>
+    <mat-checkbox #compatibilityFormat checked
+        matTooltip="Format the code list for compatibility with existing workflows">
+        Compatibility format for existing workflows (without meta data)
+    </mat-checkbox>
+</div>
+<div mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Cancel</button>
+
+    <button mat-raised-button enabled="enabled"
+        (click)="download(includeDescendants.checked, compatibilityFormat.checked)" matDialogClose
+        color="primary"><mat-icon>download</mat-icon>Download</button>
+</div>

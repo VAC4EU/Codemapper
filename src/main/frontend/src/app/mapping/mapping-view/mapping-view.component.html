@@ -28,6 +28,11 @@
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
     </span>
+    <span matTooltip="Download the current revision as a code list">
+      <button [disabled]="!userCanDownload || saveRequired || mapping.undoStack.length > 0" (click)="openDownloadDialog()" mat-icon-button>
+        <mat-icon>download</mat-icon>
+      </button>
+    </span>
   </ng-container>
 </menu-banner>
 

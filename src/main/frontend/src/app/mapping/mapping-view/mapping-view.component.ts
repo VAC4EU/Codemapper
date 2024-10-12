@@ -49,6 +49,7 @@ import {
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
+import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
 
 export enum Tabs {
   Start = 0,
@@ -314,6 +315,14 @@ export class MappingViewComponent implements HasPendingChanges {
     let dialogRef = this.dialog.open(templateRef, {
       width: '700px',
     });
+  }
+
+  openDownloadDialog() {
+    let data = {
+      projectName: this.projectName,
+      mappingConfigs: [this.mappingShortkey],
+    };
+    this.dialog.open(DownloadDialogComponent, { data })
   }
 
   save(summary : string) {

@@ -1,15 +1,23 @@
 <div class="center-content spaced">
 
   <mat-accordion>
-    <mat-expansion-panel expanded>
+
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Download</mat-panel-title>
-        <mat-panel-description>Download the code list as a CSV file</mat-panel-description>
+        <mat-panel-title>Start</mat-panel-title>
+        <mat-panel-description>The start of the mapping</mat-panel-description>
       </mat-expansion-panel-header>
-      <div class="download-content">
-        <app-download [projectName]="projectName" [mappingConfigs]="[mappingShortkey!]" [disabled]="!userCanDownload || !mappingShortkey">
-        </app-download>
-        <p *ngIf="!userCanDownload || !mappingShortkey">(The mapping must be saved before.)</p>
+      <div *ngIf="isIndexing(mapping.start)">
+        <p>
+          The mapping was started with the following textual description and selected concepts:
+        </p>
+        <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
+      </div>
+      <div *ngIf="isCsvImport(mapping.start)">
+        <p>
+          The mapping was started by importing a mapping from the following CSV data:
+        </p>
+        <pre class="csv-import">{{mapping.start.csvContent}}</pre>
       </div>
     </mat-expansion-panel>
 
@@ -51,25 +59,6 @@
 
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Start</mat-panel-title>
-        <mat-panel-description>The start of the mapping</mat-panel-description>
-      </mat-expansion-panel-header>
-      <div *ngIf="isIndexing(mapping.start)">
-        <p>
-          The mapping was started with the following textual description and selected concepts:
-        </p>
-        <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
-      </div>
-      <div *ngIf="isCsvImport(mapping.start)">
-        <p>
-          The mapping was started by importing a mapping from the following CSV data:
-        </p>
-        <pre class="csv-import">{{mapping.start.csvContent}}</pre>
-      </div>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
         <mat-panel-title>Configuration</mat-panel-title>
         <mat-panel-description>Configurations of the mapping</mat-panel-description>
       </mat-expansion-panel-header>
@@ -92,9 +81,3 @@
     </mat-expansion-panel>
   </mat-accordion>
 </div>
-
-<ng-template #downloadDialog>
-  <h2 matDialogTitle>Download selected mappings</h2>
-  <app-download [projectName]="projectName" [mappingConfigs]="[mappingShortkey!]">
-  </app-download>
-</ng-template>
