@@ -369,44 +369,50 @@ public class PersistencyApi {
     }
 
     public String slugifyName() {
-      return String.format("%s-%s", CodeMapperResource.slugify(projectName), CodeMapperResource.slugify(mappingName));
+      return String.format(
+          "%s-%s",
+          CodeMapperResource.slugify(projectName), CodeMapperResource.slugify(mappingName));
     }
 
-	public ParsedMappingName parseName() {
-    	ParsedMappingName parsed = new ParsedMappingName();
-	    String[] parts = this.mappingName.split("_");
-	    if (parts.length == 3) {
-	    	parsed.system = parts[0];
-	    	parsed.abbreviaton = parts[1];
-	    	parsed.type = parts[2];
-	    	parsed.definition = null;
-	    	return parsed;
-	    }
-	    if (parts.length == 4) {
-	    	parsed.system = parts[0];
-	    	parsed.abbreviaton = parts[1];
-	    	parsed.type = parts[2];
-	    	parsed.definition = parts[3];
-	    	return parsed;
-	    }
-	    return null;
-	}
+    public ParsedMappingName parseName() {
+      ParsedMappingName parsed = new ParsedMappingName();
+      String[] parts = this.mappingName.split("_");
+      if (parts.length == 3) {
+        parsed.system = parts[0];
+        parsed.abbreviation = parts[1];
+        parsed.type = parts[2];
+        parsed.definition = null;
+        return parsed;
+      }
+      if (parts.length == 4) {
+        parsed.system = parts[0];
+        parsed.abbreviation = parts[1];
+        parsed.type = parts[2];
+        parsed.definition = parts[3];
+        return parsed;
+      }
+      return null;
+    }
 
-	public String abbr() {
-		ParsedMappingName parsed = parseName();
-		if (parsed != null) {
-			return parsed.abbreviaton;
-		} else {
-			return mappingName;
-		}
-	}
+    public String abbr() {
+      ParsedMappingName parsed = parseName();
+      if (parsed != null) {
+        return parsed.abbreviation;
+      } else {
+        return mappingName;
+      }
+    }
   }
-  
+
   public static class ParsedMappingName {
-	  public String abbreviaton;
-	  public String system;
-	  public String type;
-	  public String definition;
+    public String abbreviation;
+    public String system;
+    public String type;
+    public String definition;
+
+    public String withoutDefinition() {
+      return String.format("%s_%s_%s", system, abbreviation, type);
+    }
   }
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {

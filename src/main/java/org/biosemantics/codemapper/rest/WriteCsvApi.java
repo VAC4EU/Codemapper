@@ -90,8 +90,7 @@ public class WriteCsvApi {
   @XmlRootElement
   public static class PreparedMapping {
     public Mapping mapping;
-	public ParsedMappingName parsedName;
-	public String mappingID;
+    public ParsedMappingName parsedName;
     public Map<String, Map<String, PreparedConcept>> data =
         new HashMap<>(); // voc -> cui -> forConcept
     public Map<String, Set<String>> disablad = new HashMap<>(); // voc -> set(code)
@@ -100,6 +99,14 @@ public class WriteCsvApi {
       return data.getOrDefault(voc, new HashMap<>()).entrySet().stream()
           .flatMap(e -> e.getValue().data.keySet().stream())
           .collect(Collectors.toSet());
+    }
+
+    String mappingID() {
+      if (parsedName != null) {
+        return parsedName.withoutDefinition();
+      } else {
+        return mapping.info.mappingName;
+      }
     }
   }
 
@@ -121,11 +128,6 @@ public class WriteCsvApi {
     PreparedMapping prepared = new PreparedMapping();
     prepared.mapping = mapping;
     prepared.parsedName = mapping.info.parseName();
-    if (prepared.parsedName != null) {
-    	prepared.mappingID = prepared.parsedName.abbreviaton;
-    } else {
-    	prepared.mappingID = prepared.mapping.info.mappingName;
-    }
     for (String voc : mapping.data.getVocabularies().keySet()) {
       Map<String, PreparedConcept> vocData =
           prepared.data.computeIfAbsent(voc, key -> new HashMap<>());
@@ -251,7 +253,7 @@ public class WriteCsvApi {
       boolean compatibilityFormat,
       PreparedMapping prepared)
       throws IOException {
-  	ParsedMappingName parsed = prepared.parsedName;
+    ParsedMappingName parsed = prepared.parsedName;
     if (compatibilityFormat) {
       writeRawRow(
           output,
@@ -264,10 +266,10 @@ public class WriteCsvApi {
           tag,
           origin,
           parsed != null ? parsed.system : "",
-		  prepared.mappingID,
-		  parsed != null ? parsed.type : "");
+          parsed != null ? parsed.abbreviation : prepared.mapping.info.mappingName,
+          parsed != null ? parsed.type : "");
     } else {
-      writeRawRow(output, prepared.mappingID, voc, code, term, concept, conceptName, tag, origin);
+      writeRawRow(output, prepared.mappingID(), voc, code, term, concept, conceptName, tag, origin);
     }
   }
 
@@ -294,8 +296,7 @@ public class WriteCsvApi {
     String url = CodeMapperApplication.getCodeMapperURL() + "/project/" + project;
     String meta =
         String.format(
-            "# CodeMapper project: %s, exported-mappings: %d, url: %s\n",
-            project, prepareds.size(), url);
+            "# Project: %s, exported-mappings: %d, url: %s\n", project, prepareds.size(), url);
     output.write(meta.getBytes());
     for (PreparedMapping prepared : prepareds) {
       url =
@@ -305,21 +306,25 @@ public class WriteCsvApi {
       String descendants = prepared.mapping.includeDescendants ? "true" : "false";
       String infos = "";
       if (prepared.parsedName != null) {
-	      if (prepared.parsedName.definition != null) {
-	        infos +=
-	            String.format(" definition: \"%s\",", prepared.parsedName.definition.replaceAll("\"", ""));
-	      }
-	      if (prepared.parsedName.system != null) {
-	        infos += String.format(" system: %s,", prepared.parsedName.system);
-	      }
-	      if (prepared.parsedName.type != null) {
-	        infos += String.format(" type: %s,", prepared.parsedName.type);
-      }
+        if (prepared.parsedName.system != null) {
+          infos += String.format(", system: %s", prepared.parsedName.system);
+        }
+        if (prepared.parsedName.type != null) {
+          infos += String.format(", type: %s", prepared.parsedName.type);
+        }
+        if (prepared.parsedName.abbreviation != null) {
+          infos += String.format(", abbr: %s", prepared.parsedName.abbreviation);
+        }
+        if (prepared.parsedName.definition != null) {
+          infos +=
+              String.format(
+                  ", definition: \"%s\"", prepared.parsedName.definition.replaceAll("\"", ""));
+        }
       }
       meta =
           String.format(
-              "# mapping: %s,%s version: %d, descendants: %s, url: %s\n",
-              prepared.mappingID,
+              "# Mapping: %s%s, version: %d, descendants: %s, url: %s\n",
+              prepared.mappingID(),
               infos,
               prepared.mapping.revision.getVersion(),
               descendants,

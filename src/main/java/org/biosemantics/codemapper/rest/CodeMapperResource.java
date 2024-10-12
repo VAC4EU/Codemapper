@@ -283,11 +283,13 @@ public class CodeMapperResource {
       }
       String mappingStr;
       if (mappings.size() == 1) {
-    	  mappingStr = mappings.get(0).info.abbr();
+        mappingStr = mappings.get(0).info.abbr();
       } else {
-    	  mappingStr = mappings.size() + " mappings";
+        mappingStr = mappings.size() + " mappings";
       }
-      String filename = String.format("CodeMapper %s - %s.%s", projectName, mappingStr, WriteCsvApi.FILE_EXTENSION);
+      String filename =
+          String.format(
+              "CodeMapper %s - %s.%s", projectName, mappingStr, WriteCsvApi.FILE_EXTENSION);
       String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
       return Response.ok()
           .header("Content-Disposition", contentDisposition)
@@ -299,14 +301,13 @@ public class CodeMapperResource {
       throw e.asWebApplicationException();
     }
   }
-  
+
   public static String slugify(String str) {
-	  return str
-	    .toLowerCase()
-	    .replaceAll("[_ ]", "-")
-	    .replaceAll("[^a-z0-9-]", "")
-	    .replaceAll("-+", "-")
-	    .replaceAll("^-|-$", "");
+    return str.toLowerCase()
+        .replaceAll("[_ ]", "-")
+        .replaceAll("[^a-z0-9-]", "")
+        .replaceAll("-+", "-")
+        .replaceAll("^-|-$", "");
   }
 
   List<Mapping> getMappings(

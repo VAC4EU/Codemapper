@@ -144,6 +144,9 @@
     <mat-form-field appearance="fill">
       <input type="text" placeholder="Mapping name" matInput #mappingName>
     </mat-form-field>
+    <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
+        class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
+        class="pre">I_FLU_COV_Influenca</span>.</p>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
@@ -160,6 +163,9 @@
       <mat-label>New name</mat-label>
       <input type="text" [value]="selected.selected[0].mappingName" #newName matInput>
     </mat-form-field>
+    <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
+        class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
+        class="pre">I_FLU_COV_Influenca</span>.</p>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
