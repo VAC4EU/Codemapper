@@ -23,11 +23,12 @@ import { MappingViewComponent } from './mapping/mapping-view/mapping-view.compon
 import { ProjectsViewComponent } from './mapping/projects-view/projects-view.component';
 import { ProjectViewComponent } from './mapping/project-view/project-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
-import { adminGuard, authGuard } from './mapping/auth.guard';
+import { adminGuard, authGuard, noAuthGuard } from './mapping/auth.guard';
 import { pendingChangesGuard } from './mapping/pending-changes.guard';
 import { LegacyMappingRedirectComponent } from './mapping/legacy-mapping-redirect/legacy-mapping-redirect.component';
 import { UserViewComponent } from './mapping/user-view/user-view.component';
 import { UsersViewComponent } from './mapping/users-view/users-view.component';
+import { LoginComponent } from './mapping/login/login.component';
 
 let routes : Routes = [
   {
@@ -36,18 +37,24 @@ let routes : Routes = [
     component: WelcomeViewComponent,
   },
   {
+    path: 'login',
+    title: 'CodeMapper: Login',
+    canActivate: [noAuthGuard],
+    component: LoginComponent,
+  },
+  {
     path: 'news',
     title: 'CodeMapper: News',
     component: NewsViewComponent,
   },
   {
-    path: 'projects',
-    title: 'CodeMapper: Projects',
+    path: 'folders',
+    title: 'CodeMapper: Folders',
     canActivate: [authGuard],
     component: ProjectsViewComponent,
   },
   {
-    path: 'project/:project',
+    path: 'folder/:folder',
     canActivate: [authGuard],
     component: ProjectViewComponent,
   },

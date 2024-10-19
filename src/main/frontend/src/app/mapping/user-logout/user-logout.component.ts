@@ -23,7 +23,7 @@ export class UserLogoutComponent {
     if (confirm("Really want to logout?")) {
       this.auth.logout()
         .subscribe(() => {
-          this.router.navigate(['login']);
+          this.router.navigate(['/']);
         });
     }
   }

@@ -9,7 +9,7 @@
       </mat-expansion-panel-header>
       <div *ngIf="isIndexing(mapping.start)">
         <p>
-          The mapping was started with the following textual description and selected concepts:
+          The mapping was started with the following event definition form and selected concepts:
         </p>
         <indexer [initialIndexing]="mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
       </div>
@@ -28,7 +28,7 @@
           All versions of the mapping
         </mat-panel-description>
       </mat-expansion-panel-header>
-      <span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">Use the button on the right to download them.</span>
+      <span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">Use the button on the right to export the codelist at that version.</span>
       <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
       <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [mappingShortkey]="mappingShortkey"
         [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">

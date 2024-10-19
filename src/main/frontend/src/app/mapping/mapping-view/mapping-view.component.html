@@ -28,7 +28,7 @@
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
     </span>
-    <span matTooltip="Download the current revision as a code list">
+    <span matTooltip="Export codelist of the current revision">
       <button [disabled]="!userCanDownload || saveRequired || mapping.undoStack.length > 0" (click)="openDownloadDialog()" mat-icon-button>
         <mat-icon>download</mat-icon>
       </button>
@@ -97,7 +97,7 @@
       (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
 
-  <mat-tab label="Vocabularies" [disabled]="mapping.start == null">
+  <mat-tab label="Coding systems" [disabled]="mapping.start == null">
     <vocabularies
       *ngIf="!mapping.isEmpty()"
       [userCanEdit]="userCanEdit"

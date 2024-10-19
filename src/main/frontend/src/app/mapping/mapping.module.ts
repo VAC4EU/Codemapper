@@ -82,6 +82,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MenuBannerComponent } from './menu-banner/menu-banner.component';
 import { UserLogoutComponent } from './user-logout/user-logout.component';
 import { DownloadDialogComponent } from './download-dialog/download-dialog.component';
+import { LoginComponent } from './login/login.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -127,6 +128,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     MenuBannerComponent,
     UserLogoutComponent,
     DownloadDialogComponent,
+    LoginComponent,
   ],
   imports: [
     HttpClientModule,

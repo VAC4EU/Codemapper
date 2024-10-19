@@ -14,7 +14,7 @@ Testing
 
 - import a mapping from a CSV file
 - remap a mapping using the latest UMLS data
-- download all mappings of a project
+- download all mappings of a folder
 - rename mappings
 - review on codes
 - view, select and tag codes per coding system, and create custom codes

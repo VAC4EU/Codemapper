@@ -37,6 +37,17 @@ export const authGuard : CanActivateFn = async (_next : ActivatedRouteSnapshot, 
   }
 }
 
+export const noAuthGuard : CanActivateFn = async (_next : ActivatedRouteSnapshot, state : RouterStateSnapshot) => {
+  let auth = inject(AuthService);
+  let router = inject(Router);
+  let user = await auth.user;
+  if (user == null) {
+    return true;
+  } else {
+    return router.parseUrl('/');
+  }
+}
+
 export const adminGuard : CanActivateFn = async (
   _next : ActivatedRouteSnapshot,
   state : RouterStateSnapshot

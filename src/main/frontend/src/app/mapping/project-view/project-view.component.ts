@@ -74,8 +74,8 @@ export class ProjectViewComponent {
   ngOnInit() {
     this.api.serverInfo().subscribe(info => this.serverInfo = info);
     this.route.params.subscribe(params => {
-      this.projectName = params['project'];
-      this.title.setTitle(`CodeMapper: Project ${this.projectName}`);
+      this.projectName = params['folder'];
+      this.title.setTitle(`CodeMapper: Folder ${this.projectName}`);
       this.persistency.projectMappingInfos(this.projectName)
         .subscribe((mappings) => this.mappings = mappings);
       this.auth.user.then((user) => this.user = user);

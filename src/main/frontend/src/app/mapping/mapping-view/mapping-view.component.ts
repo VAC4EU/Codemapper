@@ -398,7 +398,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   titleTooltip() : string {
-    let res = `In project ${this.projectName}`;
+    let res = `In folder ${this.projectName}`;
     if (this.saveRequired) {
       res += `, mapping needs save`;
     }

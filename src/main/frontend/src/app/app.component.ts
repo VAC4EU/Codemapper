@@ -33,8 +33,8 @@ export class AppComponent {
   title = 'CodeMapper';
   constructor(
     public loadingService : LoadingService,
-    private router : Router,
-    private snackbar : MatSnackBar,
+    router : Router,
+    snackbar : MatSnackBar,
   ) {
     router.events.forEach(ev => {
       if (ev instanceof NavigationEnd) {

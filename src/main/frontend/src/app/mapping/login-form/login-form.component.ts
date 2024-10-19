@@ -52,6 +52,8 @@ export class LoginFormComponent {
           if (res.success) {
             if (res.redirectUrl) {
               this.router.navigate([res.redirectUrl]);
+            } else if (this.router.url == "/login") {
+              this.router.navigate(["/"]);
             }
           } else {
             this.snackBar.open(res.error!, "Ok");

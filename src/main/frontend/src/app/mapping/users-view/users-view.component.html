@@ -28,9 +28,9 @@
                             <input #createUserEmail matInput autocomplete="off">
                         </mat-form-field>
                         <mat-form-field>
-                            <mat-label>Project roles</mat-label>
+                            <mat-label>Folder roles</mat-label>
                             <textarea #createProjectRoles matInput autocomplete="off">Tests: Owner</textarea>
-                            <mat-hint>PROJECT: ROLE per line, ROLE is Owner/Editor/Reviewer</mat-hint>
+                            <mat-hint>FOLDER: ROLE per line, ROLE is Owner/Editor/Reviewer</mat-hint>
                         </mat-form-field>
                         <button mat-raised-button class="create-user-button"
                             [disabled]="!createUserName.value || !createUserPassword.value || !createUserEmail.value"

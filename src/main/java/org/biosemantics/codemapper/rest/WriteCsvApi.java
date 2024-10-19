@@ -44,7 +44,7 @@ public class WriteCsvApi {
   public static final String FILE_EXTENSION = "csv";
   public static final String MIME_TYPE = "text/csv";
   static final String[] HEADERS = {
-    "mapping", "vocabulary", "code", "code_name", "concept", "concept_name", "tag", "origin"
+    "mapping", "coding_system", "code", "code_name", "concept", "concept_name", "tag", "origin"
   };
   static final String[] COMPATIBILITY_HEADERS = {
     "event_definition",
@@ -293,10 +293,10 @@ public class WriteCsvApi {
   public void writeProjectHeader(
       OutputStream output, String project, Collection<PreparedMapping> prepareds)
       throws IOException {
-    String url = CodeMapperApplication.getCodeMapperURL() + "/project/" + project;
+    String url = CodeMapperApplication.getCodeMapperURL() + "/folder/" + project;
     String meta =
         String.format(
-            "# Project: %s, exported-mappings: %d, url: %s\n", project, prepareds.size(), url);
+            "# Folder: %s, exported-mappings: %d, url: %s\n", project, prepareds.size(), url);
     output.write(meta.getBytes());
     for (PreparedMapping prepared : prepareds) {
       url =

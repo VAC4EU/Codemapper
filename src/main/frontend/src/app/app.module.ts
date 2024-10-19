@@ -64,11 +64,7 @@ export let urlEncodedOptions = {
       provide: MAT_TOOLTIP_DEFAULT_OPTIONS,
       useValue: myCustomTooltipDefaults
     },
-    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { width: "40em" } }
-    // {
-    //   provide: LocationStrategy,
-    //   useClass: HashLocationStrategy
-    // }
+    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { width: "40em" } },
   ],
   bootstrap: [AppComponent]
 })

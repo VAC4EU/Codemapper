@@ -1,4 +1,4 @@
-<a mat-button [matMenuTriggerFor]="menu" matTooltip="Menu - access your projects, mappings and anything else">
+<a mat-button [matMenuTriggerFor]="menu" matTooltip="Menu - access your folders, mappings and anything else">
   <ng-content></ng-content>
 </a>
 <mat-menu #menu="matMenu">
@@ -17,14 +17,14 @@
     <!-- <mat-icon>groups</mat-icon> -->
     Users
   </a>
-  <a *ngIf="user" routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+  <a *ngIf="user" routerLink="/folders" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
     class="navigation-button" mat-menu-item>
     <!-- <mat-icon>dataset</mat-icon> -->
-    Projects
+    Folders
   </a>
   <ul class="projects">
     <li *ngFor="let entry of roles| keyvalue">
-      <a [class]='{active: entry.key == projectName}' routerLink="/project/{{entry.key}}" routerLinkActive="active"
+      <a [class]='{active: entry.key == projectName}' routerLink="/folder/{{entry.key}}" routerLinkActive="active"
         [routerLinkActiveOptions]="{exact: true}" class="navigation-button project-link" mat-menu-item>
         {{entry.key}}
       </a>
