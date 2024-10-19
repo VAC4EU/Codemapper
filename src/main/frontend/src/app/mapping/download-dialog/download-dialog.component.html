@@ -1,17 +1,24 @@
-<h1 mat-dialog-title>Download code list</h1>
+<h1 mat-dialog-title>Download codelist</h1>
+
 <div class="inputs" mat-dialog-content>
-    <mat-checkbox #includeDescendants matTooltip="For each code, include also all codes that are more specific">
+    <mat-form-field>
+        <mat-label>Format</mat-label>
+        <mat-select #format required value="csv_compat">
+            <mat-option value="csv">CSV</mat-option>
+            <mat-option value="csv_compat">CSV compatibility</mat-option>
+        </mat-select>
+        <mat-hint *ngIf="format.value == 'csv_compat'">Compatibility: for existing workflows, without meta data</mat-hint>
+    </mat-form-field>
+
+    <p>
+    <mat-checkbox #includeDescendants checked matTooltip="For each code, include also all codes that are more specific">
         Include descendant codes
-    </mat-checkbox>
-    <mat-checkbox #compatibilityFormat checked
-        matTooltip="Format the code list for compatibility with existing workflows">
-        Compatibility format for existing workflows (without meta data)
-    </mat-checkbox>
+    </mat-checkbox></p>
 </div>
 <div mat-dialog-actions>
     <button mat-raised-button (click)="close()">Cancel</button>
 
     <button mat-raised-button enabled="enabled"
-        (click)="download(includeDescendants.checked, compatibilityFormat.checked)" matDialogClose
+        (click)="download(includeDescendants.checked, format.value)" matDialogClose
         color="primary"><mat-icon>download</mat-icon>Download</button>
 </div>

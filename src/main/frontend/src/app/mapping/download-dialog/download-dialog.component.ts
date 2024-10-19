@@ -18,14 +18,14 @@ export class DownloadDialogComponent {
     }
   ) { }
 
-  download(includeDescendants : boolean, compatibilityFormat : boolean) {
+  download(includeDescendants : boolean, format : string) {
     let url = new URL(this.api.codeListsUrl);
     url.searchParams.set('project', this.data.projectName);
     for (let mappingConfig of this.data.mappingConfigs) {
       url.searchParams.append('mappings', mappingConfig);
     }
     url.searchParams.set('includeDescendants', '' + includeDescendants);
-    url.searchParams.set('compatibilityFormat', '' + compatibilityFormat);
+    url.searchParams.set('format', '' + format);
     window.open(url, '_blank');
   }
   close() {

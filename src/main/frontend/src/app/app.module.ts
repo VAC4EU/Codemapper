@@ -29,6 +29,7 @@ import { MappingModule } from './mapping/mapping.module';
 
 import { LoadingService } from './loading.service';
 import { LoadingInterceptor } from './loading.interceptor';
+import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
 
 export const myCustomTooltipDefaults : MatTooltipDefaultOptions = {
   showDelay: 500,
@@ -62,7 +63,8 @@ export let urlEncodedOptions = {
     {
       provide: MAT_TOOLTIP_DEFAULT_OPTIONS,
       useValue: myCustomTooltipDefaults
-    }
+    },
+    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { width: "40em" } }
     // {
     //   provide: LocationStrategy,
     //   useClass: HashLocationStrategy

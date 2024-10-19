@@ -255,7 +255,7 @@ public class CodeMapperResource {
       @QueryParam("project") final String projectName,
       @QueryParam("mappings") final List<String> rawMappingConfigs,
       @QueryParam("includeDescendants") final boolean includeDescendants,
-      @QueryParam("compatibilityFormat") final boolean compatibilityFormat) {
+      @QueryParam("format") final String format) {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       logger.debug(String.format("Download code lists as CSV %s", projectName));
@@ -276,6 +276,17 @@ public class CodeMapperResource {
       }
       List<Mapping> mappings = getMappings(projectName, mappingConfigs, includeDescendants);
       try {
+        boolean compatibilityFormat;
+        switch (format) {
+          case "csv":
+            compatibilityFormat = false;
+            break;
+          case "csv_compat":
+            compatibilityFormat = true;
+            break;
+          default:
+            throw CodeMapperException.user("unexpected format: " + format);
+        }
         new WriteCsvApi().writeProjectCSV(output, projectName, mappings, compatibilityFormat);
       } catch (IOException e) {
         throw CodeMapperException.server("could not write code lists CSV", e);
