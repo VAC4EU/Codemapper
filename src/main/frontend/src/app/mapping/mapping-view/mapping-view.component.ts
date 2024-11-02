@@ -348,9 +348,8 @@ export class MappingViewComponent implements HasPendingChanges {
                 this.saveRequired = false;
               } catch (err) {
                 console.error('Could not save all review topics', err);
-                this.snackBar.open(
-                  'Could not save all review topics: ' + err,
-                  'Close'
+                alert(
+                  'Could not save all review topics: ' + err
                 );
               }
             }

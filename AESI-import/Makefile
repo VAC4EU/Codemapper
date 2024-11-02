@@ -1,6 +1,11 @@
+.PHONY: setup
+setup:
+	pip3 install -r requirements.txt
+
+ORIGINAL = B_to_C_Sima
 
 .PHONY: norm
-norm: AESI-norm.py AESI
+norm: AESI-norm.py $(ORIGINAL)
 	python3 $^ AESI-$@
 
 .PHONY: dedup

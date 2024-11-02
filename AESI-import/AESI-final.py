@@ -10,29 +10,30 @@ REVIEW_COLUMNS = ("review_author_%", "review_date_%", "review_content_%")
 YES_NO = {'N': 'No', 'Y': 'Yes'}
 
 RESULT_DETAILS = {
-    "DIRECT":                    "direct match",
+    "EXACT_MATCH":               "exact match",
     "BY_CODE_AND_NAME":          "code and code name match",
     "CODE_BY_NAME":              "code by code name",
     "CODE_BY_CUI":               "code by concept",
     "CODE_NAME_BY_CUI":          "code name by concept",
     "NAME_BY_CODE":              "code name by code",
     "NAME_BY_CODE_ABBR":         "abbr code name by code",
-    "NONE":                      "nothing found",
+    "NONE":                      "no matching code found",
     "NONE_CODING_SYSTEM":        "unknown coding system or free text",
     "NONE_NO_CODE":              "no code",
     "NONE_SAME_CUI":             "code concept and code name concept match but mismatch with concept",
     "NONE_SAME_CUI_NO_CONCEPT":  "code concept and code name concept match but no concept",
-    "OTHER_CODING_SYSTEM":       "changed coding system",
+    "CHANGE_CODING_SYSTEM":      "changed coding system",
 }
 
 def review_content(s):
+    details = RESULT_DETAILS[s['dedup_result']]
     if s['dedup_result'].startswith('NONE'):
-        res = "No matching code found."
+        res = f"Could not confirm/correct (${details})"
     else:
         if s.dedup_changed == '-':
-            res = "Confirmed."
+            res = f"Confirmed (${details})"
         else:
-            res = "Corrected."
+            res = f"Corrected (${details})"
     if s['dedup_changed'] != '-':
         res += f"\nChanged: {s['dedup_changed']}."
     if s['dedup_comment'] != '-':
@@ -42,7 +43,8 @@ def review_content(s):
 def finalize(df0, name, num_reviews):
     print(name)
     ignore = df0.dedup_ignore == 'true'
-    df = df0[~ignore]
+    nocode = df0.code == ''
+    df = df0[~ignore & ~nocode]
     info = [len(df0), len(df), 1 + num_reviews]
 
     review_cols = [s.replace('%', str(num_reviews)) for s in REVIEW_COLUMNS]
@@ -67,7 +69,7 @@ def finalize(df0, name, num_reviews):
         return res, info
     else:
         rev_auth, rev_date, rev_cont = review_cols
-        res[rev_auth] = 'SharePoint import'
+        res[rev_auth] = 'SharePoint deduplication'
         res[rev_date] = date.today().isoformat()
         res[rev_cont] = df.apply(review_content, axis=1)
         return res, info

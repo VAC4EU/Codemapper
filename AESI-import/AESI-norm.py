@@ -1,4 +1,5 @@
 import sys
+import os
 from os import path
 import pandas as pd
 from glob import glob
@@ -98,7 +99,8 @@ def get_sheets(indir, outdir, max):
 
 if __name__ == "__main__":
     try:
-        max = int(sys.argv[3])
+        max = int(os.environ['MAX'])
     except:
         max = None
+    print("max", max)
     get_sheets(sys.argv[1], sys.argv[2], max)

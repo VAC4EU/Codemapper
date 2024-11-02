@@ -19,10 +19,12 @@
 package org.biosemantics.codemapper.rest;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -121,6 +123,21 @@ public class PersistencyResource {
       return stateJson;
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition");
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @DELETE
+  @Path("mapping/{mappingShortkey}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public void deleteMapping(
+      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
+    try {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, mappingShortkey, ProjectPermission.Owner);
+      api.deleteMappings(Collections.singletonList(mappingShortkey));
+    } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }

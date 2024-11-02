@@ -1,3 +1,6 @@
+# TODO
+# - keep Free_text
+
 import sys
 import os
 import functools
@@ -184,7 +187,7 @@ class Categorization:
         self.names_by_code = None
         self.codes_by_name = None
         self.synonyms = None
-        self.comment = None
+        self.comments = []
 
     def __str__(self):
         return self.result
@@ -210,13 +213,15 @@ class Tables:
         print("by_sab_code:", sum(len(d) for d in self.by_sab_code.values()))
 
     def retired(self, cui):
-        return mrcui[self.mrcui.cui1 == cui].cui2.to_list()
+        return self.mrcui[self.mrcui.cui1 == cui].cui2.to_list()
 
+    # returns table where sab matches and str matches (ilike_test)
     def codes_by_name(self, sab, str):
         # TODO? sab_test
         df = self.by_sab[sab]
         return df[ilike_test(df.str, str)].to_dict('records')
 
+    # returns table where sab and code match
     def names_by_codes(self, sab, code):
         # TODO? sab_test
         df = self.by_sab_code[sab].get(code)
@@ -235,16 +240,9 @@ class Tables:
         df = self.table
         df = df[df.sab == sab]
         df = df[df.code == code]
+        df = df[df.str == str]
         if cuis:
             df = df[df.cui.isin(cuis)]
-        if len(code) < 8:
-            # Small codes are not rounded and we can search direct codes from
-            # sab/code alone.
-            pass
-        else:
-            # Large code could be rounded and may have to restore the code from
-            # the term
-            df = df[df.str == str]
         return df.to_dict('records')
 
     # row: {'coding_system': sab, 'code': str, 'code_name': str}
@@ -254,12 +252,11 @@ class Tables:
         cat = Categorization()
 
         concepts = None
-        concept_retired = False
         if concept:
             retired = self.retired(concept)
-            if retired is not None:
-                concept_retired = True
+            if retired:
                 concepts = retired
+                cat.comments.append("updated retired concept")
             else:
                 concepts = [concept]
 
@@ -271,18 +268,18 @@ class Tables:
             cat.result = "NONE_CODING_SYSTEM"
             return cat
 
+        if code.endswith('*'):
+            cat.comments.append("removed asterisk from code")
+            code = code.rstrip("*")
+
+        # 1. Confirm by exact match of coding system, code, code name, concept
         cat.direct = self.direct(coding_system, code, code_name, concepts)
         rows_direct = (r for r in cat.direct)
         try:
             cat.row = next(rows_direct)
-            cat.result = 'DIRECT'
-            comments = []
+            cat.result = 'EXACT_MATCH'
             if next(rows_direct, None):
-                comments.append("not unique")
-            if concept_retired:
-                comments.append("original concept was retired")
-            if comments:
-                cat.comment = ', '.join(comments)
+                cat.comments.append("not unique")
             return cat
         except:
             pass
@@ -300,6 +297,7 @@ class Tables:
             if code_match(r['code'], code, coding_system)
         )
 
+        # 2. Confirm by match on coding system, and code - correct code name (term_match)
         try:
             cat.row = next(rows_name_by_code)
             if next(rows_code_by_name, None):
@@ -307,16 +305,64 @@ class Tables:
             else:
                 cat.result = "NAME_BY_CODE"
             if next(rows_name_by_code, None):
-                cat.comment = "not unique"
+                cat.comments.append("not unique")
             return cat
         except:
             pass
 
+        # 3. Confirm my match on coding system and term (ilike) - correct the code (code_match)
         try:
             cat.row = next(rows_code_by_name)
             cat.result = "CODE_BY_NAME"
             if next(rows_code_by_name, None):
-                cat.comment = "not unique"
+                cat.comments.append("not unique")
+            return cat
+        except:
+            pass
+
+        if concepts:
+            rows = (r for r in cat.codes_by_name if r['cui'] in concepts)
+
+            # 4. Confirm by match on coding system, term and cui - correct code
+            try:
+                cat.row = next(rows)
+                cat.result = "CODE_BY_CUI"
+                if next(rows, None):
+                    cat.comments.append("not unique")
+                return cat
+            except:
+                pass
+
+            # 5. Confirm by match on coding system, term name and cui - correct code
+            try:
+                rows = (r for r in cat.names_by_code if r['cui'] == concept)
+                cat.row = next(rows)
+                cat.result = "CODE_NAME_BY_CUI"
+                if next(rows, None):
+                    cat.comments.append("not unique")
+                return cat
+            except:
+                pass
+
+
+        # 6. Confirm by exact match on code and code name - correct coding system
+        rows = (r for r in self.any_coding_system(code, code_name))
+        try:
+            cat.row = next(rows)
+            if next(rows, None):
+                cat.comments.append("not unique")
+            cat.result = "CHANGE_CODING_SYSTEM"
+            return cat
+        except:
+            pass
+
+        # 7. Confirm by match on coding system and cdode - correct term abbreviations
+        rows = (r for r in cat.names_by_code if term_match_abbr(r['str'], code_name))
+        try:
+            cat.row = next(rows)
+            cat.result = "NAME_BY_CODE_ABBR"
+            if next(rows, None):
+                cat.comments.append("not unique")
             return cat
         except:
             pass
@@ -324,56 +370,14 @@ class Tables:
         name_cuis = {r['cui'] for r in cat.codes_by_name}
         code_cuis = {r['cui'] for r in cat.names_by_code}
 
-        if concept:
-            rows = (r for r in cat.codes_by_name if r['cui'] == concept)
-            try:
-                cat.row = next(rows)
-                cat.result = "CODE_BY_CUI"
-                if next(rows, None):
-                    cat.comment = "not unique"
-                return cat
-            except:
-                pass
-
-            try:
-                rows = (r for r in cat.names_by_code if r['cui'] == concept)
-                cat.row = next(rows)
-                cat.result = "CODE_NAME_BY_CUI"
-                if next(rows, None):
-                    cat.comment = "not unique"
-                return cat
-            except:
-                pass
-
-
-        rows = (r for r in self.any_coding_system(code, code_name))
-        try:
-            cat.row = next(rows)
-            if next(rows, None):
-                cat.comment = "not unique"
-            cat.result = "OTHER_CODING_SYSTEM"
-            return cat
-        except:
-            pass
-
-        rows = (r for r in cat.names_by_code if term_match_abbr(r['str'], code_name))
-        try:
-            cat.row = next(rows)
-            cat.result = "NAME_BY_CODE_ABBR"
-            if next(rows, None):
-                cat.comment = "not unique"
-            return cat
-        except:
-            pass
-
+        # 8. No confirmation
         if name_cuis and code_cuis:
             if concept:
                 cat.result = "NONE_SAME_CUI"
             else:
                 cat.result = "NONE_SAME_CUI_NO_CONCEPT"
             return cat
-
-        cat.result = "NONE"
+        cat.result = "NONE"        
         return cat
 
     def dedup(self, df):
@@ -438,8 +442,8 @@ class Tables:
                     for r in cat.codes_by_name
                 )
 
-            if cat.comment is not None:
-                df.at[i, 'dedup_comment'] = cat.comment
+            if cat.comments:
+                df.at[i, 'dedup_comment'] = '\n'.join(cat.comments)
 
         return df
 
@@ -468,8 +472,8 @@ if __name__ == "__main__":
         pd.read_csv(table_filename, dtype=dtype)
         .assign(ttys=lambda df: df.ttys.str.split(',').apply(set))
     )
-    names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin']
-    mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names)
+    names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin', 'dummy']
+    mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names, sep='|')
     tables = Tables(table, mrcui)
     try:
         num = int(os.environ['DEDUP_NUM'])

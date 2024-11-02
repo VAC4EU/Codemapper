@@ -152,7 +152,9 @@ public class ReviewApi {
       timestamp = now();
     }
     logger.info(
-        String.format("new topic %s %s %s %s %s", mappingShortkey, cui, heading, user, timestamp));
+        String.format(
+            "new topic %s %s %s %s %s %s %s",
+            mappingShortkey, cui, sab, code, heading, user, timestamp));
     String query = "SELECT * FROM review_new_topic_shortkey(?, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
@@ -165,7 +167,7 @@ public class ReviewApi {
       statement.setString(ix++, timestamp);
       ResultSet set = statement.executeQuery();
       if (!set.next()) {
-        throw CodeMapperException.server("Could not save message");
+        throw CodeMapperException.server("Could not create new topic");
       }
       return set.getInt(1);
     } catch (SQLException e) {

@@ -81,8 +81,9 @@ export class ImportCsvDialogComponent {
           this.dialogRef.close(imported);
         },
         error: (err) => {
-          console.log("CSV import error", err);
-          this.snackbar.open("Could not import CSV file: " + (err as HttpErrorResponse).error, "Ok");
+          let msg = typeof(err) == "string" ? err : ((err as any).error ?? "Could not import codelist: unknown error (see console)");
+          console.log("Could not import codelist", err);
+          alert(msg);
         },
       });
     this.unsetCsvImportFile();

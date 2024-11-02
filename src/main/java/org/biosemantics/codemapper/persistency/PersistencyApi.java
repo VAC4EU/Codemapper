@@ -544,7 +544,8 @@ public class PersistencyApi {
             + "ON cd.project_id = p.id "
             + "LEFT JOIN case_definition_latest_revision r "
             + "ON r.case_definition_id = cd.id "
-            + "WHERE p.name = ?";
+            + "WHERE p.name = ? "
+            + "AND (cd.status is null OR cd.status != 'DELETED')";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -563,6 +564,18 @@ public class PersistencyApi {
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to get case definition names", e);
+    }
+  }
+
+  public int deleteMappings(List<String> shortkeys) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET status = 'DELETED' where shortkey = ANY(?)";
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setArray(1, connection.createArrayOf("varchar", shortkeys.toArray()));
+      return statement.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to delete mappings", e);
     }
   }
 
