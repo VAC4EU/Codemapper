@@ -7,7 +7,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 @Provider
-public class ForbiddenExceptionErrorHandler implements ExceptionMapper<ForbiddenException> {
+public class ForbiddenExceptionExceptionMapper implements ExceptionMapper<ForbiddenException> {
   @Override
   public Response toResponse(ForbiddenException e) {
     return Response.status(e.getResponse().getStatus())

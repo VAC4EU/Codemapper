@@ -256,7 +256,6 @@ public class UmlsApi {
         String name;
         if (str.equals(cui)) name = String.format("CUI %s: %s", cui, str1);
         else name = String.format("%s in %s: %s", code, sab, str1);
-        System.out.println("SOURCE CONCEPT: " + name);
         concepts
             .computeIfAbsent(cui, k -> new UmlsConcept(cui, name))
             .getSourceConcepts()
