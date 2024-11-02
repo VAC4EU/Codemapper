@@ -48,7 +48,6 @@ export class LoginFormComponent {
     if (username && password) {
       this.auth.login(username, password)
         .subscribe((res) => {
-          console.log("form login res", res);
           if (res.success) {
             if (res.redirectUrl) {
               this.router.navigate([res.redirectUrl]);

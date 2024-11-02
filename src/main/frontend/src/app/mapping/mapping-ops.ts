@@ -173,9 +173,9 @@ export class AddConcepts extends Operation {
   }
   override run(mapping : Mapping) : Operation | undefined {
     console.log("ADD CONCEPTS", this.concepts, this.codes);
+    mapping.addConceptsCodes(this.concepts, this.codes);
     let ids = Object.keys(this.concepts)
       .filter(id => id in mapping.concepts);
-    mapping.addConceptsCodes(this.concepts, this.codes);
     return new RemoveConcepts(ids);
   }
 }
@@ -202,7 +202,6 @@ export class RemoveConcepts extends Operation {
         for (const codeId of codeIds) {
           codes[vocId][codeId] = mapping.codes[vocId][codeId];
         }
-
       }
     }
     mapping.concepts = { ...mapping.concepts };

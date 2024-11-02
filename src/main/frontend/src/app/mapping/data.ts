@@ -312,6 +312,7 @@ export class Mapping {
   public run(op : Operation) {
     console.log("Run", op);
     let inv = this.runIntern(op);
+    this.redoStack = [];
     if (inv !== undefined) {
       this.undoStack.push([op.describe(), inv]);
     } else {
