@@ -28,12 +28,12 @@ RESULT_DETAILS = {
 def review_content(s):
     details = RESULT_DETAILS[s['dedup_result']]
     if s['dedup_result'].startswith('NONE'):
-        res = f"Could not confirm/correct (${details})"
+        res = f"Could not confirm/correct ({details})"
     else:
         if s.dedup_changed == '-':
-            res = f"Confirmed (${details})"
+            res = f"Confirmed ({details})"
         else:
-            res = f"Corrected (${details})"
+            res = f"Corrected ({details})"
     if s['dedup_changed'] != '-':
         res += f"\nChanged: {s['dedup_changed']}."
     if s['dedup_comment'] != '-':
