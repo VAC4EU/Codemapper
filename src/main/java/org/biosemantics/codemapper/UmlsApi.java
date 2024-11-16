@@ -97,8 +97,8 @@ public class UmlsApi {
     this.nonUmls = nonUmls;
   }
 
-  public List<CodingSystem> getCodingSystems() throws CodeMapperException {
-    List<CodingSystem> res = nonUmls.getVocabularies();
+  public Collection<CodingSystem> getCodingSystems() throws CodeMapperException {
+    Collection<CodingSystem> res = nonUmls.getVocabularies();
     res.addAll(getUmlsCodingSystems());
     return res;
   }

@@ -3,7 +3,7 @@ mrconso.csv:
 	psql umls2024aa -c "COPY (select distinct cui,sab,code,str,lat,tty from mrconso order by sab,code) TO STDOUT DELIMITER ',' CSV HEADER" \
 	  > $@
 
-VOCS = ICD10DA MEDCODEID RCD2
+VOCS = ICD10DA MEDCODEID RCD2 ICDO3
 EXPORTS = $(addprefix export/, $(addsuffix .csv, $(VOCS)))
 
 export/non-umls.csv: $(EXPORTS)

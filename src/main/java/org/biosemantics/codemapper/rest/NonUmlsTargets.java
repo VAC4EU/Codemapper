@@ -39,18 +39,12 @@ import org.biosemantics.codemapper.UmlsConcept;
 public class NonUmlsTargets {
 
   private DataSource connectionPool;
-  private Collection<CodingSystem> vocs;
 
   public NonUmlsTargets(DataSource connectionPool) throws CodeMapperException {
     this.connectionPool = connectionPool;
-    this.vocs = retrieveVocabularies();
   }
 
-  public List<CodingSystem> getVocabularies() {
-    return new LinkedList<>(this.vocs);
-  }
-
-  private Collection<CodingSystem> retrieveVocabularies() throws CodeMapperException {
+  public Collection<CodingSystem> getVocabularies() throws CodeMapperException {
     String query = "SELECT DISTINCT abbr, full_name, ver FROM non_umls_latest_vocs";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -70,8 +64,8 @@ public class NonUmlsTargets {
     }
   }
 
-  public boolean is(String codingSystem) {
-    return this.vocs.stream().anyMatch(v -> v.getAbbreviation().equals(codingSystem));
+  public boolean is(String codingSystem) throws CodeMapperException {
+    return this.getVocabularies().stream().anyMatch(v -> v.getAbbreviation().equals(codingSystem));
   }
 
   public Map<String, Collection<String>> getCuisForCodes(String abbr, Collection<String> codes)

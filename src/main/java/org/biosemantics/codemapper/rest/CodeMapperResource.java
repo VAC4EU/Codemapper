@@ -116,7 +116,7 @@ public class CodeMapperResource {
   @GET
   @Path("coding-systems")
   @Produces(MediaType.APPLICATION_JSON)
-  public List<CodingSystem> getCodingSystems(@Context User user) {
+  public Collection<CodingSystem> getCodingSystems(@Context User user) {
     AuthentificationApi.assertAuthentificated(user);
     try {
       return api.getCodingSystems();
