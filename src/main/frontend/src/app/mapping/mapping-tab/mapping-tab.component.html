@@ -50,7 +50,7 @@
         When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
         remap the mapping to update the concept codes using the latest version of the UMLS.
       </p>
-      <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack"
+      <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack.length > 0"
         (click)="remap()" mat-raised-button color="primary">
         Remap
       </button>

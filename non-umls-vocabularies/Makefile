@@ -16,4 +16,4 @@ $(EXPORTS): export/%.csv: $$*/$$*.csv export/ids.txt
 
 .PHONY:
 import: export/non-umls.csv
-	psql codemapper -c "COPY non_umls_codes (voc_id,code,term,rel,umls_code,umls_sab,cui) FROM STDIN with (format csv);" < $<
+	psql codemapper -c "COPY non_umls_codes (voc_id,code,term,rel,umls_code,umls_sab,cui,criterion) FROM STDIN with (format csv);" < $<
