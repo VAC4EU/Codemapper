@@ -52,6 +52,7 @@ export abstract class Operation {
   public abstract run(mapping : Mapping) : Operation | undefined;
   public abstract describe() : string;
   saveRequired : boolean = false;
+  saveReviewRequired : boolean = false;
   afterRunCallback : () => void = () => { };
   public withAfterRunCallback(callback : () => void) {
     this.afterRunCallback = callback;
@@ -491,6 +492,7 @@ export class ImportMapping extends Operation {
   ) {
     super();
     this.saveRequired = true;
+    this.saveReviewRequired = true;
   }
   override describe() : string {
     return "Import initial mapping";

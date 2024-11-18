@@ -91,6 +91,7 @@ export class MappingViewComponent implements HasPendingChanges {
   reviewData : ReviewData = new ReviewData();
   vocabularies! : Vocabularies;
   selectedIndex : number = 1;
+  saveReviewRequired : boolean = false;
   saveRequired : boolean = false;
   error : string | null = null;
   projectRole : ProjectRole | null = null;
@@ -219,6 +220,7 @@ export class MappingViewComponent implements HasPendingChanges {
   async setInitialMapping(initial : any) {
     console.log('Initial mapping', initial.mapping);
     this.saveRequired = true;
+    this.saveReviewRequired = true;
     this.mappingName = initial.mappingName;
     this.projectName = initial.projectName;
     this.mapping = initial.mapping as Mapping;
@@ -274,6 +276,9 @@ export class MappingViewComponent implements HasPendingChanges {
     this.updateMapping(this.mapping);
     if (op.saveRequired) {
       this.saveRequired = true;
+    }
+    if (op.saveReviewRequired) {
+      this.saveReviewRequired = true;
     }
   }
 
@@ -337,7 +342,7 @@ export class MappingViewComponent implements HasPendingChanges {
         .saveRevision(mappingShortkey, this.mapping, summary)
         .subscribe({
           next: async (version) => {
-            if (this.saveRequired) {
+            if (this.saveReviewRequired) {
               try {
                 await firstValueFrom(
                   this.apiService.saveAllTopics(
@@ -345,7 +350,7 @@ export class MappingViewComponent implements HasPendingChanges {
                     this.allTopics.toRaw()
                   )
                 );
-                this.saveRequired = false;
+                this.saveReviewRequired = false;
               } catch (err) {
                 console.error('Could not save all review topics', err);
                 alert(
