@@ -7,9 +7,7 @@ LOCAL_TOMCAT?=/var/lib/tomcat9/
 deploy-production:
 	mvn -P production clean package
 	scp target/codemapper.war $(SERVER):/tmp/
-	echo -n "deploy what? > "; \
-	read resp; \
-	[ "$$resp" = "production" ]
+	@printf "Deploy what? > "; read resp; [ "$$resp" = "production" ]
 	ssh -t $(SERVER) \
 	  sudo -u tomcat8 \
 	  cp /tmp/codemapper.war /var/lib/tomcat8/webapps

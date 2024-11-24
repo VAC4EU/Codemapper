@@ -1,6 +1,9 @@
+UMLSVERSION=umls2024ab
+
 .PHONY: mrconso.csv
 mrconso.csv:
-	psql umls2024aa -c "COPY (select distinct cui,sab,code,str,lat,tty from mrconso order by sab,code) TO STDOUT DELIMITER ',' CSV HEADER" \
+	psql $(UMLSVERSION) \
+	  -c "COPY (SELECT DISTINCT cui, sab, code, str, lat, tty FROM mrconso ORDER BY sab, code) TO STDOUT DELIMITER ',' CSV HEADER" \
 	  > $@
 
 VOCS = ICD10DA MEDCODEID RCD2 ICDO3

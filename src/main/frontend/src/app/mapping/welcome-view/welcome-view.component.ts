@@ -22,6 +22,7 @@ import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
 import { firstValueFrom, map, Observable } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-welcome-view',
@@ -30,6 +31,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class WelcomeViewComponent {
   info : ServerInfo = EMPTY_SERVER_INFO;
+  isProduction : boolean = environment.isProduction;
   constructor(
     private auth : AuthService,
     private api : ApiService,

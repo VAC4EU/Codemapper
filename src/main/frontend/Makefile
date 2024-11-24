@@ -16,8 +16,6 @@ dist-production:
 
 .PHONY: deploy-production
 deploy-production: dist-production
-	echo -n "deploy what? > "; \
-	read resp; \
-	[ "$$resp" = "production" ]
+	@printf "Deploy what? > "; read resp; [ "$$resp" = "production" ]
 	rsync -zrv --delete dist-production advance:/tmp
 	ssh -t advance sudo -u www-data rsync -avz --delete /tmp/dist-production/ /var/www/codemapper-frontend

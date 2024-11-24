@@ -1,5 +1,5 @@
 
-<mat-toolbar [class.testing]="!isProduction">
+<mat-toolbar [class.testing]="!isProduction" [matTooltipDisabled]="isProduction" matTooltip="Testing version of CodeMapper">
     <span>
         <app-navigation [projectName]="projectName">
             <img class="logo" src="assets/logo.png" alt="CodeMapper logo" />

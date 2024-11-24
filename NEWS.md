@@ -9,18 +9,20 @@
 
 <section class="center-content">
 
-Testing
+November 24, 2024
 -------
 
-- import a mapping from a CSV file
+- complete overhaul of the user interface
+- integration of non-umls coding systems (ICD10DA, RCD2, MEDCODEID, ICDO3)
+- view coding systems, and create custom coding systems
+- import mappings from CSV files
 - remap a mapping using the latest UMLS data
 - download all mappings of a folder
-- rename mappings
+- basic administration for mappings
 - review on codes
 - view, select and tag codes per coding system, and create custom codes
-- view coding systems, and create custom coding systems
-- integration of non-umls coding systems (ICD10DA, RCD2, MEDCODEID)
-- complete overhaul of the user interface
+- faster descendant codes
+- update UMLS to version 2024AB
 
 October 4, 2023
 ----
