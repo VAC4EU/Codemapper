@@ -38,3 +38,5 @@ WebContent
 /non-umls-vocabularies/export/*.csv
 /AESI-import/table.csv
 non-umls-vocabularies/ICDO3/ICDO3-missing.csv
+/src/main/frontend/dist-production/
+/src/main/frontend/dist-testing/

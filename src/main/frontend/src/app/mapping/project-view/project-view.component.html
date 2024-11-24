@@ -71,7 +71,7 @@
             <a [routerLink]="mappingLink(mapping)" mat-menu-item>
               {{mapping.mappingName}}
               <mat-icon *ngIf="mapping.version == null" class="revision-icon"
-                matTooltip="Mapping has no revision yet, please open, review and save">warning</mat-icon>
+                matTooltip="From old version of CodeMapper, please open, review and save">warning</mat-icon>
             </a>
 
           </td>
@@ -85,7 +85,7 @@
           <mat-card-header>
             <h4>Set user role</h4>
           </mat-card-header>
-          <mat-card-content class="column">
+          <mat-card-content>
             <mat-form-field>
               <mat-label>User</mat-label>
               <mat-select #addUserRoleName>
@@ -101,7 +101,7 @@
                 <mat-option *ngFor="let role of rolesDomain()" [value]="role">{{role}}</mat-option>
               </mat-select>
             </mat-form-field>
-            <button mat-raised-button [disabled]="!addUserRoleName.value"
+            <button mat-raised-button color="primary" [disabled]="!addUserRoleName.value"
               (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Set</button>
           </mat-card-content>
         </mat-card>

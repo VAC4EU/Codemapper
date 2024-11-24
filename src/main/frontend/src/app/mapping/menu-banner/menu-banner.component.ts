@@ -1,4 +1,5 @@
-import { booleanAttribute, Component, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'menu-banner',
@@ -6,5 +7,6 @@ import { booleanAttribute, Component, Input } from '@angular/core';
   styleUrls: ['./menu-banner.component.scss']
 })
 export class MenuBannerComponent {
+  isProduction : boolean = environment.isProduction;
   @Input() projectName : string | null = null;
 }

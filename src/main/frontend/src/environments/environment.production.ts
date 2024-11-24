@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 export const environment = {
-  isProduction: false,
-  apiUrl: '',
-  peregrineUrl: ''
+  isProduction: true,
+  apiUrl: 'https://app.vac4eu.org/codemapper/rest',
+  peregrineUrl: "https://app.vac4eu.org/peregrine-codemapper/rest"
 };
