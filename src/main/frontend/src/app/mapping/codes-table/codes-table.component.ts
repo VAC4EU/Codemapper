@@ -143,8 +143,9 @@ export class CodesTableComponent {
     if (this.mapping != null) {
       let codeName = this.mapping.codes[this.vocabularyId]?.[code]?.term ?? "unknown";
       this.dialog.open(ReviewsDialogComponent, {
+        width: '80em',
         data: {
-          heading: `Comments on code ${code}: ${codeName}`,
+          heading: `Review ${code}: ${codeName}`,
           voc: this.vocabularyId,
           code: code,
           allTopicsObj: this.allTopicsObj,

@@ -56,17 +56,6 @@ subset() {
         org.java.plugin.boot.Boot
 }
 
-FILES=(MRCONSO MRDEF MRHIER MRSAB MRSTY MRCUI)
-
-zipumls() {
-    ZIP=$(realpath $(dirname "$1"))/$(basename "$1")
-    DIR="$2"
-    cd $(dirname "$DIR")
-    files=(${FILES[@]/#/$(basename "$DIR")/META/})
-    files=(${files[@]/%/.RRF})
-    zip -o "$ZIP" "${files[@]}"
-}
-
 GRANTDB="
 grant connect to codemapper;
 grant usage on schema public to codemapper;

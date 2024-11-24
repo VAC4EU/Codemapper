@@ -130,8 +130,9 @@ export class ConceptsTableComponent {
 
   showReviews(cui : ConceptId) {
     const dialogRef = this.dialog.open(ReviewsDialogComponent, {
+      width: '80em',
       data: {
-        heading: `Comments on concept ${cui}: ${this.concepts[cui].name}`,
+        heading: `Review ${cui}: ${this.concepts[cui].name}`,
         cui,
         allTopicsObj: this.allTopicsObj,
         data: this.reviewData,

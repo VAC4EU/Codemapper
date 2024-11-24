@@ -85,7 +85,7 @@ public class ReviewApi {
     }
     logger.info(
         String.format("new message %s %d %s %s", mappingShortkey, topicId, content, timestamp));
-    String query = "SELECT * FROM review_new_message(?, ?, ?, ?::TIMESTAMP)";
+    String query = "SELECT * FROM review_new_message(?, ?, ?, ?)";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setInt(ix++, topicId);
@@ -155,7 +155,7 @@ public class ReviewApi {
         String.format(
             "new topic %s %s %s %s %s %s %s",
             mappingShortkey, cui, sab, code, heading, user, timestamp));
-    String query = "SELECT * FROM review_new_topic_shortkey(?, ?, ?, ?, ?, ?, ?::TIMESTAMP)";
+    String query = "SELECT * FROM review_new_topic_shortkey(?, ?, ?, ?, ?, ?, ?)";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setString(ix++, mappingShortkey);

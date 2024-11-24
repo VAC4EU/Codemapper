@@ -1,11 +1,13 @@
-<mat-dialog-actions>
-  <button mat-raised-button color="primary" (click)="close()">Close</button>
-</mat-dialog-actions>
+<h2 mat-dialog-title>
+  <span class="heading">{{data.heading}}</span>
+  <button (click)="close()" mat-icon-button color="primary" align="end" matTooltip="Close review dialog">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
 <mat-dialog-content class="form-fields">
   <reviews
     *ngIf="getTopics(); let topics"
     [topicsInfo]="topics"
-    [heading]="data.heading"
     [cui]="data.cui"
     [voc]="data.voc"
     [code]="data.code"

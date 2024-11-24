@@ -25,7 +25,7 @@ COLUMN_MAPPING = (
 INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"]
 
 def get_mapping(filename):
-    name = path.splitext(path.basename(filename))[0]
+    name = path.basename(path.dirname(filename))
     xls = pd.ExcelFile(filename)
     sheets = pd.read_excel(filename, dtype=str, sheet_name=None)
     res = None

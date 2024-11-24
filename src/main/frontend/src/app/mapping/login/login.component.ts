@@ -8,12 +8,13 @@ import { AuthService } from '../auth.service';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
+  
+  pleaseLogin : boolean = false;
+
   constructor(private snackbar: MatSnackBar, private auth: AuthService) {
   }
 
   async ngOnInit() {
-    if (this.auth.redirectUrl) {
-      this.snackbar.open('Please login', undefined, {duration: 0});
-    }
+    this.pleaseLogin = this.auth.redirectUrl != null;
   }
 }

@@ -78,8 +78,7 @@ create function review_edit_user_message(
 $$ language sql;
 
 -- create a new message
-drop function if exists review_new_message;
-create function review_new_message(topic_id int, content text, username text, t timestamp)
+create or replace function review_new_message(topic_id int, content text, username text, t text)
 returns table (message_id int) as $$
 with
   nobody as (
@@ -102,8 +101,8 @@ with
   ),
   message as (
     insert into review_message (topic_id, author_id, content, timestamp)
-    select review_new_message.topic_id, a.id, c.content, review_new_message.t
-    from author a, content c
+    select review_new_message.topic_id, a.id, c.content, str_to_timestamp
+    from author a, content c, str_to_timestamp(t, '1970-01-01'::TIMESTAMP)
     returning id
   ),
   x as (
@@ -132,9 +131,16 @@ as $$
   returning id
 $$ language sql;
 
-drop function if exists review_new_topic_uuid;
-drop function if exists review_new_topic_shortkey;
-create function review_new_topic_shortkey(mapping_shortkey SHORTKEY, cui char(8), sab varchar(40), code text, heading text, username text, t timestamp)
+create or replace function str_to_timestamp(_date text, fallback timestamp) returns timestamp
+language plpgsql AS
+$$
+    begin
+        return _date::timestamp;
+        exception when others then return fallback;
+    end;
+$$;
+
+create or replace function review_new_topic_shortkey(mapping_shortkey SHORTKEY, cui char(8), sab varchar(40), code text, heading text, username text, t text)
 returns table (topic_id int)
 as $$
   with
@@ -142,8 +148,8 @@ as $$
   user0 as (select id from users u where u.username = review_new_topic_shortkey.username),
   user1 as (select coalesce(user0.id, nobody.id) as id from nobody left join user0 on true)
   insert into review_topic (case_definition_id, cui, sab, code, heading, created_by, created_at)
-  select cd.id, review_new_topic_shortkey.cui, review_new_topic_shortkey.sab, review_new_topic_shortkey.code, review_new_topic_shortkey.heading, u.id, review_new_topic_shortkey.t
-  from case_definitions cd, user1 u
+  select cd.id, review_new_topic_shortkey.cui, review_new_topic_shortkey.sab, review_new_topic_shortkey.code, review_new_topic_shortkey.heading, u.id, str_to_timestamp
+  from case_definitions cd, user1 u, str_to_timestamp(review_new_topic_shortkey.t, '1970-01-01'::TIMESTAMP)
   where cd.shortkey = review_new_topic_shortkey.mapping_shortkey
   returning id
 $$ language sql;

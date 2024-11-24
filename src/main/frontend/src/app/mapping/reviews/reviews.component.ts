@@ -29,7 +29,6 @@ import { AuthService } from '../auth.service';
 })
 export class ReviewsComponent {
   @Input() topicsInfo! : TopicsInfo;
-  @Input() heading! : string;
   @Input() cui : ConceptId | null = null;
   @Input() voc : VocabularyId | null = null;
   @Input() code : CodeId | null = null;
