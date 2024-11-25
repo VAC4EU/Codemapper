@@ -1,0 +1,48 @@
+<h1 matDialogTitle>Import CSV</h1>
+<mat-dialog-content>
+  <p>
+    <mat-form-field appearance="fill">
+      <mat-label>Mapping name</mat-label>
+      <input type="text" [(ngModel)]="mappingName" matInput>
+    </mat-form-field>
+  </p>
+  <p>
+    <input
+      #csvFileInput
+      type="file"
+      style="display: none"
+      (change)="handleCsvFileInput($event)"
+      accept="text/csv">
+    <button
+      (click)="csvFileInput.click()"
+      mat-raised-button>
+      Select file
+    </button>
+  </p>
+  <p>The CSV file must have the following columns:</p>
+  <ul>
+    <li><code>coding_system</code></li>
+    <li><code>concept</code></li>
+    <li><code>code</code></li>
+    <li><code>term</code></li>
+    <li><code>tag</code></li>
+    <li><code>review_author_0</code></li>
+    <li><code>review_date_0</code></li>
+    <li><code>review_content_0</code></li>
+    <li><code>...</code></li>
+  </ul>
+  <p>The CSV file can contain multiple rounds of comments in columns with increasing numbers.</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button
+    (click)="unsetCsvImportFile()"
+    mat-button
+    matDialogClose>Cancel</button>
+  <span matTooltip="Requires mapping name and CSV file">
+    <button
+      [disabled]="csvImportFile == null || !mappingName"
+      (click)="importCsv(mappingName, csvImportFile!)"
+      color="primary"
+      mat-raised-button>Import</button>
+  </span>
+</mat-dialog-actions>

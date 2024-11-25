@@ -1,0 +1,15 @@
+
+<mat-toolbar [class.testing]="!isProduction" [matTooltipDisabled]="isProduction" matTooltip="Testing version of CodeMapper">
+    <span>
+        <app-navigation [projectName]="projectName">
+            <img class="logo" src="assets/logo.png" alt="CodeMapper logo" />
+            <mat-icon>menu</mat-icon>
+        </app-navigation>
+        <span class="content"><ng-content></ng-content></span>
+    </span>
+    <span class="on-the-right">
+        <ng-content select="[onTheRight]"></ng-content>
+        <app-user-logout></app-user-logout>
+    </span>
+</mat-toolbar>
+

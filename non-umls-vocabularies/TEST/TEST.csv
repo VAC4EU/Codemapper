@@ -1,0 +1,8 @@
+code,term,cui,rel
+10,Fever,C0015967,EQ
+20,Headache,C0018681,EQ
+21,Very headache,C0018681,RN
+30,Acidosis,C0001122,EQ
+31,Acidosis 2,C0001122,RN
+32,Acidosis 3,C0001122,RN
+33,Autoimmune thyroiditis,C0920350,EQ

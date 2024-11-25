@@ -1,0 +1,24 @@
+.logos {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 1em;
+}
+
+.vac4eu-logo {
+    height: 8ex;
+}
+
+.comap-logo {
+    height: 9ex;
+}
+
+:host ::ng-deep .mat-form-field-flex {
+    background: rgb(245, 245, 245);
+  }
+  
+
+.center {
+  width: 50%;
+  margin: 0 auto;
+}

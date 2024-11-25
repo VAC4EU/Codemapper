@@ -1,0 +1,27 @@
+.outer {
+  display: flex;
+  flex-direction: row;
+}
+
+.left, .right {
+  display: flex;
+  flex-direction: column;
+  margin: 1em 1em 1em 1em;
+}
+
+/* .custom-code { */
+/*   border-left: 5px solid orange; */
+/*   border-right: 5px solid orange; */
+/* } */
+
+.custom-codes-operations .mat-mdc-card-header {
+  /* background-color: #b0d4ff; */
+  /* padding: 2px; */
+  /* border-bottom: 5px solid orange; */
+  /* border-left: 5px solid orange; */
+  /* border-right: 5px solid orange; */
+}
+
+.mat-mdc-form-field-subscript-wrapper {
+display: none;
+}

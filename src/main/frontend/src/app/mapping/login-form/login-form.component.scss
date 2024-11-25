@@ -1,0 +1,12 @@
+.login-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1ex;
+}
+.ng-invalid {
+  border-left: 5px solid #a94442; /* red */
+}
+input {
+}

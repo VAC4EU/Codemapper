@@ -1,0 +1,101 @@
+<div class="toolbox">
+
+  <mat-card appearance="outlined">
+    <mat-card-content matTooltip="Enter a string to filter the concepts displayed in the table by concept name or tag.">
+      <mat-form-field>
+        <mat-label>Filter {{this.numConcepts}} concepts</mat-label>
+        <input matInput [(ngModel)]="conceptsFilter" placeholder="">
+        <button mat-icon-button matSuffix (click)="conceptsFilter = ''">
+          <mat-icon>backspace</mat-icon>
+        </button>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header matTooltip="Modify the selected concepts.">
+      Modify {{selectedConcepts.length}} selected concept{{selectedConcepts.length == 1 ? '' : 's'}}
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)" [disabled]="!hasSelectedConcepts() || !userCanEdit">Tag</button>
+      <button mat-stroked-button (click)="delete(selectedConcepts)" [disabled]="!hasSelectedConcepts() || !userCanEdit" color="warn">Delete</button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header matTooltip="Expand a concept to related concepts. Operates on a single selected concept.">
+      Expand concept
+    </mat-card-header>
+    <mat-card-actions>
+      <button
+        matTooltip="Expand to concepts that are broader than the selected concept."
+        (click)="broaderConcepts(selectedConcepts[0], vocIds())"
+        [disabled]="selectedConcepts.length != 1 || !userCanEdit"
+        mat-stroked-button>
+        Broader
+      </button>
+      <button
+        matTooltip="Expand to concepts that are narrower than the selected concept"
+        (click)="narrowerConcepts(selectedConcepts[0], vocIds())"
+        [disabled]="selectedConcepts.length != 1 || !userCanEdit"
+        mat-stroked-button>
+        Narrower
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header matTooltip="Search and add concepts by CUI, code or term. Concepts that match a CUI or code are shown in dropdown, optionally with vocabulary as prefix (e.g., ICD9:780). Use the search button to retrieve all concepts that mention the query text.">
+      Search concepts
+    </mat-card-header>
+    <mat-card-actions class="dense">
+      <mat-form-field>
+        <input #query matInput type="text" placeholder="Code or concept query" [readonly]="!userCanEdit" [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option *ngFor="let option of codeConcepts" (click)="selectAutocompleteCode(option, query.value)">
+            {{option.name}}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+      <button
+        (click)="searchAddConcepts(query.value, mapping.meta)"
+        [disabled]="!userCanEdit"
+        mat-stroked-button
+        matTooltip="Search concepts by query">Search</button>
+      <button
+        (click)="openDialog(indexer)"
+        [disabled]="!userCanEdit"
+        mat-stroked-button
+        matTooltip="Search concepts in free text">
+        Free&#8209;text
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<concepts-table
+  #table
+  [showCodeTagIndication]="true"
+  [concepts]="mapping.concepts"
+  [filter]="conceptsFilter"
+  [codes]="mapping.codes"
+  [vocabularies]="vocIds()"
+  [allTopics]="allTopics"
+  [userCanEdit]="userCanEdit"
+  (reviewRun)="reviewRun.emit($event)"
+  (selected)="setSelectedConcepts($event)">
+</concepts-table>
+
+<ng-template #indexer>
+  <h2 matDialogTitle>Search and add concepts from free-text</h2>
+  <mat-dialog-content>
+    <indexer
+      [vocIds]="vocIds()"
+      [typesInfo]="mapping.meta"
+      (confirmedIndexing)="addIndexing($event); dialogRef!.close()"
+      confirmLabel="Add selected concepts"></indexer>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-button matDialogClose>Cancel</button>
+  </mat-dialog-actions>
+</ng-template>

@@ -8,8 +8,16 @@ these steps is a string `yyyyXX`, e.g. `2022aa`.
    read API_KEY
    VERSION=2023AA
    URL=https://download.nlm.nih.gov/umls/kss/$VERSION/umls-$VERSION-full.zip
-   wget -O $(basename $URL) "https://uts-ws.nlm.nih.gov/download?apiKey=$API_KEY&url=URL"
+   curl -OJ "https://uts-ws.nlm.nih.gov/download?apiKey=$API_KEY&url=URL"
+   unzip umls-$VERSION-full.zip
+   cd $VERSION-full
+   unzip mmsys.zip
+   # use mmsys to subset UMLS
+   psql -c "create database UMLS$VERSION"
+   sed 's|@META@|/path/to/umls/YEAR/META|' umls-tables.sql|psql UMLS$VERSION
+   psql UMLS$VERSION < umls-indices.sql
    ```
+2. 
 2. Setup data
    ```
    unzip umls-$VERSION-full.zip $VERSION-full/'*'-meta.nlm

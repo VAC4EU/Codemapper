@@ -4,6 +4,9 @@ create table users (
   id int not null auto_increment,  
   username char(100) not null unique,
   password char(64) not null,
+  email text,
+  anonymous boolean default false not null,
+  is_admin boolean default false not null,
   primary key (id)
 );
 
@@ -30,188 +33,189 @@ drop table if exists users_projects;
 create table users_projects (
   user_id int not null references users(id),
   project_id int not null references projects(id),
-  -- E: editor, C: commentator
+  -- A: admin/PI, E: editor, C: commentator
   role char(1) not null,
-  unique (user_id, project_id, role)
+  unique (user_id, project_id)
 );
 
+-- MIGRATION
+drop index idx_20366_user_project_unique;
+alter table users_projects add constraint users_projects_unique unique (user_id, project_id);
 
-insert into users_projects (user_id, project_id) values
-(2, 1),
-(2, 2),
-(3, 1),
-(4, 2);
+insert into users_projects (user_id, project_id, role) values
+(2, 1, 'A'),
+(2, 2, 'E'),
+(3, 1, 'E'),
+(4, 2, 'C');
 
 drop table if exists case_definitions;
-
 create table case_definitions (
   id int not null auto_increment,
+  shortkey SHORTKEY NOT NULL, -- public identifier
+  name char(255), -- variable name
+  old_name char(255) -- fixed old name
   project_id int not null references projects(id),
-  name char(255) not null,
-  state mediumtext not null,
-  unique (project_id, name),
+  state mediumtext,
   primary key (id)
+  unique (shortkey)
 );
+-- -- MIGRATION
+-- alter table case_definitions add column old_name char(255);
+-- update case_definitions set old_name = name;
+-- drop index idx_20337_project_id;
 
-drop table if exists review_topic cascade;
-create table review_topic (
+-- ALTER TABLE case_definitions ADD COLUMN shortkey SHORTKEY;
+-- UPDATE case_definitions SET shortkey = shortkey_generate();
+-- ALTER TABLE case_definitions ALTER COLUMN shortkey SET NOT NULL;
+-- CREATE TRIGGER case_definitions_shortkey_trigger
+-- BEFORE INSERT ON case_definitions
+-- FOR EACH ROW EXECUTE PROCEDURE shortkey_trigger();
+-- CREATE INDEX case_definitions_shortkey_index ON case_definitions(shortkey);
+
+drop view if exists users_and_projects;
+create view users_and_projects
+as
+select
+u.username user_name,
+up.role,
+p.name project_name,
+u.id user_id,
+p.id project_id
+from users_projects up
+inner join users u on u.id = up.user_id
+inner join projects p on p.id = up.project_id;
+
+drop view if exists projects_case_definitions;
+create view projects_case_definitions
+as
+  select
+    p.id project_id,
+    p.name project_name,
+    cd.id case_definition_id,
+    cd.name case_definition_name
+  from projects p
+  join case_definitions cd
+  on p.id = cd.project_id
+  order by project_name, case_definition_name;
+
+drop view if exists projects_mappings_uuid;
+drop view if exists projects_mappings_shortkey;
+create view projects_mappings_shortkey
+as
+  select
+    p.id project_id,
+    p.name project_name,
+    cd.id mapping_id,
+    cd.name mapping_name,
+    cd.shortkey mapping_shortkey,
+    cd.old_name mapping_old_name
+  from projects p
+  join case_definitions cd
+  on p.id = cd.project_id
+  order by p.name, cd.name;
+
+drop table if exists case_definition_revisions;
+create table case_definition_revisions (
   id serial primary key,
   case_definition_id int not null references case_definitions(id),
-  cui char(8) not null,
-  heading text,
-  created_by int references users(id),
-  created_at TIMESTAMP not null default CURRENT_TIMESTAMP,
-  resolved boolean not null default false,
-  resolved_by int references users(id),
-  resolved_at TIMESTAMP
-);
-
-drop table if exists review_message cascade;
-create table review_message (
-  id serial primary key,
-  topic_id int not null references review_topic(id),
-  timestamp TIMESTAMP not null default CURRENT_TIMESTAMP,
-  author_id int not null references users(id),
-  content text not null
-);
-
-drop table if exists review_message_is_read;
-create table review_message_is_read (
-  message_id int not null references review_message(id),
+  version int not null, -- unique serial per case_definition_id
   user_id int not null references users(id),
-  constraint primary_keys primary key (message_id, user_id)
+  timestamp TIMESTAMP not null default CURRENT_TIMESTAMP,
+  summary text not null,
+  mapping jsonb not null,
+  constraint case_definition_version UNIQUE (case_definition_id, version)
 );
 
--- mark a topic as resolved by a given user
-drop function if exists review_resolve_topic;
-create function review_resolve_topic(topic_id int, username text) returns boolean
-language plpgsql as $$ begin
-update
-  review_topic
-set
-  resolved = true,
-  resolved_by = u.id,
-  resolved_at = now()
-from
-  users as u
-where
-  review_topic.id = review_resolve_topic.topic_id
-and
-  u.username = review_resolve_topic.username;
-return found;
-end; $$; 
+drop view if exists case_definition_latest_revision;
+create view case_definition_latest_revision
+as
+  select rev.*
+  from case_definition_revisions as rev
+  join (
+    select case_definition_id, max(version) as version
+    from case_definition_revisions
+    group by case_definition_id
+  ) as latest
+  on rev.case_definition_id = latest.case_definition_id and rev.version = latest.version;
 
--- delete all read-markers of messages for a (resolved) topic
-drop function if exists review_reset_mark_read;
-create function review_reset_mark_read(topic_id int) returns void
+drop table if exists cached_descendants;
+create table cached_descendants (
+  id int generated always as identity,
+  last_access timestamp DEFAULT now(),
+  sab varchar(20),
+  ver varchar(20),
+  code varchar(100),
+  descendants text,
+  unique (sab, ver, code)
+);
+
+create or replace function set_cached_descendants(
+  sab varchar(20),
+  ver varchar(20),
+  code varchar(100),
+  descendants text
+) returns void as $$
+insert into cached_descendants (sab, ver, code, descendants)
+values (
+  set_cached_descendants.sab,
+  set_cached_descendants.ver,
+  set_cached_descendants.code,
+  set_cached_descendants.descendants
+)
+$$ language sql;
+
+create or replace function get_cached_descendants(
+  sab varchar(20),
+  ver varchar(20),
+  codes varchar[]
+) returns table (
+  code varchar(20),
+  descendants text
+) as $$
+update cached_descendants set last_access = NOW()
+where sab = get_cached_descendants.sab
+and ver = get_cached_descendants.ver
+and code = any(codes)
+returning code, descendants
+$$ language sql;
+
+create or replace function evict_cached_descendants (keep int)
+returns void
 as $$
-delete from review_message_is_read
-where message_id in
-( select id
-  from review_message
-  where topic_id = review_reset_mark_read.topic_id )
+delete from cached_descendants where id in
+( select id from cached_descendants
+  order by last_access desc
+  offset evict_cached_descendants.keep )
 $$ language sql;
 
--- create a new message
-drop function if exists review_new_message;
-create function review_new_message(project text, casedef text, cui char(8), topic_id int, content text, username text)
-returns table (message_id int) as $$
-with
-  message as (
-    insert into review_message (topic_id, author_id, content)
-    select review_new_message.topic_id, a.id, review_new_message.content
-    from users a
-    where a.username = review_new_message.username
-    returning id
-  ),
-  x as (
-    insert into review_message_is_read (message_id, user_id)
-    select m.id, u.id
-    from message m, users u
-    where u.username = review_new_message.username
-  )
-  select * from message
-$$ language sql;
+create or replace function set_revision_version()
+returns trigger as $$
+begin
+  new.version = coalesce((
+    select max(version)
+    from case_definition_revisions
+    where case_definition_id = new.case_definition_id
+  ), 0) + 1;
+  return new;
+end;
+$$ language plpgsql;
 
--- create a new topic
-drop function if exists review_new_topic;
-create function review_new_topic(project text, casedef text, cui char(8), heading text, username text) returns table (topic_id int)
-as $$
-  insert into review_topic (case_definition_id, cui, heading, created_by)
-  select cd.id, review_new_topic.cui, review_new_topic.heading, u.id
-  from projects p
-  inner join case_definitions cd on cd.project_id = p.id
-  inner join users u on u.username = review_new_topic.username
-  where p.name = review_new_topic.project and cd.name = review_new_topic.casedef
-  returning id
-$$ language sql;
+create trigger set_revision_version_trigger
+create trigger set_revision_version_trigger
+before insert on case_definition_revisions
+for each row
+execute procedure set_revision_version();
 
+create index case_definition_revisions_case_definition_id on case_definition_revisions(case_definition_id);
+create index case_definition_revisions_timestamp on case_definition_revisions(timestamp);
+create index case_definition_revisions_version on case_definition_revisions(version);
+before insert on case_definition_revisions
+for each row
+execute procedure set_revision_version();
 
--- mark all messages of a topic read for a given user
-drop function if exists review_mark_topic_read;
-create function review_mark_topic_read(topic_id int, username text) returns void
-language plpgsql as $$ begin
-  insert into review_message_is_read (message_id, user_id)
-  select m.id, u.id
-  from review_message m, users u
-  where m.topic_id = review_mark_topic_read.topic_id
-  and u.username = review_mark_topic_read.username
-  on conflict on constraint primary_keys do nothing;
-end; $$; 
+create index case_definition_revisions_case_definition_id on case_definition_revisions(case_definition_id);
+create index case_definition_revisions_timestamp on case_definition_revisions(timestamp);
+create index case_definition_revisions_version on case_definition_revisions(version);
 
--- get all messages
-drop function if exists review_all_messages;
-create function review_all_messages(project text, casedef text, username text)
-  returns table (
-    cui char(8), topic_id int, topic_heading text,
-    created_by text, created_at TIMESTAMP,
-    resolved boolean, resolved_user text, resolved_timestamp TIMESTAMP,
-    message_id int, message_author text, message_timestamp TIMESTAMP, message_content text,
-    is_read boolean
-  ) as $$
-    select
-      t.cui, t.id, t.heading,
-      cu.username, t.created_at,
-      t.resolved, ru.username, t.resolved_at,
-      m.id, mu.username, m.timestamp, m.content,
-      r.message_id is not null
-    from projects p
-    inner join case_definitions c on c.project_id = p.id
-    inner join review_topic t on t.case_definition_id = c.id
-    left join users cu on cu.id = t.created_by
-    left join review_message m on m.topic_id = t.id
-    left join users mu on mu.id = m.author_id
-    left join users ru on ru.username = review_all_messages.username
-    left join review_message_is_read r on (r.message_id = m.id and r.user_id = ru.id)
-    where p.name = review_all_messages.project
-    and c.name = review_all_messages.casedef
-    order by t.cui, t.id, m.timestamp;
-$$ language sql;
-
-drop function if exists review_topic_created_by;
-create function review_topic_created_by(topic_id int)
-returns text
-as $$
-select u.username
-from review_topic t
-inner join users u on u.id = t.created_by 
-where t.id = review_topic_created_by.topic_id
-$$ language sql;
-
-drop function if exists review_migrate_from_comments;
-create function review_migrate_from_comments() returns void
-as $$
-
-insert into review_topic (case_definition_id, cui, created_by, created_at, heading)
-select distinct c.case_definition_id, c.cui, c.author, c.timestamp, 'Comment' as heading
-from "public".comments c
-inner join case_definitions cd
-on c.case_definition_id = cd.id;
-
-insert into review_message (topic_id, timestamp, author_id, content)
-select t.id as topic_id, c.timestamp, c.author, c.content
-from "public".comments as c, review_topic as t
-where c.case_definition_id = t.case_definition_id
-and c.cui = t.cui;
-
-$$ language sql;
+alter table case_definitions alter column state drop not null;
+alter table users add column anonymous boolean default false;

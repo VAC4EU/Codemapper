@@ -1,0 +1,23 @@
+
+.code {
+    white-space: nowrap;
+    display: flex;
+    align-items: flex-end;
+}
+
+.disabled {
+  text-decoration: line-through;
+}
+
+.term {
+    margin-left: 0.3em;
+}
+
+// .term::before {
+//   content: ' ';
+// }
+
+.tag-indicator {
+    font-size: small;
+    align-content: center;
+}

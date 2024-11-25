@@ -1,0 +1,24 @@
+<div class="toolbox">
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      Modify {{table.selection.selected.length}} coding system{{table.selection.selected.length == 1 ? '' : 's'}}
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="delete(table.selection.selected)" [disabled]="table.selection.selected.length == 0 || !userCanEdit">Delete</button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      Add coding system
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-stroked-button (click)="addStandard()" [disabled]="!userCanEdit">Standard</button>
+      <button mat-stroked-button (click)="createCustom()" [disabled]="!userCanEdit">Custom</button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<vocabularies-table #table [vocabularies]="vocabularies">
+</vocabularies-table>

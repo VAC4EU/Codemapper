@@ -1,0 +1,35 @@
+#loadingOverlay {
+    position: fixed;
+    z-index: 1000000;
+    cursor: wait;
+    height: 100vh;
+    width: 100vw;
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#heading {
+    background: rgba(1, 1, 1, 0.25);
+    background: white;
+    padding: .5em;
+    border-radius: 3px;
+}
+
+::ng-deep .mat-column-select {
+    width: 40px;
+}
+
+
+::ng-deep .mat-column-comments {
+    width: 4em;
+}
+
+::ng-deep .column-concept-codes, ::ng-deep .mat-column-tag {
+    width: 10em;
+}
+
+::ng-deep .mat-column-concepts {
+    width: 15em;
+}

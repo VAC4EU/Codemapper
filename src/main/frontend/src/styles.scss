@@ -1,0 +1,120 @@
+$roboto-font-path: "~roboto-fontface/fonts" !default;
+@import "~roboto-fontface/css/roboto/roboto-fontface.css";
+$material-icons-font-path: '~material-icons/iconfont/';
+@import '@material-design-icons/font/index.scss';
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.code-id {
+    font-weight: bold;
+}
+
+.toolbox {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+    margin: 1em;
+    mat-card-actions {
+        align-items: start;
+        gap: 0.2em;
+    }
+    .mat-mdc-form-field-subscript-wrapper {
+        margin-bottom: -1.25em;
+    }
+}
+
+.custom-code-icon {
+    transform: scale(0.6);
+}
+
+.menu-spacer {
+    flex: 1 1 auto;
+}
+
+.menu-padder {
+    padding-left: .5em;
+    padding-right: .5em;
+}
+
+.btn-xs {
+    height: 3ex !important;
+    padding: 0 8px 0 8px !important;
+}
+
+.center-content {
+    max-width: 60em;
+    margin-bottom: 2.5em;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1em;
+}
+
+.spaced {
+    margin-top: 1ex;
+}
+
+.max-vertical {
+    height: 100%;
+}
+
+mat-icon.text-align {
+    vertical-align: text-bottom;
+}
+
+.pre-line-tooltip {
+    white-space: pre-line;
+}
+
+.indexedConcept {
+  display: inline-block;
+  padding: 1px 1px 1px 1px;
+  border-radius: 5px;
+  border: 1px solid grey;
+}
+
+.indexedConcept.enabled {
+  background-color: #fff091;
+  border: 1px solid grey;
+}
+
+.remap-snackbar {
+    white-space: pre-wrap;
+}
+
+// Manipulate initial background color
+.login-form .input-form {
+  .mdc-text-field--filled:not(.mdc-text-field--disabled), .mat-mdc-input-element, .mat-mdc-form-field-focus-overlay {
+    background-color: white;
+  }
+}
+
+mat-form-field {
+    // margin-right: 1ex;
+}
+
+.column {
+    display: flex !important;
+    flex-direction: column;
+}
+
+.form-column {
+    display: flex !important;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 3ex;
+}
+
+.pre {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: lightgray;
+}

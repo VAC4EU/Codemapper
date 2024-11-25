@@ -1,0 +1,14 @@
+<h1 mat-dialog-title>Select tag for {{heading}}</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <mat-icon matPrefix fontIcon="label"></mat-icon>
+    <mat-select [(value)]="tag">
+      <mat-option value="">NO TAG</mat-option>
+      <mat-option *ngFor="let tag of allowedTags" [value]="tag">{{tag}}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-button [mat-dialog-close]="tag || null" color="primary" cdkFocusInitial>Ok</button>
+</div>

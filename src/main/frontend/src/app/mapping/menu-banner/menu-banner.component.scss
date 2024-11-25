@@ -1,0 +1,25 @@
+app-navigation mat-icon {
+    transform: scale(1.18) translateY(0.23ex);
+}
+
+.logo {
+    width: 6ex;
+    margin-bottom: -0.7ex;
+    margin-right: 0.4ex;
+}
+
+mat-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.on-the-right {
+    display: flex;
+    flex-direction: row;
+}
+
+.mat-toolbar.testing {
+    background-color:lightpink;
+}

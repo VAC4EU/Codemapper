@@ -1,8 +1,28 @@
 
-[//]: # (pandoc -s --metadata title="CodeMapper NEWS" --css style.css -i NEWS.md -o src/main/webapp/NEWS.html)
+[//]: # (pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html)
+   
+<menu-banner>
+  <!-- <mat-icon>notifications</mat-icon> -->
+  CodeMapper: News
+  <login-form onTheRight></login-form>
+</menu-banner>
 
-Next
-----
+<section class="center-content">
+
+November 24, 2024
+-------
+
+- complete overhaul of the user interface
+- integration of non-umls coding systems (ICD10DA, RCD2, MEDCODEID, ICDO3)
+- view coding systems, and create custom coding systems
+- import mappings from CSV files
+- remap a mapping using the latest UMLS data
+- download all mappings of a folder
+- basic administration for mappings
+- review on codes
+- view, select and tag codes per coding system, and create custom codes
+- faster descendant codes
+- update UMLS to version 2024AB
 
 October 4, 2023
 ----
@@ -124,3 +144,5 @@ Published as
 
 Development under the IMI ADVANCE project at the Erasmus Medical Center,
 Rotterdam.
+
+</section>

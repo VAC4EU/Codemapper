@@ -1,0 +1,74 @@
+<menu-banner>
+  <!-- <mat-icon>home</mat-icon> -->
+  CodeMapper
+  <login-form onTheRight></login-form>
+</menu-banner>
+
+<section class="center-content">
+
+  <p *ngIf="isProduction">
+    10 years CodeMapper &ndash; everything new!
+  </p>
+
+  <p class="logos">
+    <img class="comap-logo" src="assets/logo-large.png" alt="CodeMapper logo" />
+    by
+    <a href="https://vac4eu.org/"><img class="vac4eu-logo" src="assets/vac4eu.png" alt="VAC4EU logo" /></a>
+  </p>
+
+  <h3>CodeMapper: Semi-automatic coding of case definitions</h3>
+
+  <p>Click the menu button <mat-icon class="text-align">menu</mat-icon> at the top left
+    to access your folders and mappings (when logged in).</p>
+
+  <p>CodeMapper is built to deal efficiently with the reality that in Europe, datasources use different vocabularies to
+    code diagnoses. It facilitates mapping across different terminologies and has a knowlegde management system to
+    capture decisions and revisions.</p>
+
+  <h4>Registration</h4>
+
+  <p>Please send an email to <a href="mailto:{{info.contactEmail}}?subject=CodeMapper"
+      ng-bind="globals.codemapperContactEmail" class="ng-binding">secretariat&#64;vac4eu.org</a> to request access to
+    CodeMapper.
+  <p>
+
+  <h4>Background</h4>
+
+  <p>A <a href="https://docs.google.com/presentation/d/1vo94NxADoJAMTQDbzK7QRDy9IvfMHZdBiyzdsqecJA0/edit?usp=sharing"
+      target="_blank">presentation</a> describes the idea, and shows the user interface in a walk-through. More details
+    about the background, implementation, and effectiveness of the approach are documented in our article:</p>
+
+  <blockquote>
+    Becker BFH, Avillach P, Romio S, van Mulligen EM, Weibel D, Sturkenboom MCJM, Kors J: <em>CodeMapper: Semi-automatic
+      coding of case definitions. A contribution from the ADVANCE project.</em> Pharmacoepidemiology and Drug Safety
+    2017. doi:10.1002/pds.4245 (<a href="http://onlinelibrary.wiley.com/doi/10.1002/pds.4245/epdf" target="_blank">full
+      text</a>)
+  </blockquote>
+
+  <p>Please use this citation to refer to CodeMapper in research publications.</p>
+
+  <h4>Development</h4>
+
+  <p>CodeMapper is open source software and licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.en.html"
+      target="_blank">Affero GPL 3</a>. The source code is available on <a href="https://github.com/VAC4EU/Codemapper"
+      target="_blank">github</a>.</p>
+
+  <p>The current development of CodeMapper is funded by <a href="https://vac4eu.org/" target="_blank">VAC4EU</a> (view
+    the <a routerLink="/news">development news</a>). The research leading to this tool was carried out at Erasmus
+    Medical Center, Rotterdam, and has received support from the Innovative Medicines Initiative Joint Undertaking under
+    ADVANCE grant agreement.</p>
+
+  <h4>Found a problem?</h4>
+
+  Please report problems on <a href="https://github.com/VAC4EU/Codemapper/issues">Github issues</a>.
+
+  <h4>UMLS license</h4>
+
+  <p>CodeMapper uses the Unified Medical Language System (UMLS) issued by the U.S. National Library of Medicine in
+    version {{info.umlsVersion}}.</p>
+
+  <p>Some material in the UMLS Metathesaurus is from copyrighted sources of the respective copyright holders. Users of
+    the UMLS Metathesaurus are solely responsible for compliance with any copyright, patent or trademark restrictions
+    and are referred to the copyright, patent or trademark notices appearing in the original sources, all of which are
+    hereby incorporated by reference.</p>
+</section>

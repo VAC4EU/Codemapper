@@ -1,0 +1,11 @@
+<span
+  class="code"
+  [class.disabled]="!code.enabled"
+  [class.custom]="code.custom"
+  matTooltip="{{tooltipContent()}}"
+  matTooltipPosition="right">
+  <span class="code-id">{{code.id}}<ng-container *ngIf="code.custom">*</ng-container></span><mat-icon *ngIf="showTagIndication && code.tag != null" class="tag-indicator" fontIcon="label"></mat-icon><span class="term" *ngIf="showTerm"> {{code.term}}</span>
+</span>
+
+
+

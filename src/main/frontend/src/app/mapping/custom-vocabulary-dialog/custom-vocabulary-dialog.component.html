@@ -1,0 +1,25 @@
+<h1 mat-dialog-title>Custom vocabulary</h1>
+<div mat-dialog-content class="form-fields">
+  <mat-form-field>
+    <mat-label>Identifier</mat-label>
+    <input matInput [(ngModel)]="data.id">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Name</mat-label>
+    <input matInput [(ngModel)]="data.name">
+  </mat-form-field>
+  <!-- <mat-form-field> -->
+  <!--   <mat-label>Codes (CSV)</mat-label> -->
+  <!--   <textarea matInput [(ngModel)]="data.codesCSV" -->
+  <!--             cdkTextareaAutosize -->
+  <!--             #autosize="cdkTextareaAutosize" -->
+  <!--             cdkAutosizeMinRows="5" -->
+  <!--             cdkAutosizeMaxRows="25"></textarea> -->
+  <!-- </mat-form-field> -->
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button color="primary" [mat-dialog-close]="data" cdkFocusInitial>
+    Create
+  </button>
+</div>
