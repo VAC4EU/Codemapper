@@ -19,7 +19,7 @@ REVIEW_PATTERNS = [
 
 COLUMN_MAPPING = (
     ["coding system", "code", "code name", "concept", "concept name", "tags", "Comments"],
-    ["coding_system", "code", "code_name", "concept", "concept_name", "tags", "comments"],
+    ["sab", "code", "str", "cui", "concept_name", "tags", "comments"],
 )
 
 INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"]

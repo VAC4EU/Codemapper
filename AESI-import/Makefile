@@ -9,7 +9,7 @@ norm: AESI-norm.py $(ORIGINAL)
 	python3 $^ AESI-$@
 
 .PHONY: dedup
-dedup: AESI-dedup.py AESI-norm table.csv ../umls/2024AA/META/MRCUI.RRF
+dedup: AESI-dedup.py AESI-norm table.csv ../umls/2024AB/META/MRCUI.RRF
 	python3 $^ AESI-$@
 
 .PHONY: final

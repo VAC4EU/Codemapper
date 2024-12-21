@@ -1,6 +1,3 @@
-# TODO
-# - keep Free_text
-
 import sys
 import os
 import functools
@@ -20,9 +17,13 @@ from nltk.tokenize import word_tokenize
 
 SEP = "-',/"
 
-KEY_COLUMNS = ['coding_system', 'code', 'code_name', 'concept', 'concept_name']
-
 IGNORE_TTYS = set("AA AD AM AS AT CE EP ES ETAL ETCF ETCLIN ET EX GT IS IT LLTJKN1 LLTJKN LLT LO MP MTH_ET MTH_IS MTH_LLT MTH_LO MTH_OAF MTH_OAP MTH_OAS MTH_OET MTH_OET MTH_OF MTH_OL MTH_OL MTH_OPN MTH_OP OAF OAM OAM OAP OAS OA OET OET OF OLC OLG OLJKN1 OLJKN1 OLJKN OLJKN OL OL OM OM ONP OOSN OPN OP PCE PEP PHENO_ET PQ PXQ PXQ SCALE TQ XQ".split())
+
+def any_ignored_ttys(ttys):
+    return not ttys.isdisjoint(IGNORE_TTYS)
+
+def all_ignored_ttys(ttys):
+    return ttys.issubset(IGNORE_TTYS)
 
 # ./check.py:coding_systems
 UMLS_CODING_SYSTEMS = set(['ICD10', 'ICD10CM', 'ICD9CM', 'ICPC', 'ICPC2EENG', 'ICPC2P', 'MTHICD9', 'RCD', 'SCTSPA', 'SNM', 'SNOMEDCT_US'])
@@ -107,17 +108,16 @@ def term_match_abbr(str1, str2):
             ix1 += 1
             ix2 += 1
 
-def code_norm(code, coding_system):
-    if coding_system == 'SNOMEDCT_US' or coding_system == 'SCTSPA':
-        if len(code) == 17 and code.endswith("00"):
-            return code[:-1] + '0'
+def code_norm(code, sab):
+    if sab in ['SNOMEDCT_US', 'SCTSPA'] and code.isnumeric() and len(code) > 15:
+        return code[:15]
     return code.strip('0').rstrip('.')
 
-def code_match(code1, code2, coding_system):
-    match = code_norm(code1, coding_system) == code_norm(code2, coding_system)
+def code_match(code1, code2, sab):
+    match = code_norm(code1, sab) == code_norm(code2, sab)
     if match:
         return True
-    if coding_system == 'SNOMEDCT_US' or coding_system == 'SCTSPA':
+    if sab == 'SNOMEDCT_US' or sab == 'SCTSPA':
         if len(code2) == 17 and code2.endswith('00'):
             code2 = code2.rstrip('0')
             code1 = code1[:len(code2)]
@@ -156,7 +156,7 @@ def sab_lang(sab):
 #     return [dict(r) for r in cursor.fetchall()]
 
 # # CUI, STR, CODE, TTYS (on sab and codes)
-# def names_by_codes(cursor, sab, code):
+# def by_codes(cursor, sab, code):
 #     query = f"""
 #     select cui, str, code, string_agg(tty,',') as ttys
 #     from mrconso
@@ -178,222 +178,233 @@ def sab_lang(sab):
 #     cursor.execute(query, (code, str))
 #     return [dict(r) for r in cursor.fetchall()]
 
-class Categorization:
+class Validation:
 
-    def __init__(self):
-        self.result = None
-        self.row = None
-        self.direct = None
-        self.names_by_code = None
-        self.codes_by_name = None
-        self.synonyms = None
-        self.comments = []
+    def __init__(self, result, cuis=[], row=None, comments=[]):
+        self.result = result
+        self.row = row
+        self.cuis = cuis
+        self.comments = comments
+        self.obsolete = None
 
-    def __str__(self):
-        return self.result
+    def select(result, cuis, df, comments=None):
+        rows = (r for r in df)
+        try:
+            row = next(rows)
+            comments = [] if comments is None else comments
+            if next(rows, None):
+                comments.append('not unique')
+            return Validation(result, cuis, row, comments)
+        except:
+            pass
+
+    def __repr__(self):
+        repr = self.result
+        if self.row is not None:
+            repr += f" - {self.row['cui']} - {self.row['code']} - {self.row['str']} - {self.row['sab']}"
+        if self.cuis is not None:
+            repr += f" - {','.join(self.cuis)}"
+        if self.comments:
+            repr += f" - ({', '.join(self.comments)})"
+        return repr
+
+def ttys_index(row):
+    if 'PT' in row['ttys']:
+        return 1
+    elif row['all_ignored_ttys']:
+        return 4
+    else:
+        if row['ttys'].issubset({'AA', 'AB', 'ACR', 'AM', 'CA2', 'CA3', 'CDA', 'CS', 'DEV', 'DS', 'DSV', 'ES', 'HS', 'ID', 'MTH_ACR', 'NS', 'OAM', 'OA', 'OSN', 'PS', 'QAP', 'QEV', 'RAB', 'SSN', 'SS', 'VAB'}):
+            return 3
+        else:
+            return 2
+
+import time
 
 class Tables:
 
-    def __init__(self, table, mrcui):
-        self.table = table
+    def __init__(self, table, mrcui, by_sab):
+        self.table = table # | sab | code | str | cui | ttys | all_ignored_ttys | any_ignored_ttys | ttys_index |
         self.mrcui = mrcui
-        print("tables:", len(self.table))
-        self.by_sab = {
+        self.by_sab = by_sab # {sab: table}
+
+    def from_tables(tables):
+        return Tables(tables.table, tables.mrcui, tables.by_sab)
+
+    def load(table_filename, mrcui_filename):
+        t0 = time.time()
+        table_parquet = table_filename + '.parquet'
+        if os.path.isfile(table_parquet):
+            print("Read cached table file", table_parquet)
+            table = (
+                pd.read_parquet(table_parquet)
+                .assign(ttys=lambda df: df.ttys.map(lambda s: set(s.split(','))))
+            )
+        else:
+            dtype = defaultdict(lambda: str, {'sab': "category"})
+            print("Read table file", time.time() - t0)
+            table = (
+                pd.read_csv(table_filename, dtype=dtype)
+                .assign(sab=lambda df: df.sab.astype("category"))
+                .assign(code=lambda df: df.code.astype("category"))
+                .assign(ttys=lambda df: df.ttys.str.split(',').apply(set))
+                .assign(all_ignored_ttys=lambda df: df.ttys.map(all_ignored_ttys))
+                .assign(any_ignored_ttys=lambda df: df.ttys.map(any_ignored_ttys))
+                .assign(ttys_index=lambda df: df.apply(ttys_index, axis=1))
+            )
+            print("Write table cache file", table_parquet, time.time() - t0)
+            table.assign(ttys=table.ttys.map(','.join)).to_parquet(table_parquet)
+        print("tables:", len(table), time.time() - t0)
+        names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin', 'dummy']
+        mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names, sep='|')
+        print("mrcui:", len(mrcui), time.time() - t0)
+        by_sab = {
             sab: df
-            for sab, df in self.table.groupby('sab')
+            for sab, df in table.groupby('sab', observed=True)
         }
-        print("by_sab:", len(self.by_sab))
-        self.by_sab_code = {
-            sab: {
-                code: df1
-                for code, df1 in df.groupby('code')
-            }
-            for sab, df in self.by_sab.items()
-        }
-        print("by_sab_code:", sum(len(d) for d in self.by_sab_code.values()))
+        print("by_sab:", len(by_sab), time.time() - t0)
+        return Tables(table, mrcui, by_sab)
+
+    @functools.cache
+    def by_sab_code(self, sab, code):
+        df = self.by_sab[sab]
+        return df[df.code == code]
 
     def retired(self, cui):
         return self.mrcui[self.mrcui.cui1 == cui].cui2.to_list()
 
-    # returns table where sab matches and str matches (ilike_test)
-    def codes_by_name(self, sab, str):
-        # TODO? sab_test
-        df = self.by_sab[sab]
-        return df[ilike_test(df.str, str)].to_dict('records')
+    # exact code and matching str
+    def by_code(self, sab, code):
+        df = self.by_sab_code(sab, code)
+        return df.to_dict('records')
 
-    # returns table where sab and code match
-    def names_by_codes(self, sab, code):
-        # TODO? sab_test
-        df = self.by_sab_code[sab].get(code)
-        if df is None:
-            return []
-        else:
-            return df.to_dict('records')
+    # ilike str and matching code
+    def by_name(self, sab, str):
+        df = self.by_sab[sab]
+        df = df[ilike_test(df.str, str)]
+        return df.to_dict('records')
 
     def any_coding_system(self, code, str):
         df = self.table
         df = df[df.code == code]
         df = df[df.str == str]
-        return df.to_dict('records')
+        return df.sort_values('ttys_index').to_dict('records')
 
-    def direct(self, sab, code, str, cuis):
+    def exact(self, sab, code, str, cuis):
         df = self.table
         df = df[df.sab == sab]
         df = df[df.code == code]
-        df = df[df.str == str]
         if cuis:
             df = df[df.cui.isin(cuis)]
-        return df.to_dict('records')
+        df = df[df.str == str]
+        return df.sort_values('ttys_index').to_dict('records')
 
-    # row: {'coding_system': sab, 'code': str, 'code_name': str}
+    def unignore(self, sab, code, cuis):
+        df = self.by_sab_code(sab, code)
+        if df is None:
+            return []
+        df = df[~df.all_ignored_ttys]
+        return (
+            df.assign(not_cui=False if cuis is None else ~df.cui.isin(cuis))
+            .sort_values(['not_cui', 'ttys_index'])
+            .drop('not_cui', axis=1)
+            .to_dict('records')
+        )
+
+    def categorize(self, row):
+        return self.categorize_inner(row['sab'], row['code'], row['str'], row['cui'])
+
     @functools.cache
-    def categorize(self, coding_system, code, code_name, concept):
+    def categorize_inner(self, sab, code, str, cui):
+        val = self.validate(sab, code, str, cui)
+        if val.row is not None and val.row['all_ignored_ttys']:
+            rows = self.unignore(val.row['sab'], val.row['code'], val.cuis)
+            if len(rows) > 0:
+                val.row, val.obsolete = rows[0], val.row
+        return val
 
-        cat = Categorization()
-
-        concepts = None
-        if concept:
-            retired = self.retired(concept)
+    def validate(self, sab, code, str, cui):
+        cuis = None
+        comments = []
+        if cui:
+            retired = self.retired(cui)
             if retired:
-                concepts = retired
-                cat.comments.append("updated retired concept")
+                cuis = retired
+                comments.append("updated retired concept")
             else:
-                concepts = [concept]
+                cuis = [cui]
 
-        if not code or code == '-':
-            cat.result = "NONE_NO_CODE"
-            return cat
+        if code is None or not code or code == '-':
+            return Validation('NONE_NO_CODE', cuis, comments=comments)
 
-        if pd.isna(coding_system) or coding_system.strip() not in CODING_SYSTEMS:
-            cat.result = "NONE_CODING_SYSTEM"
-            return cat
+        if sab is None or pd.isna(sab) or sab.strip() not in CODING_SYSTEMS or sab == '-':
+            return Validation('NONE_NO_CODING_SYSTEM', cuis, comments=comments)
 
-        if code.endswith('*'):
-            cat.comments.append("removed asterisk from code")
-            code = code.rstrip("*")
+        rows = self.exact(sab, code, str, cuis)
+        val = Validation.select('EXACT', cuis, rows)
+        if val is not None:
+            return val
+        
+        by_code = self.by_code(sab, code)
+        for row in by_code:
+            if term_match(row['str'], str):
+                return Validation('BY_CODE', cuis, row)
 
-        # 1. Confirm by exact match of coding system, code, code name, concept
-        cat.direct = self.direct(coding_system, code, code_name, concepts)
-        rows_direct = (r for r in cat.direct)
-        try:
-            cat.row = next(rows_direct)
-            cat.result = 'EXACT_MATCH'
-            if next(rows_direct, None):
-                cat.comments.append("not unique")
-            return cat
-        except:
-            pass
+        by_name = self.by_name(sab, str)
+        for row in by_name:
+            if code_match(row['code'], code, sab):
+                return Validation('BY_NAME', cuis, row)
 
-        cat.names_by_code = self.names_by_codes(coding_system, code)
-        cat.codes_by_name = self.codes_by_name(coding_system, code_name)
+        for row in by_code:
+            df = self.table
+            df = df[df.cui == row['cui']]
+            df = df[df.str == row['str']]
+            for _, row1 in df.iterrows():
+                return Validation('BY_CODE_EQUIV', cuis, row, comments=comments)
 
-        rows_name_by_code = (
-            r for r in cat.names_by_code
-            if term_match(r['str'], code_name)
-        )
+        if cuis:
+            rows = (r for r in by_name if r['cui'] in cuis)
+            val = Validation.select('CODE_BY_CUI', cuis, rows, comments=comments)
+            if val is not None:
+                return val
 
-        rows_code_by_name = (
-            r for r in cat.codes_by_name
-            if code_match(r['code'], code, coding_system)
-        )
+            rows = (r for r in by_code if r['cui'] in cuis)
+            val = Validation.select('CODE_NAME_BY_CUI', cuis, rows, comments=comments)
+            if val is not None:
+                return val
 
-        # 2. Confirm by match on coding system, and code - correct code name (term_match)
-        try:
-            cat.row = next(rows_name_by_code)
-            if next(rows_code_by_name, None):
-                cat.result = "BY_CODE_AND_NAME"
-            else:
-                cat.result = "NAME_BY_CODE"
-            if next(rows_name_by_code, None):
-                cat.comments.append("not unique")
-            return cat
-        except:
-            pass
+        # # don't change coding system: better represent as custom code than lose
+        # # the code in another coding system
+        # rows = self.any_coding_system(code, str)
+        # val = Validation.select('CHANGE_CODING_SYSTEM', cuis, rows, comments=comments)
+        # if val is not None:
+        #     return val
 
-        # 3. Confirm my match on coding system and term (ilike) - correct the code (code_match)
-        try:
-            cat.row = next(rows_code_by_name)
-            cat.result = "CODE_BY_NAME"
-            if next(rows_code_by_name, None):
-                cat.comments.append("not unique")
-            return cat
-        except:
-            pass
+        for row in by_code:
+            if term_match_abbr(row['str'], str):
+                return Validation('NAME_BY_CODE_ABBR', cuis, row, comments=comments)
 
-        if concepts:
-            rows = (r for r in cat.codes_by_name if r['cui'] in concepts)
+        if len(code) > 15 and code[-2:] == '00':
+            df = self.table
+            df = df[df.sab == sab]
+            df = df[df.code.str.startswith(code[:-2])]
+            print("ROUNDING", df)
+            # str does not match, use a code that matches the first 15 digits
+            # uniquely
+            if len(df.cui.drop_duplicates()) == 1:
+                return Validation('ROUNDING', cuis, df.iloc[0], comments=comments)
 
-            # 4. Confirm by match on coding system, term and cui - correct code
-            try:
-                cat.row = next(rows)
-                cat.result = "CODE_BY_CUI"
-                if next(rows, None):
-                    cat.comments.append("not unique")
-                return cat
-            except:
-                pass
-
-            # 5. Confirm by match on coding system, term name and cui - correct code
-            try:
-                rows = (r for r in cat.names_by_code if r['cui'] == concept)
-                cat.row = next(rows)
-                cat.result = "CODE_NAME_BY_CUI"
-                if next(rows, None):
-                    cat.comments.append("not unique")
-                return cat
-            except:
-                pass
-
-
-        # 6. Confirm by exact match on code and code name - correct coding system
-        rows = (r for r in self.any_coding_system(code, code_name))
-        try:
-            cat.row = next(rows)
-            if next(rows, None):
-                cat.comments.append("not unique")
-            cat.result = "CHANGE_CODING_SYSTEM"
-            return cat
-        except:
-            pass
-
-        # 7. Confirm by match on coding system and cdode - correct term abbreviations
-        rows = (r for r in cat.names_by_code if term_match_abbr(r['str'], code_name))
-        try:
-            cat.row = next(rows)
-            cat.result = "NAME_BY_CODE_ABBR"
-            if next(rows, None):
-                cat.comments.append("not unique")
-            return cat
-        except:
-            pass
-
-        name_cuis = {r['cui'] for r in cat.codes_by_name}
-        code_cuis = {r['cui'] for r in cat.names_by_code}
-
-        # 8. No confirmation
-        if name_cuis and code_cuis:
-            if concept:
-                cat.result = "NONE_SAME_CUI"
-            else:
-                cat.result = "NONE_SAME_CUI_NO_CONCEPT"
-            return cat
-        cat.result = "NONE"        
-        return cat
+        return Validation('NONE', cuis)
 
     def dedup(self, df):
         df["dedup_result"] = "-"
-        df["dedup_comment"] = "-"
+        df["dedup_comments"] = "-"
         df["dedup_code"] = "-"
-        df["dedup_code_name"] = "-"
-        df["dedup_coding_system"] = "-"
-        df["dedup_concept"] = "-"
-        df["dedup_changed"] = "-"
+        df["dedup_str"] = "-"
+        df["dedup_sab"] = "-"
+        df["dedup_cui"] = "-"
         df["dedup_ttys"] = "-"
         df["dedup_ignore"] = "-"
-        df["dedup_names_by_code"] = "-"
-        df["dedup_codes_by_name"] = "-"
-        df["dedup_original_code"] = df.code
-        df["dedup_original_code_name"] = df.code_name
 
         hist = {}
         count = 0
@@ -402,48 +413,18 @@ class Tables:
             if count % 100 == 0:
                 print(".", end="", flush=True)
 
-            cat = self.categorize(row['coding_system'], row['code'], row['code_name'], row['concept'])
-            if cat.result.startswith("NONE"):
-                df.at[i, "dedup_result"]       = cat.result
-            else:
-                ttys = cat.row.get('ttys', None)
-                ignore = '?'
-                if ttys is not None:
-                    ignore = str(all(t in IGNORE_TTYS for t in ttys)).lower()
-                coding_system = cat.row["sab"] if "sab" in cat.row else row['coding_system']
-                changed = []
-                if cat.row['code'] != row['code']:
-                    changed.append(f"code from {row['code']}")
-                if cat.row['str'].lower() != row['code_name'].lower():
-                    changed.append(f"code name from {row['code_name']}")
-                if coding_system != row['coding_system']:
-                    changed.append(f"coding system from {row['coding_system']}")
-                if cat.row['cui'] != row.get('cwncept'):
-                    changed.append(f"cui from {row.get('concept') or '-'}")
-                df.at[i, "dedup_result"]        = cat.result
-                df.at[i, "dedup_code"]          = cat.row["code"]
-                df.at[i, "dedup_code_name"]     = cat.row["str"]
-                df.at[i, "dedup_concept"]       = cat.row["cui"]
-                df.at[i, "dedup_coding_system"] = coding_system
-                if changed:
-                    df.at[i, "dedup_changed"]   = 'changed ' + '|'.join(changed)
-                df.at[i, "dedup_ttys"]          = ','.join(sorted(ttys))
-                df.at[i, "dedup_ignore"]        = ignore
-
-            if cat.names_by_code:
-                df.at[i, 'dedup_names_by_code'] = '|'.join(
-                    r['str'] # f"{r['code']}:{r['str']}"
-                    for r in cat.names_by_code
-                )
-
-            if cat.codes_by_name:
-                df.at[i, 'dedup_codes_by_name'] = '|'.join(
-                    r['code'] # f"{r['code']}:{r['str']}"
-                    for r in cat.codes_by_name
-                )
-
-            if cat.comments:
-                df.at[i, 'dedup_comment'] = '\n'.join(cat.comments)
+            val = self.categorize(row)
+            df.at[i, "dedup_result"]       = val.result
+            if not val.result.startswith("NONE"):
+                df.at[i, "dedup_result"] = val.result
+                df.at[i, "dedup_code"]   = val.row["code"]
+                df.at[i, "dedup_str"]    = val.row["str"]
+                df.at[i, "dedup_cui"]    = val.row["cui"]
+                df.at[i, "dedup_sab"]    = val.row['sab']
+                df.at[i, "dedup_ttys"]   = ','.join(sorted(val.row['ttys']))
+                df.at[i, "dedup_ignore"] = str(val.row['all_ignored_ttys']).lower()
+            if val.comments:
+                df.at[i, 'dedup_comments'] = '\n'.join(val.comments)
 
         return df
 
@@ -456,29 +437,94 @@ class Tables:
             name = path.basename(infile).replace('.csv', '')
             print(name, end=' ', flush=True)
             outfile = f"{outdir}/{name}.csv"
-            if path.exists(outfile):
-                print("exists already.")
-                continue
+            # if path.exists(outfile):
+            #     print("exists already.")
+            #     continue
             df = pd.read_csv(infile, dtype=str, na_filter=False)
             print(len(df), end=' ', flush=True)
             df = self.dedup(df)
             print()
             df.to_csv(outfile, index=False)
 
-if __name__ == "__main__":
+def mkrow(sab=None, code=None, str=None, cui=None, row=None, **kwargs):
+    if row is None:
+        res = {}
+    else:
+        res = mkrow(row.get('sab'), row.get('code'), row.get('str'), row.get('cui'))
+    if sab is not None:
+        res['sab'] = sab
+    if code is not None:
+        res['code'] = code
+    if str is not None:
+        res['str'] = str
+    if cui is not None:
+        res['cui'] = cui
+    return res
+
+def tests(tables):
+
+    row = mkrow(sab='-', code='D68.4', str='Deficiency of coagulation factor due to liver disease', cui='C0398604')
+    val = tables.categorize(row)
+    assert val.result == 'NONE_NO_CODING_SYSTEM', val.result
+
+    row = mkrow(sab='ICD10CM', code='-', str='Deficiency of coagulation factor due to liver disease', cui='C0398604')
+    val = tables.categorize(row)
+    assert val.result == 'NONE_NO_CODE', val.result
+
+    row = mkrow(sab='ICD10CM', code='D68.4', str='Acquired coagulation factor deficiency', cui='C0001169')
+    val = tables.categorize(row)
+    assert val.result == 'EXACT', val.result
+    assert val.obsolete == None, val.obsolete
+    assert mkrow(row=val.row) == row, val.row
+
+    row = mkrow(sab='ICD10CM', code='D68.4', str='Deficiency of coagulation factor due to liver disease', cui='C0398604')
+    val = tables.categorize(row)
+    assert val.result == 'EXACT', val.result
+    assert mkrow(row=val.obsolete) == row, val.obsolete
+    assert val.row['str'] == 'Acquired coagulation factor deficiency', val.row['str']
+
+    row = mkrow(sab='ICD10CM',code='I66',str='embolism of cerebral artery',cui='C0007780')
+    val = tables.categorize(row)
+    assert val.result == 'EXACT', val.result
+    assert val.obsolete is not None
+    assert mkrow(row=val.row) == mkrow(str='Occlusion and stenosis of cerebral arteries, not resulting in cerebral infarction', cui='C0348832', row=row), mkrow(row=val.row)
+
+    row = mkrow(sab='ICD10CM', code='D68.4', str='XXquired coagulation factor deficiency', cui='C0001169')
+    val = tables.categorize(row)
+    assert val.result == 'BY_CODE', val.result
+    assert val.obsolete == None, val.obsolete
+    assert mkrow(row=val.row) == mkrow(str='Acquired coagulation factor deficiency', row=row), mkrow(val.row)
+
+    row = mkrow(sab='ICD10', code='D68', str='Von Willebrand\'s disease', cui='C0042974')
+    val = tables.categorize(row)
+    assert val.result == 'BY_NAME', val.result
+    assert val.obsolete == None, val.obsolete
+    assert mkrow(row=val.row) == mkrow(code='D68.0', row=row), mkrow(val.row)
+
+    row = mkrow(sab='SNOMEDCT_US', code='10752381000119100', str='Fetal thrombocytopenia', cui='C2349596')
+    val = tables.categorize(row)
+    assert val.result == 'BY_NAME', val.result
+    assert val.obsolete == None, val.obsolete
+    assert mkrow(row=val.row) == mkrow(code='10752381000119101', row=row), mkrow(val.row)
+
+    row = mkrow(sab='SCTSPA', code='328381000119105', str='Pancytopenia caused by anticonvulsant', cui='C5547251')
+    val = tables.categorize(row)
+    assert val.result == 'BY_CODE_EQUIV', val.result
+    assert val.obsolete == None, val.obsolete
+    assert mkrow(row=val.row) == mkrow(str='pancitopenia causada por anticonvulsivante', row=row), val.row
+
+    row = mkrow(sab='SCTSPA', code='10752381000119100', str='Fetal thrombocytopenia', cui='')
+    val = tables.categorize(row)
+    assert val.result == 'ROUNDING', val.result
+
+if __name__ == "__main__" and "INTERACTIVE" not in globals():
     [_, indir, table_filename, mrcui_filename, outdir] = sys.argv
-    dtype = defaultdict(lambda: str, {'sab': "category"})
-    table = (
-        pd.read_csv(table_filename, dtype=dtype)
-        .assign(ttys=lambda df: df.ttys.str.split(',').apply(set))
-    )
-    names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin', 'dummy']
-    mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names, sep='|')
-    tables = Tables(table, mrcui)
+    tables = Tables.load(table_filename, mrcui_filename)
+    tests(tables)
+    print("Tests succeeded!")
     try:
         num = int(os.environ['DEDUP_NUM'])
     except:
         num = None
     print("num:", num)
     tables.dedup_dir(indir, outdir, num)
-
