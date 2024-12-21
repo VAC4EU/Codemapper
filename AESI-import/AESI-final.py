@@ -33,41 +33,41 @@ RESULT_DETAILS = {
 def review_content(s):
     details = RESULT_DETAILS[s['dedup_result']]
     if s['dedup_result'].startswith('NONE'):
-        res = f"Could not confirm/correct ({details})"
+        result = f"Could not confirm/correct ({details})."
     else:
         if s.dedup_changes == '-':
-            res = f"Confirmed ({details})"
+            result = f"Confirmed ({details})."
         else:
-            res = f"Corrected ({details})"
+            result = f"Corrected ({details})."
+    contents = [result]
     if s['dedup_changes'] != '-':
-        res += f"\nChanged: {s['dedup_changes']}."
+        contents.append(f"Changed: {s['dedup_changes']}.")
     if s['dedup_comments'] != '-':
-        res += f"\nDetail: {s['dedup_comments']}."
-    return res
+        contents.append(f"Detail: {s['dedup_comments']}.")
+    return '\n\n'.join(contents)
 
 def finalize(df0, name, num_reviews):
     print(name)
-    # ignore = df0.dedup_ignore == 'true'
+    ignore = df0.dedup_ignore == 'true'
     nocode = df0.code == ''
 
     df0['dedup_changes'] = '-'
     for i, row in df0.iterrows():
         changes = []
+        if row['dedup_sab'] != row['sab']:
+            changes.append(f"coding system from {row['sab']}")
         if row['dedup_code'] != row['code']:
             changes.append(f"code from {row['code']}")
         if row['dedup_str'].lower() != row['str'].lower():
-            changes.append(f"code name from {row['str']}")
-        if row['dedup_sab'] != row['sab']:
-            changes.append(f"coding system from {row['sab']}")
+            changes.append(f"code_name from \"{row['str']}\"")
         if row['dedup_cui'] != row['cui'] and row['cui'] not in {'', '-'}:
-            changes.append(f"cui from {row['cui']}")
+            changes.append(f"concept from {row['cui']}")
         if changes:
             df0.at[i, "dedup_changes"] = ', '.join(changes)
 
     df = df0[~nocode] # & ~ignore
     info = [len(df0), len(df), 1 + num_reviews]
 
-    review_cols = [s.replace('%', str(num_reviews)) for s in REVIEW_COLUMNS]
     for i in (str(i) for i in range(num_reviews + 1)):
         author_col, date_col, content_col = (s.replace('%', str(i)) for s in REVIEW_COLUMNS)
 
@@ -82,9 +82,10 @@ def finalize(df0, name, num_reviews):
     for col in df.columns:
         if col.startswith('review_'):
             res[col] = df[col]
+
+    review_cols = [s.replace('%', str(num_reviews + 1)) for s in REVIEW_COLUMNS]
     for col in review_cols:
         res[col] = ""
-
     if len(df) == 0:
         return res, info
     else:

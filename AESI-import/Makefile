@@ -1,3 +1,6 @@
+.PHONY: default
+default: norm dedup final
+
 .PHONY: setup
 setup:
 	pip3 install -r requirements.txt

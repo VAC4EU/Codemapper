@@ -111,7 +111,10 @@ def term_match_abbr(str1, str2):
 def code_norm(code, sab):
     if sab in ['SNOMEDCT_US', 'SCTSPA'] and code.isnumeric() and len(code) > 15:
         return code[:15]
-    return code.strip('0').rstrip('.')
+    if sab.startswith('ICD') and len(code) > 3 and code[3] == '.':
+        code = code[:3] + code[4:]
+    code = code.strip('0').rstrip('.')
+    return code
 
 def code_match(code1, code2, sab):
     match = code_norm(code1, sab) == code_norm(code2, sab)
@@ -388,7 +391,6 @@ class Tables:
             df = self.table
             df = df[df.sab == sab]
             df = df[df.code.str.startswith(code[:-2])]
-            print("ROUNDING", df)
             # str does not match, use a code that matches the first 15 digits
             # uniquely
             if len(df.cui.drop_duplicates()) == 1:

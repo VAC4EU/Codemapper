@@ -18,8 +18,8 @@ REVIEW_PATTERNS = [
 ]
 
 COLUMN_MAPPING = (
-    ["coding system", "code", "code name", "concept", "concept name", "tags", "Comments"],
-    ["sab", "code", "str", "cui", "concept_name", "tags", "comments"],
+    ["coding system",  "code",  "code name",  "concept",  "concept name",  "tags"], 
+    ["sab",            "code",  "str",        "cui",      "concept_name",  "tags"], 
 )
 
 INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"]
@@ -39,7 +39,7 @@ def get_mapping(filename):
             if res is None:
                 res = name, sheet_name, df
             else:
-                print(filename, "two sheets with coding systems:", data.mapping_sheet_name, ' and ', sheet_name)
+                print("*** Two sheets with coding systems in file", filename + ": ", data.mapping_sheet_name, ' and ', sheet_name)
                 exit(1)
     if res is None:
         print("*** Mapping sheet not found in", filename, "***")
@@ -54,11 +54,11 @@ def preprocess(name, df):
         df
         .rename(lambda s: s.lower(), axis=1)
         .rename(dict(zip(*COLUMN_MAPPING)), axis=1)
+        .apply(lambda s: s.str.strip())
         .pipe(lambda df: df[df.code != '-'])
         .assign(code=lambda df: df.code.map(f))
-        .apply(lambda s: s.str.strip())
     )
-    i_comments = 0
+    i_comments = 1
     review_renames = {}
     for col_pats in REVIEW_PATTERNS:
         for i in (str(i) for i in range(5)):
@@ -77,7 +77,7 @@ def preprocess(name, df):
     df = df.fillna('')[known_columns]
     unknown_cols = set(df.columns) - set(COLUMN_MAPPING[1]) - set(review_renames.values())
     if unknown_cols:
-        print(name, "unknown columns:", unknown_cols)
+        print(name, "*** unknown columns:", unknown_cols)
     n_reviews = len(review_renames) / 3
     renames = ';'.join(f'{n1}:{n2}' for n1, n2 in review_renames.items())
     return df, n_reviews, renames, unknown_cols
