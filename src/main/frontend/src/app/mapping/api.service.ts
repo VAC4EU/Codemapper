@@ -213,7 +213,7 @@ export class ApiService {
     return this.http.get<ServerInfo>(this.baseUrl + "/server-info")
   }
 
-  importCsvContent(csvContent : string, commentColumns : string[], format : string) : Observable<ImportResult> {
+  importCsvContent(csvContent : string, commentColumns : string[], format : string, ignoreTermTypes: string[]) : Observable<ImportResult> {
     let url = `${this.baseUrl}/import-csv`;
     let body = new URLSearchParams();
     body.set("format", format);
@@ -221,17 +221,20 @@ export class ApiService {
     for (let commentColumns1 of commentColumns) {
       body.append("commentColumns", commentColumns1);
     }
+    for (let ignoreTermType of ignoreTermTypes) {
+      body.append("ignoreTermTypes", ignoreTermType);
+    }
     return this.http.post<ImportResult>(url, body, urlEncodedOptions);
   }
 
-  importCsv(csv : File, commentColumns : string[], format : string) : Observable<ImportedMapping> {
+  importCsv(csv : File, commentColumns : string[], format : string, ignoreTermTypes: string[]) : Observable<ImportedMapping> {
     let api = this;
     return new Observable((subscriber) => {
       var reader = new FileReader();
       reader.onload = function() {
         let csvContent = reader.result;
         if (typeof csvContent == "string") {
-          api.importCsvContent(csvContent, commentColumns, format)
+          api.importCsvContent(csvContent, commentColumns, format, ignoreTermTypes)
             .subscribe(res => {
               if (res.success && res.imported) {
                 let imported = res.imported!;
@@ -299,6 +302,7 @@ export interface ImportedMapping {
   warnings : string[],
   csvContent : string;
   mappingName : string;
+  ignoreTermTypes : string[],
 }
 
 export type Descendants = { [key : CodeId] : Code[] }

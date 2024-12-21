@@ -16,11 +16,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../api.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'import-csv-dialog',
@@ -34,13 +35,9 @@ export class ImportCsvDialogComponent {
     private api : ApiService,
     private dialogRef : MatDialogRef<ImportCsvDialogComponent>,
     private snackbar : MatSnackBar,
-    // @Inject(MAT_DIALOG_DATA) public data : {
-    //   title : string,
-    //   action : string,
-    //   concepts : { [key : ConceptId] : Concept },
-    //   codes : { [key : VocabularyId] : { [key : CodeId] : Code } },
-    //   vocabularies : VocabularyId[]
-    // }
+    @Inject(MAT_DIALOG_DATA) public data : {
+      ignoreTermTypes: string[]
+    },
   ) { }
 
   handleCsvFileInput(event : Event) {
@@ -65,27 +62,24 @@ export class ImportCsvDialogComponent {
     this.csvImportFile = null;
   }
 
-  importCsv(mappingName : string, file : File, format : string) {
-    this.api.importCsv(file, [], format)
-      .subscribe({
-        next: (imported) => {
-          if (imported.warnings.length) {
-            let msg = "There were problems with the import: " +
-              imported.warnings.map(s => `${s}. `).join("") +
-              "Continue?";
-            if (!confirm(msg)) {
-              return;
-            }
-          }
-          imported.mappingName = mappingName;
-          this.dialogRef.close(imported);
-        },
-        error: (err) => {
-          let msg = typeof(err) == "string" ? err : ((err as any).error ?? "Could not import codelist: unknown error (see console)");
-          console.log("Could not import codelist", err);
-          alert(msg);
-        },
-      });
-    this.unsetCsvImportFile();
+  async importCsv(mappingName : string, file : File, format : string) {
+    try {
+      let imported = await firstValueFrom(this.api.importCsv(file, [], format, this.data.ignoreTermTypes));
+      if (imported.warnings.length) {
+        let msg = "There were problems with the import: " +
+          imported.warnings.map(s => `${s}. `).join("") +
+          "Continue?";
+        if (!confirm(msg)) {
+          return;
+        }
+      }
+      imported.mappingName = mappingName;
+      this.unsetCsvImportFile();
+      this.dialogRef.close(imported);
+    } catch (err) {
+      console.error("Could not import codelist", err);
+      let msg = typeof(err) == "string" ? err : ((err as any).error ?? "Could not import codelist: unknown error (see console)");
+      alert(msg);
+    }
   }
 }

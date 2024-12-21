@@ -211,7 +211,7 @@ public class CodeMapperResource {
   }
 
   @XmlRootElement
-  class ImportResult {
+  public static class ImportResult {
     boolean success;
     ImportedMapping imported;
     String error;
@@ -232,12 +232,13 @@ public class CodeMapperResource {
       @FormParam("csvContent") String csvContent,
       @FormParam("commentColumns") List<String> commentColumns,
       @FormParam("format") String format,
+      @FormParam("ignoreTermTypes") List<String> ignoreTermTypes,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
     try {
       if (format == null || format.isEmpty() || format.equals("csv_compat")) {
         ImportedMapping imported =
-            api.importCompatCSV(new StringReader(csvContent), commentColumns);
+            api.importCompatCSV(new StringReader(csvContent), commentColumns, ignoreTermTypes);
         return new ImportResult(true, imported, null);
       } else {
         return new ImportResult(false, null, "unexpected format: " + format);

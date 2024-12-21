@@ -800,7 +800,8 @@ public class UmlsApi {
     int author, date, content;
   }
 
-  public ImportedMapping importCompatCSV(Reader csvContent, Collection<String> commentColumns)
+  public ImportedMapping importCompatCSV(
+      Reader csvContent, Collection<String> commentColumns, Collection<String> ignoreTermTypes)
       throws CodeMapperException {
     String importAuthor = "Codelist import";
     String deduplicationAuthor =
@@ -974,7 +975,7 @@ public class UmlsApi {
       Collection<String> conceptIds1 = replaceRetired(retired, conceptIds, messagesByConcept);
 
       // retrieve UMLS data
-      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds1, vocIds, null);
+      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds1, vocIds, ignoreTermTypes);
 
       // All coding systems
       Map<String, CodingSystem> codingSystems = new HashMap<>();

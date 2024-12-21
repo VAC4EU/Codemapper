@@ -24,8 +24,8 @@ import { Title } from "@angular/platform-browser";
 import { MatDialog } from '@angular/material/dialog';
 import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, UserRole, roleAtLeast as roleAtLeast, userCanDownload, userCanRename, userCanCreate } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
-import { ApiService } from '../api.service';
-import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo } from '../data';
+import { ApiService, ImportedMapping } from '../api.service';
+import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo, MappingMeta } from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -132,25 +132,27 @@ export class ProjectViewComponent {
     if (!projectName) {
       return;
     }
-    this.dialog.open(ImportCsvDialogComponent)
-      .afterClosed()
+    let ignoreTermTypes = this.serverInfo.defaultIgnoreTermTypes;
+    this.dialog.open(ImportCsvDialogComponent, {data: { ignoreTermTypes }}).afterClosed()
       .subscribe(imported => {
+        console.log("IMPORTED", imported);
         if (typeof (imported) == 'object') {
           let start : Start = {
             type: StartType.CsvImport,
             csvContent: imported.csvContent
           };
-          let { mappingName, mapping: { vocabularies, concepts, codes, umlsVersion } } = imported;
-          let info = {
+          let { mappingName, mapping } = imported as ImportedMapping;
+          let { vocabularies, concepts, codes, umlsVersion } = mapping;
+          let meta: MappingMeta = {
             formatVersion: MappingFormat.version,
             umlsVersion,
-            allowedTags: this.serverInfo.defaultAllowedTags,
-            ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
+            ignoreTermTypes,
             ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
+            allowedTags: this.serverInfo.defaultAllowedTags,
           };
-          let mapping = new Mapping(info, start, vocabularies, concepts, codes);
+          let mapping1 = new Mapping(meta, start, vocabularies, concepts, codes);
           let allTopics = AllTopics.fromRaw(imported.allTopics, null, Object.keys(concepts));
-          let initial = { mappingName, projectName, mapping, allTopics };
+          let initial = { mappingName, projectName, mapping: mapping1, allTopics };
           this.router.navigate(["/mapping"], { state: { initial } });
         }
       });

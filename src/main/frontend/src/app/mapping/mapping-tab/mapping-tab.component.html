@@ -28,7 +28,7 @@
           All versions of the mapping
         </mat-panel-description>
       </mat-expansion-panel-header>
-      <span *ngIf="projectRole == 'Owner' || projectRole == 'Editor'">Use the button on the right to export the codelist at that version.</span>
+      <span>Use the button on the right to export the codelist at that version.</span>
       <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
       <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [mappingShortkey]="mappingShortkey"
         [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">
@@ -50,7 +50,7 @@
         When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
         remap the mapping to update the concept codes using the latest version of the UMLS.
       </p>
-      <button [disabled]="mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack.length > 0"
+      <button [disabled]="!userCanEdit || mapping.meta.umlsVersion == serverInfo.umlsVersion || mapping.undoStack.length > 0"
         (click)="remap()" mat-raised-button color="primary">
         Remap
       </button>
@@ -67,16 +67,15 @@
       <ul class="tags-list">
         <li *ngFor="let tag of mapping.meta.allowedTags"><mapping-tag [tag]="tag"></mapping-tag></li>
       </ul>
-
-      <h4>Ignored semantic types</h4>
-      <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
-      <ul>
-        <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
-      </ul>
       <h4>Ignored term types</h4>
       <p *ngIf="mapping.meta.ignoreTermTypes.length == 0">None.</p>
       <ul>
         <li *ngFor="let tty of mapping.meta.ignoreTermTypes">{{tty}}</li>
+      </ul>
+      <h4>Ignored semantic types</h4>
+      <p *ngIf="mapping.meta.ignoreSemanticTypes.length == 0">None.</p>
+      <ul>
+        <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
       </ul>
     </mat-expansion-panel>
   </mat-accordion>
