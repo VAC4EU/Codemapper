@@ -231,11 +231,17 @@ public class CodeMapperResource {
   public ImportResult importCSV(
       @FormParam("csvContent") String csvContent,
       @FormParam("commentColumns") List<String> commentColumns,
+      @FormParam("format") String format,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
     try {
-      ImportedMapping imported = api.importCSV(new StringReader(csvContent), commentColumns);
-      return new ImportResult(true, imported, null);
+      if (format == null || format.isEmpty() || format.equals("csv_compat")) {
+        ImportedMapping imported =
+            api.importCompatCSV(new StringReader(csvContent), commentColumns);
+        return new ImportResult(true, imported, null);
+      } else {
+        return new ImportResult(false, null, "unexpected format: " + format);
+      }
     } catch (CodeMapperException e) {
       return new ImportResult(false, null, e.getMessage());
     }

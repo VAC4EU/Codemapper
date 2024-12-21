@@ -65,8 +65,8 @@ export class ImportCsvDialogComponent {
     this.csvImportFile = null;
   }
 
-  importCsv(mappingName : string, file : File) {
-    this.api.importCsv(file, [])
+  importCsv(mappingName : string, file : File, format : string) {
+    this.api.importCsv(file, [], format)
       .subscribe({
         next: (imported) => {
           if (imported.warnings.length) {

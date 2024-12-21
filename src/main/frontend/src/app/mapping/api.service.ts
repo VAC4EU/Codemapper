@@ -213,24 +213,25 @@ export class ApiService {
     return this.http.get<ServerInfo>(this.baseUrl + "/server-info")
   }
 
-  importCsvContent(csvContent : string, commentColumns : string[]) : Observable<ImportResult> {
+  importCsvContent(csvContent : string, commentColumns : string[], format : string) : Observable<ImportResult> {
     let url = `${this.baseUrl}/import-csv`;
     let body = new URLSearchParams();
-    body.append("csvContent", csvContent);
+    body.set("format", format);
+    body.set("csvContent", csvContent);
     for (let commentColumns1 of commentColumns) {
       body.append("commentColumns", commentColumns1);
     }
     return this.http.post<ImportResult>(url, body, urlEncodedOptions);
   }
 
-  importCsv(csv : File, commentColumns : string[]) : Observable<ImportedMapping> {
+  importCsv(csv : File, commentColumns : string[], format : string) : Observable<ImportedMapping> {
     let api = this;
     return new Observable((subscriber) => {
       var reader = new FileReader();
       reader.onload = function() {
         let csvContent = reader.result;
         if (typeof csvContent == "string") {
-          api.importCsvContent(csvContent, commentColumns)
+          api.importCsvContent(csvContent, commentColumns, format)
             .subscribe(res => {
               if (res.success && res.imported) {
                 let imported = res.imported!;

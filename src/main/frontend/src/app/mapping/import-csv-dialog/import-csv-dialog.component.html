@@ -1,5 +1,13 @@
-<h1 matDialogTitle>Import CSV</h1>
+<h1 matDialogTitle>Import codelist</h1>
 <mat-dialog-content>
+  <p>
+    <mat-form-field>
+      <mat-label>Format</mat-label>
+      <mat-select #format required value="csv_compat">
+          <mat-option value="csv_compat">CSV compatibility</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </p>
   <p>
     <mat-form-field appearance="fill">
       <mat-label>Mapping name</mat-label>
@@ -19,19 +27,19 @@
       Select file
     </button>
   </p>
-  <p>The CSV file must have the following columns:</p>
+  <p>The codelist must be a CSV file with the following columns:</p>
   <ul>
     <li><code>coding_system</code></li>
     <li><code>concept</code></li>
     <li><code>code</code></li>
-    <li><code>term</code></li>
-    <li><code>tag</code></li>
-    <li><code>review_author_0</code></li>
-    <li><code>review_date_0</code></li>
-    <li><code>review_content_0</code></li>
+    <li><code>code_name</code></li>
+    <li><code>tags</code></li>
+    <li><code>comment1_author</code></li>
+    <li><code>comment1_timestamp</code></li>
+    <li><code>comment1_content</code></li>
     <li><code>...</code></li>
   </ul>
-  <p>The CSV file can contain multiple rounds of comments in columns with increasing numbers.</p>
+  <p>There may be multiple sets of comment columns with increasing numbers.</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button
@@ -41,7 +49,7 @@
   <span matTooltip="Requires mapping name and CSV file">
     <button
       [disabled]="csvImportFile == null || !mappingName"
-      (click)="importCsv(mappingName, csvImportFile!)"
+      (click)="importCsv(mappingName, csvImportFile!, format.value)"
       color="primary"
       mat-raised-button>Import</button>
   </span>
