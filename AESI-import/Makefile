@@ -5,7 +5,7 @@ default: norm dedup final
 setup:
 	pip3 install -r requirements.txt
 
-ORIGINAL = B_to_C_Sima
+ORIGINAL ?= B_to_C_Sima
 
 .PHONY: norm
 norm: AESI-norm.py $(ORIGINAL)

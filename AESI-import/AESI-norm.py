@@ -25,7 +25,6 @@ COLUMN_MAPPING = (
 INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"]
 
 def get_mapping(filename):
-    name = path.basename(path.dirname(filename))
     xls = pd.ExcelFile(filename)
     sheets = pd.read_excel(filename, dtype=str, sheet_name=None)
     res = None
@@ -37,7 +36,7 @@ def get_mapping(filename):
             continue
         if col0 == 'Coding system' and all(c in df.columns for c in INPUT_COLUMNS):
             if res is None:
-                res = name, sheet_name, df
+                res = sheet_name, df
             else:
                 print("*** Two sheets with coding systems in file", filename + ": ", data.mapping_sheet_name, ' and ', sheet_name)
                 exit(1)
@@ -56,8 +55,27 @@ def preprocess(name, df):
         .rename(dict(zip(*COLUMN_MAPPING)), axis=1)
         .apply(lambda s: s.str.strip())
         .pipe(lambda df: df[df.code != '-'])
+        .assign(tags=lambda df: df.tags.str.lower())
         .assign(code=lambda df: df.code.map(f))
     )
+
+    contr_tags = (
+        df
+        .assign(tags=df.tags.replace("", "NONE"))
+        .groupby(["sab", "code"])
+        .tags.agg(set).reset_index()
+        .pipe(lambda df: df[df.tags.map(len) > 1])
+    )
+    if len(contr_tags):
+        print()
+        print(f"*** contradicting tags in {name}")
+        print(contr_tags.assign(tags=contr_tags.tags.map(','.join)).to_string(index=False))
+    df = (
+        pd.merge(df, contr_tags, on=["sab", "code"], how='outer', indicator=True, suffixes=["", "_contr"])
+        .assign(tags=lambda df: df.tags.where(df._merge == 'left_only', df.tags_contr.map(lambda s: "never" if pd.isna(s) else '/'.join(s))))
+        .drop(["tags_contr", "_merge"], axis=1)
+    )
+    
     i_comments = 1
     review_renames = {}
     for col_pats in REVIEW_PATTERNS:
@@ -83,11 +101,18 @@ def preprocess(name, df):
     return df, n_reviews, renames, unknown_cols
 
 def get_sheets(indir, outdir, max):
+    subdir = True
+    if os.environ.get("NO_SUBDIR"):
+        subdir = False
     index_rows = []
-    for i, filename in enumerate(sorted(glob(f'{indir}/*/*.xlsx'))):
+    for i, filename in enumerate(sorted(glob(f'{indir}{"/*" if subdir else ""}/*.xlsx'))):
         if max and i >= max:
             break
-        name, sheet_name, df = get_mapping(filename)
+        if subdir:
+            name = path.basename(path.dirname(filename))
+        else:
+            name = path.splitext(path.basename(filename))[0]
+        sheet_name, df = get_mapping(filename)
         df, num_reviews, cols_norms, unknown_cols = preprocess(name, df)
         outfilename = f"{outdir}/{name}.csv"
         df.to_csv(outfilename, index=False)
