@@ -6,7 +6,7 @@ from glob import glob
 from collections import namedtuple
 
 # Also in AESI-final.py, AESI-import.py
-REVIEW_COLUMNS = ("review_author_%", "review_date_%", "review_content_%")
+REVIEW_COLUMNS = ("review%_author", "review%_timestamp", "review%_content")
 
 REVIEW_PATTERNS = [
     ("edited by",   "date",           "comment"),           
@@ -23,6 +23,11 @@ COLUMN_MAPPING = (
 )
 
 INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"]
+
+SAB_MAPPING = {
+    "e": "SNOMEDCT_US",
+    "p": "MEDCODEID",
+}
 
 def get_mapping(filename):
     xls = pd.ExcelFile(filename)
@@ -45,10 +50,12 @@ def get_mapping(filename):
     return res
 
 def preprocess(name, df):
-    def f(code):
-        if not pd.isna(code) and 'E+' in code:
-            return '{:.0f}'.format(float(code))
-        return code
+    def f(row):
+        if row['sab'] == 'ICD10DA' and len(row['code']) > 3 and row['code'][3] == '.':
+            return row['code'][:3] + row['code'][4:]
+        if not pd.isna(row['code']) and 'E+' in row['code']:
+            return '{:.0f}'.format(float(row['code']))
+        return row['code']
     df = (
         df
         .rename(lambda s: s.lower(), axis=1)
@@ -56,24 +63,25 @@ def preprocess(name, df):
         .apply(lambda s: s.str.strip())
         .pipe(lambda df: df[df.code != '-'])
         .assign(tags=lambda df: df.tags.str.lower())
-        .assign(code=lambda df: df.code.map(f))
+        .assign(code=lambda df: df.apply(f, axis=1))
+        .assign(sab=lambda df: df.sab.replace(SAB_MAPPING))
     )
 
-    contr_tags = (
+    multi_tags = (
         df
         .assign(tags=df.tags.replace("", "NONE"))
         .groupby(["sab", "code"])
         .tags.agg(set).reset_index()
         .pipe(lambda df: df[df.tags.map(len) > 1])
     )
-    if len(contr_tags):
+    if len(multi_tags):
         print()
-        print(f"*** contradicting tags in {name}")
-        print(contr_tags.assign(tags=contr_tags.tags.map(','.join)).to_string(index=False))
+        print(f"*** multiple tags in {name}")
+        print(multi_tags.assign(tags=multi_tags.tags.map(lambda s: 'multiple:' + '+'.join(s))).to_string(index=False))
     df = (
-        pd.merge(df, contr_tags, on=["sab", "code"], how='outer', indicator=True, suffixes=["", "_contr"])
-        .assign(tags=lambda df: df.tags.where(df._merge == 'left_only', df.tags_contr.map(lambda s: "never" if pd.isna(s) else '/'.join(s))))
-        .drop(["tags_contr", "_merge"], axis=1)
+        pd.merge(df, multi_tags, on=["sab", "code"], how='outer', indicator=True, suffixes=["", "_multi"])
+        .assign(tags=lambda df: df.tags.where(df._merge == 'left_only', df.tags_multi.map(lambda s: "never" if pd.isna(s) else "multiple:" + '+'.join(s))))
+        .drop(["tags_multi", "_merge"], axis=1)
     )
     
     i_comments = 1
@@ -101,17 +109,11 @@ def preprocess(name, df):
     return df, n_reviews, renames, unknown_cols
 
 def get_sheets(indir, outdir, max):
-    subdir = True
-    if os.environ.get("NO_SUBDIR"):
-        subdir = False
     index_rows = []
-    for i, filename in enumerate(sorted(glob(f'{indir}{"/*" if subdir else ""}/*.xlsx'))):
+    for i, filename in enumerate(sorted(glob(f'{indir}/*/*.xlsx'))):
         if max and i >= max:
             break
-        if subdir:
-            name = path.basename(path.dirname(filename))
-        else:
-            name = path.splitext(path.basename(filename))[0]
+        name = path.basename(path.dirname(filename))
         sheet_name, df = get_mapping(filename)
         df, num_reviews, cols_norms, unknown_cols = preprocess(name, df)
         outfilename = f"{outdir}/{name}.csv"
@@ -125,7 +127,7 @@ def get_sheets(indir, outdir, max):
 if __name__ == "__main__":
     try:
         max = int(os.environ['MAX'])
+        print("max", max)
     except:
         max = None
-    print("max", max)
     get_sheets(sys.argv[1], sys.argv[2], max)

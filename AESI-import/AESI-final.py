@@ -4,13 +4,14 @@ from os import path
 from glob import glob
 import pandas as pd
 
-# Also in AESI-norm.py, AESI-import.puuy
-REVIEW_COLUMNS = ("review_author_%", "review_date_%", "review_content_%")
+# Also in AESI-norm.py, AESI-import.py
+REVIEW_COLUMNS = ("review%_author", "review%_timestamp", "review%_content")
 
 YES_NO = {'N': 'No', 'Y': 'Yes'}
 
 RESULT_DETAILS = {
     "EXACT":               "exact match",
+    "ROUNDING":  "unrounded code with unique concept",
     "BY_CODE": "code name by code",
     "BY_CODE_EQUIV": "code name by equivalent code",
     "BY_NAME": "code by code name",
@@ -68,9 +69,6 @@ def finalize(df0, name, num_reviews):
     df = df0[~nocode] # & ~ignore
     info = [len(df0), len(df), 1 + num_reviews]
 
-    for i in (str(i) for i in range(num_reviews + 1)):
-        author_col, date_col, content_col = (s.replace('%', str(i)) for s in REVIEW_COLUMNS)
-
     res = pd.DataFrame(index=df.index)
     def select(df, col1, col2):
         return df[col1].where(df[col1] != '-', df[col2])
@@ -83,13 +81,13 @@ def finalize(df0, name, num_reviews):
         if col.startswith('review_'):
             res[col] = df[col]
 
-    review_cols = [s.replace('%', str(num_reviews + 1)) for s in REVIEW_COLUMNS]
-    for col in review_cols:
+    dedup_review_cols = [s.replace('%', str(num_reviews + 1)) for s in REVIEW_COLUMNS]
+    for col in dedup_review_cols:
         res[col] = ""
     if len(df) == 0:
         return res, info
     else:
-        rev_auth, rev_date, rev_cont = review_cols
+        rev_auth, rev_date, rev_cont = dedup_review_cols
         res[rev_auth] = 'SharePoint deduplication'
         res[rev_date] = date.today().isoformat()
         res[rev_cont] = df.apply(review_content, axis=1)

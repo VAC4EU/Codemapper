@@ -519,14 +519,19 @@ def tests(tables):
     val = tables.categorize(row)
     assert val.result == 'ROUNDING', val.result
 
+    row = mkrow(sab='ICD10DA', code='D683', str='Blødningsforstyrrelse forårsaget af cirkulerende antikoagulantia', cui='C1399404')
+    val = tables.categorize(row)
+    assert val.result == 'BY_CODE', val.result
+    assert mkrow(row=val.row) == mkrow(str="Blødningsforstyrrelse f.a. cirkulerende antikoagulantia", row=row), val.row
+
 if __name__ == "__main__" and "INTERACTIVE" not in globals():
     [_, indir, table_filename, mrcui_filename, outdir] = sys.argv
     tables = Tables.load(table_filename, mrcui_filename)
     tests(tables)
     print("Tests succeeded!")
     try:
-        num = int(os.environ['DEDUP_NUM'])
+        num = int(os.environ['MAX'])
+        print("num:", num)
     except:
         num = None
-    print("num:", num)
     tables.dedup_dir(indir, outdir, num)

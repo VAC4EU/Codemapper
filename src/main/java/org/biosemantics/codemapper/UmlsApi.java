@@ -850,13 +850,13 @@ public class UmlsApi {
 
       List<CommentColumns> commentColumnsList = new LinkedList<>();
 
-      // search for comment{i}_{author,timestamp,content} as default if no comment columns are
+      // search for review{i}_{author,timestamp,content} as default if no comment columns are
       // provided
       if (commentColumns.stream().allMatch(s -> s.isBlank())) {
         for (int ix = 1; ; ix++) {
-          String authorCol = "comment" + ix + "_author";
-          String dateCol = "comment" + ix + "_timestamp";
-          String contentCol = "comment" + ix + "_content";
+          String authorCol = "review" + ix + "_author";
+          String dateCol = "review" + ix + "_timestamp";
+          String contentCol = "review" + ix + "_content";
           CommentColumns cc = new CommentColumns();
           cc.author = header.indexOf(authorCol);
           cc.date = header.indexOf(dateCol);
