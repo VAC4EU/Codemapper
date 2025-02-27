@@ -10,30 +10,32 @@ REVIEW_COLUMNS = ("review%_author", "review%_timestamp", "review%_content")
 YES_NO = {'N': 'No', 'Y': 'Yes'}
 
 RESULT_DETAILS = {
-    "EXACT":               "exact match",
-    "ROUNDING":  "unrounded code with unique concept",
-    "BY_CODE": "code name by code",
-    "BY_CODE_EQUIV": "code name by equivalent code",
-    "BY_NAME": "code by code name",
-    # "EXACT_MATCH_OBS":           "exact match, replace obsolete code name",
-    # "BY_CODE_AND_NAME":          "code and code name match",
-    # "CODE_BY_NAME":              "code by code name",
-    "CODE_BY_CUI":               "code by concept",
-    # "CODE_NAME_BY_CUI":          "code name by concept",
-    # "CORRECTED_NAME_BY_CODE":    "corrected code name by code",
-    # "CHANGED_NAME_BY_CODE":      "changed code name by code",
-    # "NAME_BY_CODE_ABBR":         "abbr code name by code",
-    "NONE":                      "no matching code found",
-    "NONE_NO_CODING_SYSTEM":     "unknown coding system or free text",
-    "NONE_NO_CODE":              "no code",
-    # "NONE_SAME_CUI":             "code concept and code name concept match but mismatch with concept",
-    # "NONE_SAME_CUI_NO_CONCEPT":  "code concept and code name concept match but no concept",
-    "CHANGE_CODING_SYSTEM":      "changed coding system",
+    "EXACT":                      "exact match",
+    "ROUNDING":                   "unrounded code with unique concept",
+    "BY_CODE":                    "code name by code",
+    "BY_CODE_EQUIV":              "code name by equivalent code",
+    "BY_NAME":                    "code by code name",
+    "CODE_BY_CUI":                "code by concept",
+    "NONE":                       "no matching code found",
+    "NONE_NO_CODING_SYSTEM":      "unknown coding system or free text",
+    "NONE_NO_CODE":               "no code",
+    "CHANGE_CODING_SYSTEM":       "changed coding system",
+    # "EXACT_MATCH_OBS"          :           "exact match, replace obsolete code name",
+    # "BY_CODE_AND_NAME"         :          "code and code name match",
+    # "CODE_BY_NAME"             :              "code by code name",
+    # "CODE_NAME_BY_CUI"         :          "code name by concept",
+    # "CORRECTED_NAME_BY_CODE"   :    "corrected code name by code",
+    # "CHANGED_NAME_BY_CODE"     :      "changed code name by code",
+    # "NAME_BY_CODE_ABBR"        :         "abbr code name by code",
+    # "NONE_SAME_CUI"            :             "code concept and code name concept match but mismatch with concept",
+    # "NONE_SAME_CUI_NO_CONCEPT" :  "code concept and code name concept match but no concept",
 }
 
 def review_content(s):
     details = RESULT_DETAILS[s['dedup_result']]
-    if s['dedup_result'].startswith('NONE'):
+    if s['dedup_result'] == 'EXACT':
+        return ""
+    elif s['dedup_result'].startswith('NONE'):
         result = f"Could not confirm/correct ({details})."
     else:
         if s.dedup_changes == '-':
@@ -45,7 +47,7 @@ def review_content(s):
         contents.append(f"Changed: {s['dedup_changes']}.")
     if s['dedup_comments'] != '-':
         contents.append(f"Detail: {s['dedup_comments']}.")
-    return '\n\n'.join(contents)
+    return '\n'.join(contents)
 
 def finalize(df0, name, num_reviews):
     print(name)
@@ -77,21 +79,23 @@ def finalize(df0, name, num_reviews):
     res['code_name'] = select(df, 'dedup_str', 'str')
     res['concept'] = select(df, 'dedup_cui', 'cui')
     res['tags'] = df['tags'].str.lower()
-    for col in df.columns:
-        if col.startswith('review_'):
-            res[col] = df[col]
+    for i in range(1, num_reviews+1):
+        prefix = f'review{i}_'
+        for suffix in ['timestamp', 'author', 'content']:
+            res[prefix + suffix] = df[prefix + suffix]
 
     dedup_review_cols = [s.replace('%', str(num_reviews + 1)) for s in REVIEW_COLUMNS]
     for col in dedup_review_cols:
         res[col] = ""
-    if len(df) == 0:
-        return res, info
-    else:
+    if len(df) > 0:
         rev_auth, rev_date, rev_cont = dedup_review_cols
-        res[rev_auth] = 'SharePoint deduplication'
+        res[rev_auth] = 'SharePoint import'
         res[rev_date] = date.today().isoformat()
         res[rev_cont] = df.apply(review_content, axis=1)
-        return res, info
+        has_cont = res[rev_cont] != ""
+        res[rev_auth] = res[rev_auth].where(has_cont, "")
+        res[rev_date] = res[rev_date].where(has_cont, "")
+    return res, info
 
 def finalize_dir(indexfile, indir, outdir):
     index = pd.read_csv(indexfile).set_index('name')

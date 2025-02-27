@@ -11,10 +11,10 @@ ICD10DA$(SUFFIX).csv: ../link-cuis.py ICD10DA-codes$(SUFFIX).csv ../mrconso.csv
 	make -C $(dir $@) $(not-dir $@)
 
 # add the vocabulary id
-ICD10DA_%.csv: ICD10DA.csv
+ICD10DA_%.csv: ICD10DA$(SUFFIX).csv
 	sed -e 's/^/$*,/' -e '1 s/^$*/voc_id/' $< > $@
 
-SKSComplete.txt:
+SKSComplete$(SUFFIX).txt:
 	curl -o $@ https://filer.sundhedsdata.dk/sks/data/skscomplete/SKScomplete.txt 
 
 .PHONY: import

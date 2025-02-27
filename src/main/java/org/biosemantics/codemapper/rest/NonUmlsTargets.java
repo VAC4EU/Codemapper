@@ -22,13 +22,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.sql.DataSource;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.CodingSystem;
@@ -38,6 +41,7 @@ import org.biosemantics.codemapper.UmlsConcept;
 
 public class NonUmlsTargets {
 
+  private static final List<String> LEXICOGRAPHICAL_CODING_SYSTEMS = Arrays.asList("ICD10DA");
   private DataSource connectionPool;
 
   public NonUmlsTargets(DataSource connectionPool) throws CodeMapperException {
@@ -100,8 +104,7 @@ public class NonUmlsTargets {
             + "SELECT DISTINCT cui, voc_abbr, code, term "
             + "FROM non_umls_latest_codes "
             + "WHERE cui = ANY(?) "
-            + "AND voc_abbr = ANY(?) "
-            + "AND rel = 'EQ'";
+            + "AND voc_abbr = ANY(?)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", cuis.toArray()));
@@ -186,32 +189,53 @@ public class NonUmlsTargets {
     }
   }
 
-  public Map<String, Collection<Code>> getDescendants(Collection<String> cuis, String voc)
+  public Map<String, Collection<Code>> getDescendants(String voc, Collection<String> codes)
       throws CodeMapperException {
+    if (LEXICOGRAPHICAL_CODING_SYSTEMS.contains(voc)) {
+      return getDescendantsLexicographical(voc, codes);
+    } else {
+      return new HashMap<>();
+    }
+  }
+
+  public Map<String, Collection<Code>> getDescendantsLexicographical(
+      String voc, Collection<String> codes) throws CodeMapperException {
+    Collection<String> codes1 = new TreeSet<>(codes); // sorted, unique
+    Set<String> prefixes = new HashSet<>();
+    String prefix = null;
+    for (String code : codes1) {
+      if (prefix == null || !code.startsWith(prefix)) {
+        prefix = code;
+        prefixes.add(prefix);
+      }
+    }
     String query =
         ""
-            + "SELECT DISTINCT cui, code, term "
+            + "SELECT DISTINCT code, term "
             + "FROM non_umls_latest_codes "
             + "WHERE voc_abbr = ? "
-            + "AND cui = ANY(?) "
-            + "AND rel = 'RN' "
-            + "ORDER BY cui, code";
-    Map<String, Collection<Code>> descendants = new TreeMap<>();
+            + "AND code LIKE ANY(?)";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
+      Object[] prefixesArray = prefixes.stream().map(s -> s + "%").toArray();
       statement.setString(1, voc);
-      statement.setArray(2, connection.createArrayOf("VARCHAR", cuis.toArray()));
-      ResultSet result = statement.executeQuery();
-      while (result.next()) {
-        String cui = result.getString(1);
-        String code0 = result.getString(2);
-        String term = result.getString(3);
-        Code code = new Code(code0, term, false, true, null);
-        descendants.computeIfAbsent(cui, key -> new LinkedList<Code>()).add(code);
+      statement.setArray(2, connection.createArrayOf("varchar", prefixesArray));
+      Map<String, Collection<Code>> result = new HashMap<>();
+      ResultSet set = statement.executeQuery();
+      while (set.next()) {
+        String id = set.getString(1);
+        String term = set.getString(2);
+        Code code = new Code(id, term, false, true, null);
+        for (String code1 : codes1) {
+          if (code.getId().startsWith(code1)) {
+            result.computeIfAbsent(code1, key -> new LinkedList<Code>()).add(code);
+          }
+        }
       }
-      return descendants;
+      return result;
     } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot execute query for get non-umls descendants", e);
+      throw CodeMapperException.server(
+          "Cannot execute query for get non-umls lexicographical descendants", e);
     }
   }
 }

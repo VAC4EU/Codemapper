@@ -23,7 +23,7 @@ deploy-production-all:
 	  $(FRONTEND)/dist-production \
 	  $(SERVER):/tmp/
 	ssh -t $(SERVER) sudo sh -c \
-	  "'sudo -u tomcat8 cp /var/lib/tomcat8/webapps/codemapper.war /home/bb/codemapper-production-$(date +%FT%T); sudo -u tomcat8 cp /tmp/codemapper.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-production/ /var/www/codemapper-frontend'"
+	  "'cp /var/lib/tomcat8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat8 cp /tmp/codemapper.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-production/ /var/www/codemapper-frontend'"
 
 deploy-testing:
 	mvn -P testing clean package

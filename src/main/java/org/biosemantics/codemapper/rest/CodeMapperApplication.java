@@ -138,7 +138,7 @@ public class CodeMapperApplication extends ResourceConfig {
 
     try {
       umlsConnectionPool = getConnectionPool(UMLS_DB);
-      codeMapperConnectionPool = getConnectionPool(CODE_MAPPER_DB);
+      codeMapperConnectionPool = getCodeMapperConnectionPool();
       nonUmls = new NonUmlsTargets(codeMapperConnectionPool);
     } catch (SQLException | CodeMapperException e) {
       logger.error("Cannot create pooled data source");
@@ -226,6 +226,10 @@ public class CodeMapperApplication extends ResourceConfig {
     String password = properties.getProperty(prefix + DB_PASSWORD_SUFFIX);
     logger.info("Get connection pool " + prefix);
     return DataSources.unpooledDataSource(uri, username, password);
+  }
+
+  public static DataSource getCodeMapperConnectionPool() throws SQLException {
+    return getConnectionPool(CODE_MAPPER_DB);
   }
 
   public static String getProp(String str) {

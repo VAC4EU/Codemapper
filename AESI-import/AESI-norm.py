@@ -4,6 +4,7 @@ from os import path
 import pandas as pd
 from glob import glob
 from collections import namedtuple
+from itertools import chain
 
 # Also in AESI-final.py, AESI-import.py
 REVIEW_COLUMNS = ("review%_author", "review%_timestamp", "review%_content")
@@ -110,15 +111,31 @@ def preprocess(name, df):
 
 def get_sheets(indir, outdir, max):
     index_rows = []
-    for i, filename in enumerate(sorted(glob(f'{indir}/*/*.xlsx'))):
-        if max and i >= max:
+    count = 0
+    for subdir in sorted(glob(f'{indir}/*')):
+        name = path.basename(subdir)
+        globs = [glob(f'{subdir}{infix}/*.xls*') for infix in ('', '/before_merging', '/Versions')]
+        try:
+            filename = next(chain(*globs))
+        except StopIteration:
+            print("*** No .xlsx found in", subdir)
+            continue
+        norm(name, filename, index_rows, outdir)
+        count += 1
+        if max and count >= max:
+            print("Enough", max)
             break
-        name = path.basename(path.dirname(filename))
-        sheet_name, df = get_mapping(filename)
-        df, num_reviews, cols_norms, unknown_cols = preprocess(name, df)
-        outfilename = f"{outdir}/{name}.csv"
-        df.to_csv(outfilename, index=False)
-        index_rows.append([name, filename, sheet_name, num_reviews, cols_norms, ', '.join(unknown_cols)])
+    write_index(outdir, index_rows)
+
+def norm(name, filename, index_rows, outdir):
+    sheet_name, df = get_mapping(filename)
+    df, num_reviews, cols_norms, unknown_cols = preprocess(name, df)
+    outfilename = f"{outdir}/{name}.csv"
+    df.to_csv(outfilename, index=False)
+    index_rows.append([name, filename, sheet_name, num_reviews, cols_norms, ', '.join(unknown_cols)])
+
+
+def write_index(outdir, index_rows):
     filename = f"{outdir}/index.csv"
     columns = ["name", "subdir", "sheet_name", "num_reviews", "review_renames", "unknown_columns"]
     index = pd.DataFrame(index_rows, columns=columns).fillna('')

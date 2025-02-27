@@ -19,10 +19,7 @@
 package org.biosemantics.codemapper.descendants;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.biosemantics.codemapper.CodeMapperException;
@@ -67,53 +64,40 @@ public class DescendantsApi {
   public Descendants getCodeDescendants(String codingSystem, Collection<String> codes)
       throws CodeMapperException {
     Descendants res = new Descendants();
+    Map<String, Collection<Code>> descendants = null;
     if (specificDescenders.containsKey(codingSystem)) {
       Map<String, Collection<SourceConcept>> descendants2 =
           specificDescenders.get(codingSystem).getDescendants(codes);
-      for (String code : descendants2.keySet()) {
-        List<Code> descs =
-            descendants2.get(code).stream().map(SourceConcept::toCode).collect(Collectors.toList());
-        res.merge(
-            code,
-            descs,
-            (v1, v2) -> {
-              v1.addAll(v2);
-              return v1;
-            });
+      descendants = new HashMap<>();
+      for (String codeId : descendants2.keySet()) {
+        descendants.put(
+            codeId,
+            descendants2.get(codeId).stream()
+                .map(SourceConcept::toCode)
+                .collect(Collectors.toList()));
       }
     } else if (nonUmls.is(codingSystem)) {
-      Map<String, Collection<String>> cuisByCodes = nonUmls.getCuisForCodes(codingSystem, codes);
-      Collection<String> cuis = new HashSet<>();
-      for (Collection<String> cuis1 : cuisByCodes.values()) {
-        cuis.addAll(cuis1);
-      }
-      Map<String, Collection<Code>> descsByCui = nonUmls.getDescendants(cuis, codingSystem);
-      for (String code : cuisByCodes.keySet()) {
-        for (String cui : cuisByCodes.get(code)) {
-          Collection<Code> descs =
-              descsByCui.getOrDefault(cui, Collections.emptyList()).stream()
-                  .collect(Collectors.toList());
-          if (descs == null) {
-            continue;
-          }
-          res.computeIfAbsent(code, (key) -> new HashSet<>()).addAll(descs);
-        }
-      }
-
+      descendants = nonUmls.getDescendants(codingSystem, codes);
     } else {
       Map<String, Collection<SourceConcept>> descendants2 =
           generalDescender.getDescendants(codes, codingSystem);
-      for (String code : descendants2.keySet()) {
-        List<Code> descs =
-            descendants2.get(code).stream().map(SourceConcept::toCode).collect(Collectors.toList());
-        res.merge(
-            code,
-            descs,
-            (v1, v2) -> {
-              v1.addAll(v2);
-              return v1;
-            });
+      descendants = new HashMap<>();
+      for (String codeId : descendants2.keySet()) {
+        descendants.put(
+            codeId,
+            descendants2.get(codeId).stream()
+                .map(SourceConcept::toCode)
+                .collect(Collectors.toList()));
       }
+    }
+    for (String code : descendants.keySet()) {
+      res.merge(
+          code,
+          descendants.get(code),
+          (v1, v2) -> {
+            v1.addAll(v2);
+            return v1;
+          });
     }
     return res;
   }

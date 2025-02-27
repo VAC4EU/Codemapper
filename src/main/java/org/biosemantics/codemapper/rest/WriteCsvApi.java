@@ -93,8 +93,7 @@ public class WriteCsvApi {
     public ParsedMappingName parsedName;
     public Map<String, Map<String, PreparedConcept>> data =
         new HashMap<>(); // voc -> cui -> forConcept
-    public Map<String, Map<String, Set<String>>> tags =
-        new HashMap<>(); // voc -> code -> tags
+    public Map<String, Map<String, Set<String>>> tags = new HashMap<>(); // voc -> code -> tags
     public Map<String, Set<String>> disabled = new HashMap<>(); // voc -> set(code)
 
     Set<String> getConceptCodes(String voc) {
@@ -148,12 +147,16 @@ public class WriteCsvApi {
             code.code = code1;
             code.descendants.addAll(codeDescendants);
             concept.data.put(code0, code);
-            
+
             // unify tags
             String tag = code1.getTag();
             if (tag == null) tag = concept.concept.getTag();
             if (tag != null) {
-                prepared.tags.computeIfAbsent(voc, key -> new HashMap<>()).computeIfAbsent(code0, key -> new HashSet<>()).add(tag);
+              prepared
+                  .tags
+                  .computeIfAbsent(voc, key -> new HashMap<>())
+                  .computeIfAbsent(code0, key -> new HashSet<>())
+                  .add(tag);
             }
           } else {
             prepared.disabled.computeIfAbsent(voc, key -> new HashSet<>()).add(code0);
@@ -179,7 +182,11 @@ public class WriteCsvApi {
           if (disabled.contains(code0)) continue;
           if (writtenCodes.contains(code0)) continue;
           PreparedCode code = concept.data.get(code0);
-          Set<String> tags = prepared.tags.getOrDefault(voc, new HashMap<>()).getOrDefault(code.code.getId(), new HashSet<>());
+          Set<String> tags =
+              prepared
+                  .tags
+                  .getOrDefault(voc, new HashMap<>())
+                  .getOrDefault(code.code.getId(), new HashSet<>());
           String tag = String.join(",", tags);
           writeCodeRow(
               output,

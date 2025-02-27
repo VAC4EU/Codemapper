@@ -11,6 +11,7 @@ EXPORTS = $(addprefix export/, $(addsuffix .csv, $(VOCS)))
 
 export/non-umls.csv: $(EXPORTS)
 	cat $^ > $@
+	cat $^|gsed 's/,exact term\|,ICD10AM without M\|,code reference//' > $@
 
 .SECONDEXPANSION:
 $(EXPORTS): export/%.csv: $$*/$$*.csv export/ids.txt
