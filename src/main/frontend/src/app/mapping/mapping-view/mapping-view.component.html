@@ -1,8 +1,7 @@
 <menu-banner [projectName]="projectName" omitSpacer="true">
   <span matTooltip="{{titleTooltip()}}">
     <!-- <mat-icon>schema</mat-icon> -->
-    Mapping: <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span>
-    (you are {{projectRole?.toLowerCase() ?? "not a member"}})</span>
+    {{projectName}}: <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span></span>
   </span>
   <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <ng-container *ngIf="mapping != null" onTheRight>

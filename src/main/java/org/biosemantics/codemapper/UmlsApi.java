@@ -967,7 +967,7 @@ public class UmlsApi {
                 .computeIfAbsent(codeId, key -> new HashSet<>())
                 .add(content);
           } else {
-            if (!date.isEmpty()) date = String.format(" (%s)", date);
+            if (!date.isEmpty()) date = String.format(" on %s", date);
             String messageContent = String.format("%s%s: %s", author, date, content);
             importedMessagesByCode
                 .computeIfAbsent(vocId, key -> new HashMap<>())

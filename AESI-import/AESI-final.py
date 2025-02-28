@@ -56,6 +56,8 @@ def finalize(df0, name, num_reviews):
 
     df0['dedup_changes'] = '-'
     for i, row in df0.iterrows():
+        if row['dedup_result'].startswith('NONE'):
+            continue
         changes = []
         if row['dedup_sab'] != row['sab']:
             changes.append(f"coding system from {row['sab']}")
