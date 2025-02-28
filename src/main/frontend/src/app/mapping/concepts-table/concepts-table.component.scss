@@ -15,3 +15,13 @@ $pad: calc((var(--mdc-checkbox-state-layer-size) - 18px) / 2);
 th.select {
     width: 0px;
 }
+
+.table-container {
+  width: 100%;
+  height: calc(100vh - 20em);
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+}

@@ -1,69 +1,71 @@
-<table mat-table [dataSource]="dataSource" matSort matSortActive="concept" matSortDirection="asc">
+<div class="table-container">
+  <table mat-table [dataSource]="dataSource" matSort matSortActive="concept" matSortDirection="asc">
 
-  <ng-container matColumnDef="select">
-    <th mat-header-cell *matHeaderCellDef class="select">
-      <mat-checkbox
-        [disabled]="disabled"
-        (change)="$event ? toggleAllRows() : null"
-        [checked]="selection.hasValue() && isAllSelected()"
-        [indeterminate]="selection.hasValue() && !isAllSelected()">
-      </mat-checkbox>
-    </th>
-    <td mat-cell *matCellDef="let concepts">
-      <mat-checkbox
-        [disabled]="disabled"
-        (click)="$event.stopPropagation()"
-        (change)="$event ? selection.toggle(concepts) : null"
-        [checked]="selection.isSelected(concepts)">
-      </mat-checkbox>
-    </td>
-  </ng-container>
-
-  <ng-container matColumnDef="concept">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>Concept</th>
-    <td mat-cell *matCellDef="let concept" class="concept">
-      <mapping-concept [concept]="concept"></mapping-concept>
-    </td>
-  </ng-container>
-
-  <ng-container *ngFor="let voc of vocabularies" matColumnDef="codes-{{voc}}">
-    <th mat-header-cell *matHeaderCellDef class="column-concept-codes">{{voc}}</th>
-    <td mat-cell *matCellDef="let concept" class="code column-concept-codes">
-      <div class="conceptCode" *ngFor="let id of concept.codes[voc] ?? [] | sort">
-        <mapping-code
-          *ngIf="codes[voc][id]; let code"
-          [code]="code"
-          [showTerm]=false
-          [showTagIndication]="showCodeTagIndication"></mapping-code>
-      </div>
-    </td>
-  </ng-container>
-
-  <ng-container matColumnDef="tag" *ngIf="!hideTagColumn">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>Tag</th>
-    <td mat-cell *matCellDef="let concept" class="tag">
-      <mapping-tag *ngIf="concept.tag; let tag" [tag]="tag"></mapping-tag>
-    </td>
-  </ng-container>
-
-  <ng-container matColumnDef="comments" *ngIf="allTopics">
-    <th mat-header-cell *matHeaderCellDef>Comments</th>
-    <td mat-cell *matCellDef="let concept" class="comment">
-      <button
-        *ngIf="allTopics.byConcept[concept.id]; let topics"
-        mat-stroked-button
-        matTooltip='{{topics.tooltip()}}'
-        (click)="showReviews(concept.id)"
-        class='btn-xs'>
-        <mat-icon fontIcon="comment"></mat-icon>
-        {{topics.numTopics()}}/{{topics.numMessages}}
-        <span *ngIf="topics.numNewMessages > 0" class="num-new-messages">
-          ({{topics.numNewMessages}})
-        </span>
-      </button>
-    </td>
-  </ng-container>
-
-  <tr mat-header-row *matHeaderRowDef="columns"></tr>
-  <tr mat-row *matRowDef="let concept; columns: columns;"></tr>
-</table>
+    <ng-container matColumnDef="select">
+      <th mat-header-cell *matHeaderCellDef class="select">
+        <mat-checkbox
+          [disabled]="disabled"
+          (change)="$event ? toggleAllRows() : null"
+          [checked]="selection.hasValue() && isAllSelected()"
+          [indeterminate]="selection.hasValue() && !isAllSelected()">
+        </mat-checkbox>
+      </th>
+      <td mat-cell *matCellDef="let concepts">
+        <mat-checkbox
+          [disabled]="disabled"
+          (click)="$event.stopPropagation()"
+          (change)="$event ? selection.toggle(concepts) : null"
+          [checked]="selection.isSelected(concepts)">
+        </mat-checkbox>
+      </td>
+    </ng-container>
+  
+    <ng-container matColumnDef="concept" sticky>
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Concept</th>
+      <td mat-cell *matCellDef="let concept" class="concept">
+        <mapping-concept [concept]="concept"></mapping-concept>
+      </td>
+    </ng-container>
+  
+    <ng-container *ngFor="let voc of vocabularies" matColumnDef="codes-{{voc}}">
+      <th mat-header-cell *matHeaderCellDef class="column-concept-codes">{{voc}}</th>
+      <td mat-cell *matCellDef="let concept" class="code column-concept-codes">
+        <div class="conceptCode" *ngFor="let id of concept.codes[voc] ?? [] | sort">
+          <mapping-code
+            *ngIf="codes[voc][id]; let code"
+            [code]="code"
+            [showTerm]=false
+            [showTagIndication]="showCodeTagIndication"></mapping-code>
+        </div>
+      </td>
+    </ng-container>
+  
+    <ng-container matColumnDef="tag" *ngIf="!hideTagColumn">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Tag</th>
+      <td mat-cell *matCellDef="let concept" class="tag">
+        <mapping-tag *ngIf="concept.tag; let tag" [tag]="tag"></mapping-tag>
+      </td>
+    </ng-container>
+  
+    <ng-container matColumnDef="comments" *ngIf="allTopics">
+      <th mat-header-cell *matHeaderCellDef>Comments</th>
+      <td mat-cell *matCellDef="let concept" class="comment">
+        <button
+          *ngIf="allTopics.byConcept[concept.id]; let topics"
+          mat-stroked-button
+          matTooltip='{{topics.tooltip()}}'
+          (click)="showReviews(concept.id)"
+          class='btn-xs'>
+          <mat-icon fontIcon="comment"></mat-icon>
+          {{topics.numTopics()}}/{{topics.numMessages}}
+          <span *ngIf="topics.numNewMessages > 0" class="num-new-messages">
+            ({{topics.numNewMessages}})
+          </span>
+        </button>
+      </td>
+    </ng-container>
+  
+    <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+    <tr mat-row *matRowDef="let concept; columns: columns;"></tr>
+  </table>  
+</div>

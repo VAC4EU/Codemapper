@@ -19,6 +19,7 @@ body {
 .toolbox {
     display: flex;
     flex-direction: row;
+    overflow-x: auto;
     gap: 1em;
     margin: 1em;
     mat-card-actions {
