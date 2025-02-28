@@ -426,7 +426,7 @@ class Tables:
                 df.at[i, "dedup_ttys"]   = ','.join(sorted(val.row['ttys']))
                 df.at[i, "dedup_ignore"] = str(val.row['all_ignored_ttys']).lower()
             if val.comments:
-                df.at[i, 'dedup_comments'] = '\n'.join(val.comments)
+                df.at[i, 'dedup_comments'] = ', '.join(val.comments)
 
         return df
 

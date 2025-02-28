@@ -36,18 +36,18 @@ def review_content(s):
     if s['dedup_result'] == 'EXACT':
         return ""
     elif s['dedup_result'].startswith('NONE'):
-        result = f"Could not confirm/correct ({details})."
+        result = f"Could not confirm/correct ({details})"
     else:
         if s.dedup_changes == '-':
-            result = f"Confirmed ({details})."
+            result = f"Confirmed ({details})"
         else:
-            result = f"Corrected ({details})."
+            result = f"Corrected ({details})"
     contents = [result]
     if s['dedup_changes'] != '-':
-        contents.append(f"Changed: {s['dedup_changes']}.")
+        contents.append(f"changed {s['dedup_changes']}")
     if s['dedup_comments'] != '-':
-        contents.append(f"Detail: {s['dedup_comments']}.")
-    return '\n'.join(contents)
+        contents.append(f"details: {s['dedup_comments']}")
+    return ', '.join(contents) + "."
 
 def finalize(df0, name, num_reviews):
     print(name)
@@ -62,7 +62,7 @@ def finalize(df0, name, num_reviews):
         if row['dedup_code'] != row['code']:
             changes.append(f"code from {row['code']}")
         if row['dedup_str'].lower() != row['str'].lower():
-            changes.append(f"code_name from \"{row['str']}\"")
+            changes.append(f"code name from \"{row['str']}\"")
         if row['dedup_cui'] != row['cui'] and row['cui'] not in {'', '-'}:
             changes.append(f"concept from {row['cui']}")
         if changes:
