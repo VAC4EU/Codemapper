@@ -6,13 +6,13 @@
   <groupId>org.biosemantics</groupId>
   <artifactId>codemapper</artifactId>
   <name>CodeMapper</name>
-  <version>2023-10-04</version>
+  <version>2025-02-28</version>
   <packaging>war</packaging>
 
   <description>Semi-automated mapping of case definitions</description>
 
   <scm>
-      <connection>scm:https://github.com/mi-erasmusmc/comap/</connection>
+      <connection>scm:https://github.com/VAC4EU/Codemapper</connection>
   </scm>
 
   <properties>
