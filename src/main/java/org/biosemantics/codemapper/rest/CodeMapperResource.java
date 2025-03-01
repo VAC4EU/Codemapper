@@ -298,13 +298,16 @@ public class CodeMapperResource {
       } catch (IOException e) {
         throw CodeMapperException.server("could not write code lists CSV", e);
       }
-      String filenameBase;
+      String filename;
       if (mappings.size() == 1) {
-        filenameBase = mappings.get(0).info.withoutDefinition();
+        filename =
+            String.format(
+                "%s.%s", mappings.get(0).info.withoutDefinition(), WriteCsvApi.FILE_EXTENSION);
       } else {
-        filenameBase = projectName + " - " + mappings.size() + " mappings";
+        filename =
+            String.format(
+                "%s (%d mappings).%s", projectName, mappings.size(), WriteCsvApi.FILE_EXTENSION);
       }
-      String filename = String.format("%s.%s", filenameBase, WriteCsvApi.FILE_EXTENSION);
       String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
       return Response.ok()
           .header("Content-Disposition", contentDisposition)
