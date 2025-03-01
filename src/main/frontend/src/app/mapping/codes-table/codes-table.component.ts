@@ -48,15 +48,13 @@ export class CodesTableComponent {
 
   dataSource = new MatTableDataSource<Code>();
   columns : string[] = [];
-  selectedCodes = new SelectionModel<Code>(true, []);
+  selection = new SelectionModel<Code>(true, []);
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
 
   constructor(
     public dialog : MatDialog,
-    private auth : AuthService,
   ) {
-    this.selectedCodes.changed
-      .subscribe(s => this.selected.emit(s.source.selected));
+    this.selection.changed.subscribe(s => this.selected.emit(this.getSelectedFilteredCodes()));
   }
 
   ngAfterViewInit() {
@@ -76,9 +74,10 @@ export class CodesTableComponent {
     }
     if (changes['filter'] !== undefined) {
       this.dataSource.filter = changes['filter'].currentValue.trim().toLowerCase();
+      this.selected.emit(this.getSelectedFilteredCodes());
     }
     if (changes['vocabularyId']) {
-      setTimeout(() => this.selectedCodes.clear(), 0);
+      setTimeout(() => this.selection.clear(), 0);
     }
     if (changes['codes']) {
       this.dataSource.data = changes['codes'].currentValue;
@@ -88,6 +87,11 @@ export class CodesTableComponent {
     let concepts = this.showConcepts ? ["concepts"] : [];
     let comments = this.allTopics == null ? [] : ["comments"];
     this.columns = [["select", "code"], tag, concepts, parents, comments].flat();
+  }
+
+  getSelectedFilteredCodes() {
+    return Array.from(this.selection.selected)
+      .filter(c => this.dataSource.filteredData.some(c2 => c2.id == c.id));
   }
 
   conceptTooltip(concept : Concept) : string {
@@ -102,21 +106,21 @@ export class CodesTableComponent {
     return this.allTopics?.byCode[this.vocabularyId]?.[codeId] ?? new TopicsInfo();
   }
 
-  isAllSelected() {
-    return this.selectedCodes.selected.length == this.dataSource.filteredData.length &&
-      this.selectedCodes.selected.every(c => this.dataSource.filteredData.indexOf(c) != -1);
+  isAllFilteredSelected() {
+    return this.dataSource.filteredData.length <= this.selection.selected.length &&
+      this.dataSource.filteredData.every(c => this.selection.selected.indexOf(c) != -1);
   }
 
   toggleSelectAll() {
-    if (this.isAllSelected()) {
-      this.selectedCodes.clear();
+    if (this.isAllFilteredSelected()) {
+      this.selection.clear();
     } else {
-      this.codes.forEach(row => this.selectedCodes.select(row));
+      this.dataSource.filteredData.forEach(row => this.selection.select(row));
     }
   }
 
   unselect(code : Code) {
-    this.selectedCodes.deselect(code);
+    this.selection.deselect(code);
   }
 
   parents(id : CodeId) : Code[] {
@@ -131,10 +135,10 @@ export class CodesTableComponent {
   }
 
   selectAllCustomCodes() {
-    this.selectedCodes.clear();
+    this.selection.clear();
     for (let code of this.codes) {
       if (code.custom) {
-        this.selectedCodes.select(code);
+        this.selection.select(code);
       }
     }
   }

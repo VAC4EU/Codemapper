@@ -62,8 +62,7 @@ export class ConceptsTableComponent {
     private dialog : MatDialog,
     private auth : AuthService,
   ) {
-    this.selection.changed
-      .subscribe(c => this.selected.emit(Array.from(this.selection.selected)))
+    this.selection.changed.subscribe(c => this.selected.emit(this.getSelectedFilteredConcepts()));
   }
 
   ngAfterViewInit() {
@@ -79,6 +78,7 @@ export class ConceptsTableComponent {
   ngOnChanges(changes : SimpleChanges) {
     if (changes['filter']) {
       this.dataSource.filter = changes['filter'].currentValue.trim().toLowerCase();
+      this.selected.emit(this.getSelectedFilteredConcepts());
     }
     if (changes['allTopics']) {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
@@ -104,13 +104,18 @@ export class ConceptsTableComponent {
     this.dataSource.data.sort(sortConcepts);
   }
 
-  isAllSelected() {
-    return this.selection.selected.length == this.dataSource.filteredData.length &&
-      this.selection.selected.every(c => this.dataSource.filteredData.indexOf(c) != -1);
+  getSelectedFilteredConcepts() {
+    return Array.from(this.selection.selected)
+      .filter(c => this.dataSource.filteredData.some(c2 => c2.id == c.id));
+  }
+
+  isAllFilteredSelected() {
+    return this.dataSource.filteredData.length <= this.selection.selected.length &&
+      this.dataSource.filteredData.every(c => this.selection.selected.indexOf(c) != -1);
   }
 
   toggleAllRows() {
-    if (this.isAllSelected()) {
+    if (this.isAllFilteredSelected()) {
       this.selection.clear();
     } else {
       this.selectAll();

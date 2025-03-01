@@ -3,13 +3,13 @@
     <ng-container matColumnDef="select">
       <th mat-header-cell *matHeaderCellDef>
         <mat-checkbox (change)="$event ? toggleSelectAll() : null"
-          [checked]="selectedCodes.hasValue() && isAllSelected()"
-          [indeterminate]="selectedCodes.hasValue() && !isAllSelected()">
+          [checked]="selection.hasValue() && isAllFilteredSelected()"
+          [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
         </mat-checkbox>
       </th>
       <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
-        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selectedCodes.toggle(code) : null"
-          [checked]="selectedCodes.isSelected(code)">
+        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(code) : null"
+          [checked]="selection.isSelected(code)">
         </mat-checkbox>
       </td>
     </ng-container>

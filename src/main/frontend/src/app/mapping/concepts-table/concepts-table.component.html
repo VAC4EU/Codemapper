@@ -6,8 +6,8 @@
         <mat-checkbox
           [disabled]="disabled"
           (change)="$event ? toggleAllRows() : null"
-          [checked]="selection.hasValue() && isAllSelected()"
-          [indeterminate]="selection.hasValue() && !isAllSelected()">
+          [checked]="selection.hasValue() && isAllFilteredSelected()"
+          [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
         </mat-checkbox>
       </th>
       <td mat-cell *matCellDef="let concepts">
