@@ -3,6 +3,24 @@ $roboto-font-path: "~roboto-fontface/fonts" !default;
 $material-icons-font-path: '~material-icons/iconfont/';
 @import '@material-design-icons/font/index.scss';
 
+/* Seaborn deep color palette */
+
+.tag-possible {
+   color: #55a868;
+}
+
+.tag-narrow {
+    color: #c44e52;
+}
+
+.tag-ignore {
+    color: #dd8452;
+}
+
+.tag-exclude {
+    color: #4c72b0;
+}
+
 html, body {
     height: 100%;
 }
