@@ -9,10 +9,13 @@
 
 <section class="center-content">
 
-Februray 28, 2025
+March 2, 2025
 ----
 
-- improve codelist import
+- improve codelist import, detect contradicting tags
+- scrollable tables for concepts and codes
+- no more concept tags
+- correct interaction between selected and filtered concepts and codes
 - UI improvements
 
 November 24, 2024

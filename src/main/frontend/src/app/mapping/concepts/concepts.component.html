@@ -17,7 +17,7 @@
       Modify {{selectedConcepts.length}} selected concept{{selectedConcepts.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
-      <span matTooltip="Sets the tag of all codes associated to the selected concepts.">
+      <span matTooltip="Set the tag of all codes associated to the selected concepts.">
         <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)"
           [disabled]="!hasSelectedConcepts() || !userCanEdit">Tag codes</button>
       </span>
