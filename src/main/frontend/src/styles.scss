@@ -38,6 +38,7 @@ body {
     display: flex;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: clip;
     gap: 1em;
     margin: 1em;
     mat-card-actions {

@@ -182,22 +182,39 @@ export class ConceptsComponent implements OnInit {
   }
 
   showTagsDialog(concepts : Concept[]) {
-    let tags = new Set(concepts.filter(c => c.tag != null).map(c => c.tag));
+    let tags = new Set();
+    let codes: { [key : VocabularyId] : { [key : CodeId] : string | null } } = {};
+    for (let concept of concepts) {
+      for (let vocId of Object.keys(concept.codes)) {
+        codes[vocId] = {};
+        for (let codeId of concept.codes[vocId]) {
+          let code = this.mapping.codes[vocId][codeId];
+          if (!code.enabled) continue;
+          codes[vocId][codeId] = null;
+          if (code.tag != null) tags.add(code.tag);
+        }
+      }
+    }
+    let codesCount = Object.values(codes).map(o => Object.keys(o).length).reduce((x, y) => x + y, 0);
     let tag = tags.size == 1 ? tags.values().next().value : null;
-    let codeConcepts = {
+    let config = {
       data: {
         tag: tag,
-        heading: `${concepts.length} concept${concepts.length == 1 ? '' : 's'}`,
+        heading: `${codesCount} codes in ${concepts.length} concepts`,
         allowedTags: this.mapping.meta.allowedTags
       },
       width: '40em',
     };
     this.dialog
-      .open(TagsDialogComponent, codeConcepts)
+      .open(TagsDialogComponent, config)
       .afterClosed().subscribe(tag => {
         if (tag !== undefined) {
-          let conceptIdsTags = Object.fromEntries(concepts.map((c) => [c.id, tag]));
-          this.run.emit(new ops.ConceptsSetTag(conceptIdsTags));
+          for (let vocId of Object.keys(codes)) {
+            for (let codeId of Object.keys(codes[vocId])) {
+              codes[vocId][codeId] = tag;
+            }
+          }
+          this.run.emit(new ops.CodesSetTag(codes));
         }
       });
   }

@@ -323,55 +323,31 @@ export class EditCustomCode extends Operation {
 export class CodesSetTag extends Operation {
 
   constructor(
-    readonly vocId : VocabularyId,
-    readonly codeIdsTags : { [key : string/*CodeId*/] : Tag | null },
+    readonly codes: { [key: string]: { [key: string]: Tag | null } },
   ) {
     super();
   }
 
   override describe() : string {
-    let info = Object.entries(this.codeIdsTags)
-      .map(([id, tag]) => `of ${id} to ${tag ?? "<DELETE TAG>"}`)
-      .join(" and ");
-    return `Codes set tags ${this.vocId} ${info}`
+    let count = Object.values(this.codes).map(o => Object.keys(o).length).reduce((x, y) => x + y, 0);
+    let tags = Array.from(new Set(Object.values(this.codes).map(o => Object.values(o)).reduce((x, y) => x.concat(y))));
+    let tag = tags.length == 1 ? tags[0] : undefined;
+    let tagStr = tag == undefined ? "various tags" : tag == null ? "NO TAG" : tag;
+    return `Codes set tags of ${count} codes to ${tagStr}`;
   }
 
   override run(mapping : Mapping) : Operation | undefined {
-    let newCodeIdsTags : { [key : string] : Tag | null } = {};
-    for (let [codeId, tag] of Object.entries(this.codeIdsTags)) {
-      let code = mapping.codes[this.vocId]?.[codeId];
-      expect(code !== undefined);
-      newCodeIdsTags[code.id] = code.tag;
-      code.tag = tag;
+    let oldCodes: { [key: string]: { [key: string]: Tag | null } } = {};
+    for (let vocId of Object.keys(this.codes)) {
+      for (let codeId of Object.keys(this.codes[vocId])) {
+        let code = mapping.codes[vocId]?.[codeId];
+        expect(code !== undefined);
+        oldCodes[vocId] ??= {};
+        oldCodes[vocId][codeId] = code.tag;
+        code.tag = this.codes[vocId][codeId];
+      }
     }
-    return new CodesSetTag(this.vocId, newCodeIdsTags);
-  }
-}
-
-export class ConceptsSetTag extends Operation {
-
-  constructor(
-    readonly conceptIdsTags : { [key : string/*ConceptId*/] : Tag | null },
-  ) {
-    super();
-  }
-
-  override describe() : string {
-    let info = Object.entries(this.conceptIdsTags)
-      .map(([id, tag]) => `of ${id} to ${tag ?? "<DELETE TAG>"}`)
-      .join(" and ");
-    return `Concepts set tags ${info}`
-  }
-
-  override run(mapping : Mapping) : Operation | undefined {
-    let newConceptsIdsTags : { [key : string] : Tag | null } = {};
-    for (let [conceptId, tag] of Object.entries(this.conceptIdsTags)) {
-      let concept = mapping.concepts[conceptId];
-      expect(concept !== undefined, "invalid concept ID", conceptId);
-      newConceptsIdsTags[concept.id] = concept.tag;
-      concept.tag = tag;
-    }
-    return new ConceptsSetTag(newConceptsIdsTags);
+    return new CodesSetTag(oldCodes);
   }
 }
 

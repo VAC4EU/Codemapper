@@ -18,7 +18,7 @@
 
 import { Component, Input } from '@angular/core';
 
-import { Concept } from '../data';
+import { Codes, Concept } from '../data';
 
 @Component({
   selector: 'mapping-concept',
@@ -26,6 +26,5 @@ import { Concept } from '../data';
   styleUrls: ['./concept.component.scss']
 })
 export class ConceptComponent {
-  @Input() concept! : Concept;
-  @Input() showTag : boolean = false;
+  @Input({required: true}) concept! : Concept;
 }

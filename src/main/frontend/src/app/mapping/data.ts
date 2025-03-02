@@ -337,6 +337,7 @@ export class Mapping {
           this.conceptsByCode[vocId][codeId].add(concept.id);
         }
       }
+      concept.codesTag = concept.getCodesTag(this.codes);
     }
     // cleanup: drop non-custom codes that are not referred to by any concepts
     for (const [vocId, codes] of Object.entries(this.codes)) {
@@ -390,20 +391,27 @@ export class Mapping {
       vocabularies[voc.id] = voc;
     }
     let concepts : Concepts = {};
+    let conceptTags: { [key : VocabularyId] : { [key : CodeId] : Set<string> } } = {};
     for (const conceptJson0 of Object.values(json['concepts'] as JSONObject)) {
       let conceptJson = conceptJson0 as JSONObject;
       let id = conceptJson["id"] as ConceptId;
       let name = conceptJson["name"] as string;
       let definition = conceptJson["definition"] as string;
+      let conceptTag = getTag(conceptJson);
       let codes : { [key : VocabularyId] : Set<CodeId> } = {};
       for (let [vocId, codeIds0] of Object.entries(conceptJson['codes'] as JSONObject)) {
         codes[vocId] = new Set();
-        for (let codeId of codeIds0 as JSONArray) {
-          codes[vocId].add(codeId as string);
+        for (let codeId0 of codeIds0 as JSONArray) {
+          let codeId = codeId0 as string;
+          if (conceptTag != null) {
+            conceptTags[vocId] ??= {};
+            conceptTags[vocId][codeId] ??= new Set();
+            conceptTags[vocId][codeId].add(conceptTag);
+          }
+          codes[vocId].add(codeId);
         }
       }
-      let tag = getTag(conceptJson);
-      let concept = new Concept(id, name, definition, codes, tag);
+      let concept = new Concept(id, name, definition, codes);
       concepts[concept.id] = concept;
     }
     let codes : Codes = {};
@@ -415,7 +423,7 @@ export class Mapping {
         let term = codeJson['term'] as string;
         let custom = codeJson['custom'] as boolean;
         let enabled = codeJson['enabled'] as boolean;
-        let tag = getTag(codeJson);
+        let tag = formatTag(getTag(codeJson), conceptTags[vocId]?.[id]);
         let code = new Code(id, term, custom, enabled, tag);
         codes[vocId][code.id] = code;
       }
@@ -458,6 +466,7 @@ export class Mapping {
     }
     let concepts : { [key : ConceptId] : Concept } = {};
     let codes : { [key : VocabularyId] : { [key : CodeId] : Code } } = {};
+    let tags: { [key : VocabularyId] : { [key : CodeId] : Set<string> } } = {};
     for (const concept0 of (v['mapping'] as JSONObject)['concepts'] as JSONArray) {
       let conceptJson = concept0 as JSONObject;
       let tag = conceptJson['tag'] as string | null
@@ -466,14 +475,14 @@ export class Mapping {
         conceptJson['preferredName'] as string,
         conceptJson['definition'] as string,
         {},
-        tag
       );
       concepts[concept.id] = concept;
       for (let sourceConcept0 of conceptJson['sourceConcepts'] as JSONArray) {
         let sourceConcept = sourceConcept0 as JSONObject;
         let vocabularyId = sourceConcept['codingSystem'] as string;
+        let codeId = sourceConcept['id'] as string;
         let code = new Code(
-          sourceConcept['id'] as string,
+          codeId,
           sourceConcept['preferredTerm'] as string,
           false,
           sourceConcept['selected'] as boolean,
@@ -483,6 +492,17 @@ export class Mapping {
         concept.codes[vocabularyId].add(code.id);
         codes[vocabularyId] ??= {};
         codes[vocabularyId][code.id] = code;
+        if (tag != null) {
+          tags[vocabularyId] ??= {};
+          tags[vocabularyId][codeId] ??= new Set();
+          tags[vocabularyId][codeId].add(tag);
+        }
+      }
+    }
+    for (let vocId of Object.keys(tags)) {
+      for (let codeId of Object.keys(tags[vocId])) {
+        let tag = formatTag(null, tags[vocId][codeId]);
+        codes[vocId][codeId].tag = tag;
       }
     }
     let indexing = v['indexing'] as JSONObject;
@@ -535,7 +555,7 @@ export class Mapping {
 function getTag(json : any) {
   if ("tag" in json) {
     return json["tag"] as string | null;
-  } else {
+  } else if ("tags" in json) {
     let tags : string[] = (json["tags"] as JSONArray).map(v => v as string);
     if (tags.length == 0) {
       return null;
@@ -545,7 +565,18 @@ function getTag(json : any) {
       }
       return tags[0];
     }
+  } else {
+    return null;
   }
+}
+
+function formatTag(tag: string | null, tags: Set<string> | undefined) : string | null {
+  let tags0 = new Set(tags ?? new Set<string>());
+  if (tag != null) tags0.add(tag);
+  let tags1 = Array.from(tags0);
+  if (tags1.length == 0) return null;
+  else if (tags1.length == 1) return tags1[0];
+  else return `multiple:${tags1.join('+')}`;
 }
 
 export class Vocabulary {
@@ -561,13 +592,30 @@ export class Vocabulary {
 }
 
 export class Concept {
+  codesTag : Tag | null = null;
   constructor(
     readonly id : ConceptId,
     readonly name : string,
     readonly definition : string,
     public codes : { [key : VocabularyId] : Set<CodeId> } = {},
-    public tag : Tag | null = null,
   ) { }
+  getCodesTag(codes: Codes) : Tag | null {
+    let tag: Tag | null = null;
+    let first = true;
+    for (let vocId of Object.keys(this.codes)) {
+      for (let codeId of this.codes[vocId]) {
+        let code = codes[vocId][codeId];
+        if (!code.enabled) continue;
+        if (first) {
+          tag = code.tag;
+          first = false;
+        } else if (tag != code.tag) {
+          return null;
+        }
+      }
+    }
+    return tag;
+  }
 }
 
 export function filterConcepts(concepts : Concepts, removeCuis : ConceptId[]) : Concepts {
@@ -599,16 +647,6 @@ export class Code {
       && this.term == other.term
       && this.custom == other.custom;
   }
-}
-
-export function tagsInConcepts(concepts : Concept[]) : Tag[] {
-  let tags = new Set<Tag>();
-  for (let concept of concepts) {
-    if (concept.tag != null) {
-      tags.add(concept.tag);
-    }
-  }
-  return Array.from(tags);
 }
 
 export function tagsInCodes(codes : Code[]) : Tag[] {

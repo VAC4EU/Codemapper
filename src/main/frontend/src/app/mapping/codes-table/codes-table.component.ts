@@ -86,7 +86,7 @@ export class CodesTableComponent {
     let parents = this.codeParents == null ? [] : ["parents"];
     let concepts = this.showConcepts ? ["concepts"] : [];
     let comments = this.allTopics == null ? [] : ["comments"];
-    this.columns = [["select", "code"], tag, concepts, parents, comments].flat();
+    this.columns = [["select", "code"], tag, comments, concepts, parents].flat();
   }
 
   getSelectedFilteredCodes() {

@@ -40,13 +40,6 @@
       </td>
     </ng-container>
   
-    <ng-container matColumnDef="tag" *ngIf="!hideTagColumn">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Tag</th>
-      <td mat-cell *matCellDef="let concept" class="tag">
-        <mapping-tag *ngIf="concept.tag; let tag" [tag]="tag"></mapping-tag>
-      </td>
-    </ng-container>
-  
     <ng-container matColumnDef="comments" *ngIf="allTopics">
       <th mat-header-cell *matHeaderCellDef>Comments</th>
       <td mat-cell *matCellDef="let concept" class="comment">

@@ -26,7 +26,7 @@ import { Concept, VocabularyId, ConceptId, CodeId, Code } from '../data';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 
-const BASE_COLUMNS = ["select", "concept", "tag", "comments"];
+const BASE_COLUMNS = ["select", "concept", "comments"];
 
 function sortConcepts(c1 : Concept, c2 : Concept) : number {
   return (c1.name ?? "").localeCompare(c2.name ?? "");
@@ -91,9 +91,9 @@ export class ConceptsTableComponent {
       this.columns = this.columns.filter(c => c != "comments");
     }
     let vocIds = [...this.vocabularies];
-    vocIds.sort((id1, id2) => -id1.localeCompare(id2));
+    vocIds.sort((id1, id2) => id1.localeCompare(id2));
     for (let vocId of vocIds) {
-      this.columns.splice(3, 0, "codes-" + vocId);
+      this.columns.push("codes-" + vocId);
     }
     for (const concept of this.selection.selected) {
       if (this.concepts[concept.id] === undefined) {

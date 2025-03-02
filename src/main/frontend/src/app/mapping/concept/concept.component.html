@@ -1,4 +1,5 @@
 <span>
   <span class="conceptName">{{concept.name}}</span>
   ({{concept.id}})
+  <mapping-tag *ngIf="concept.codesTag != null" [tag]="concept.codesTag" matTooltip="All associated, enabled codes share the same tag"></mapping-tag>
 </span>
