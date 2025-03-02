@@ -40,7 +40,7 @@ export interface UmlsConcept {
 }
 
 export function importConcept0(c : UmlsConcept) : data.Concept {
-  return new data.Concept(c.cui, c.preferredName, c.definition, {}, null);
+  return new data.Concept(c.cui, c.preferredName, c.definition, {});
 }
 
 export function importConcept(c : UmlsConcept) :

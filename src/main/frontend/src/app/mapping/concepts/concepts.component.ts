@@ -23,7 +23,7 @@ import { FormControl } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
-import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts } from '../data';
+import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts, CodeId } from '../data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';

@@ -95,10 +95,6 @@ export class CodesComponent {
     return this.mapping.concepts[id]?.name ?? "n/a"
   }
 
-  conceptTag(id : ConceptId) : Tag | null {
-    return this.mapping.concepts[id].tag;
-  }
-
   enableCodes(codes : Code[]) {
     for (let code of codes) {
       this.run.emit(new ops.SetCodeEnabled(this.vocabularyId, code.id, true));
@@ -126,7 +122,7 @@ export class CodesComponent {
       .afterClosed().subscribe(tag => {
         if (tag !== undefined) {
           let codeIds = Object.fromEntries(codes.map((code) => [code.id, tag]));
-          this.run.emit(new ops.CodesSetTag(this.vocabularyId, codeIds))
+          this.run.emit(new ops.CodesSetTag({[this.vocabularyId]: codeIds}));
         }
       });
   }

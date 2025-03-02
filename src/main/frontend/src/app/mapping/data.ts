@@ -34,10 +34,7 @@ export type Concepts = { [key : ConceptId] : Concept }
 
 export type Codes = { [key : VocabularyId] : { [key : CodeId] : Code } }
 
-export interface Tags {
-  concepts : { [key : ConceptId] : Tag },
-  codes : { [key : VocabularyId] : { [key : CodeId] : Tag } }
-}
+export type Tags = { [key : VocabularyId] : { [key : CodeId] : Tag } }
 
 export interface ConceptsCodes {
   concepts : Concepts,
@@ -129,11 +126,6 @@ export class Mapping {
   }
   allTags() {
     let tags = new Set();
-    for (let concept of Object.values(this.concepts)) {
-      if (concept.tag != null) {
-        tags.add(concept.tag);
-      }
-    }
     for (let codes of Object.values(this.codes)) {
       for (let code of Object.values(codes)) {
         if (code.tag != null) {
@@ -203,34 +195,23 @@ export class Mapping {
     }
   }
   public getTags() : Tags {
-    let res : Tags = { concepts: {}, codes: {} };
-    for (let concept of Object.values(this.concepts)) {
-      if (concept.tag != null) {
-        res.concepts[concept.id] = concept.tag;
-      }
-    }
-    let codes : { [key : VocabularyId] : { [key : CodeId] : Tag } } = {};
+    let tags : Tags = {};
     for (let vocId of Object.keys(this.codes)) {
       for (let code of Object.values(this.codes[vocId])) {
         if (code.tag != null) {
-          res.codes[vocId] ??= {};
-          res.codes[vocId][code.id] = code.tag;
+          tags[vocId] ??= {};
+          tags[vocId][code.id] = code.tag;
         }
       }
     }
-    return res;
+    return tags;
   }
   public setTags(tags : Tags) {
-    for (let id of Object.keys(tags.concepts)) {
-      if (this.concepts[id]) {
-        this.concepts[id].tag = tags.concepts[id];
-      }
-    }
-    for (let vocId of Object.keys(tags.codes)) {
+    for (let vocId of Object.keys(tags)) {
       if (this.codes[vocId]) {
-        for (let codeId of Object.keys(tags.codes[vocId])) {
+        for (let codeId of Object.keys(tags[vocId])) {
           if (this.codes[vocId][codeId]) {
-            this.codes[vocId][codeId].tag = tags.codes[vocId][codeId];
+            this.codes[vocId][codeId].tag = tags[vocId][codeId];
           }
         }
       }
@@ -263,7 +244,7 @@ export class Mapping {
     };
     for (let [cui, concept] of Object.entries(this.concepts)) {
       let hasLostCode = false;
-      let concept1 = new Concept(cui, concept.name, concept.definition, {}, concept.tag);
+      let concept1 = new Concept(cui, concept.name, concept.definition, {});
       for (let voc of Object.keys(concept.codes)) {
         for (let code of concept.codes[voc]) {
           if (!remapConcepts[cui]?.codes[voc]?.has(code)) {

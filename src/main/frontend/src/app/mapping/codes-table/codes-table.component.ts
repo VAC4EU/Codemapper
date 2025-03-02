@@ -94,14 +94,6 @@ export class CodesTableComponent {
       .filter(c => this.dataSource.filteredData.some(c2 => c2.id == c.id));
   }
 
-  conceptTooltip(concept : Concept) : string {
-    if (concept.tag) {
-      return `Tag: ${concept.tag}`;
-    } else {
-      return "";
-    }
-  }
-
   topics(codeId : CodeId) {
     return this.allTopics?.byCode[this.vocabularyId]?.[codeId] ?? new TopicsInfo();
   }
