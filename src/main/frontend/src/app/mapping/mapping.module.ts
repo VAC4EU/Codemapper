@@ -83,6 +83,7 @@ import { MenuBannerComponent } from './menu-banner/menu-banner.component';
 import { UserLogoutComponent } from './user-logout/user-logout.component';
 import { DownloadDialogComponent } from './download-dialog/download-dialog.component';
 import { LoginComponent } from './login/login.component';
+import { LoginLinkComponent } from './login-link/login-link.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -129,6 +130,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     UserLogoutComponent,
     DownloadDialogComponent,
     LoginComponent,
+    LoginLinkComponent,
   ],
   imports: [
     HttpClientModule,

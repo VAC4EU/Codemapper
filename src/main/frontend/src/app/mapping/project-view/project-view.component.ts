@@ -73,6 +73,9 @@ export class ProjectViewComponent {
   }
   ngOnInit() {
     this.api.serverInfo().subscribe(info => this.serverInfo = info);
+    this.reload();
+  }
+  reload() {
     this.route.params.subscribe(params => {
       this.projectName = params['folder'];
       this.title.setTitle(`CodeMapper: Folder ${this.projectName}`);
@@ -156,6 +159,18 @@ export class ProjectViewComponent {
           this.router.navigate(["/mapping"], { state: { initial } });
         }
       });
+  }
+  async deleteSelectedMappings() {
+    let names = this.selected.selected.map(c => c.mappingName);
+    if (!confirm(`Do you really want to delete ${names.length} mapping(s): ${names.join(', ')}`)) return;
+    let shortkeys = this.selected.selected.map(c => c.mappingShortkey);
+    try {
+      await this.persistency.deleteMappings(shortkeys)
+    } catch(e) {
+      this.snackbar.open((e as Error).toString(), "Ok");
+    } finally {
+      this.reload();
+    }
   }
   openDialog(templateRef : TemplateRef<any>) {
     this.dialog.open(templateRef, { width: '700px' });

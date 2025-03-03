@@ -41,9 +41,10 @@
           </mat-card-header>
           <mat-card-actions>
             <span matTooltip="Rename one selected mapping (only for owners)">
-              <button mat-raised-button [disabled]="!userCanRename || selected.selected.length != 1"
-                (click)="openDialog(renameDialog)">Rename</button>
+              <button [disabled]="!userCanRename || selected.selected.length != 1"
+                (click)="openDialog(renameDialog)" mat-raised-button>Rename</button>
             </span>
+            <button (click)="deleteSelectedMappings()" [disabled]="!userCanCreate || selected.selected.length == 0" mat-raised-button>Delete</button>
           </mat-card-actions>
         </mat-card>
       </div>

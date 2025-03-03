@@ -131,14 +131,12 @@ public class PersistencyResource {
   }
 
   @DELETE
-  @Path("mapping/{mappingShortkey}")
+  @Path("mapping/{shortkey}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void deleteMapping(
-      @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
+  public void deleteMapping(@PathParam("shortkey") String shortkey, @Context User user) {
     try {
-      AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Owner);
-      api.deleteMappings(Collections.singletonList(mappingShortkey));
+      AuthentificationApi.assertMappingProjectRolesImplies(user, shortkey, ProjectPermission.Owner);
+      api.deleteMappings(Collections.singletonList(shortkey));
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

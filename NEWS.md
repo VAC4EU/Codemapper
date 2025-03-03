@@ -4,18 +4,19 @@
 <menu-banner>
   <!-- <mat-icon>notifications</mat-icon> -->
   CodeMapper: News
-  <login-form onTheRight></login-form>
+  <login-link onTheRight></login-link>
 </menu-banner>
 
 <section class="center-content">
 
-March 2, 2025
+March 3, 2025
 ----
 
+- no more concept tags, tag associated codes instead
 - improve codelist import, detect contradicting tags
-- scrollable tables for concepts and codes
-- no more concept tags
 - correct interaction between selected and filtered concepts and codes
+- scrollable tables for concepts and codes
+- delete mappings
 - UI improvements
 
 November 24, 2024

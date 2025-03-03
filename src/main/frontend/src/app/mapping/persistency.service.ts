@@ -21,7 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
 import { JSONObject, Mapping, Revision, ServerInfo } from './data';
 import { urlEncodedOptions } from '../app.module';
-import { Observable, map } from 'rxjs';
+import { Observable, firstValueFrom, map } from 'rxjs';
 import { User } from './auth.service';
 
 export enum ProjectRole {
@@ -129,6 +129,19 @@ export class PersistencyService {
     body.append("mappingName", mappingName);
     let url = this.url + `/mapping`;
     return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
+  }
+
+  async deleteMappings(shortkeys: string[]) {
+    for (let shortkey of shortkeys) {
+      let url = this.url + `/mapping/${shortkey}`;
+      try {
+        await firstValueFrom(this.http.delete<MappingInfo>(url));
+      } catch(e) {
+        let msg = `Could not delete mapping ${shortkey}`;
+        console.error(msg, e);
+        throw new Error(msg);
+      }
+    }
   }
 
   loadLegacyMapping(shortkey : string, serverInfo : ServerInfo) : Observable<Mapping> {
