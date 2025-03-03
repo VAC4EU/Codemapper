@@ -39,6 +39,7 @@ import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService, TypesInfo } from '../api.service';
 import {
+  MappingInfo,
   mappingInfoLink,
   PersistencyService,
   ProjectRole,
@@ -83,6 +84,7 @@ export class MappingViewComponent implements HasPendingChanges {
   mappingShortkey : string | null = null; // null means mapping is not saved
   mappingName : string = '(unknown)';
   projectName : string = '(unknown)';
+  info : MappingInfo | null = null;
   mapping : Mapping | null = null;
   serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   version : number = -1;
@@ -149,15 +151,18 @@ export class MappingViewComponent implements HasPendingChanges {
         return;
       }
       try {
-        let info = await firstValueFrom(
+        this.info = await firstValueFrom(
           this.persistency.mappingInfo(this.mappingShortkey)
         );
-        if (slugifyMappingInfo(info) != nameParam) {
-          this.location.go(mappingInfoLink(info).join('/'));
+        if (slugifyMappingInfo(this.info) != nameParam) {
+          this.location.go(mappingInfoLink(this.info).join('/'));
         }
-        this.setNames(info.projectName, info.mappingName);
+        this.setNames(this.info.projectName, this.info.mappingName);
+        if (this.info.status == "IMPORTED") {
+          this.snackBar.open("This mapping was automatically imported, please review carefully and save it, or report any issues.", 'Ok', {duration: undefined})
+        }
         this.persistency
-          .getProjectRole(info.projectName)
+          .getProjectRole(this.info.projectName)
           .subscribe((role) => (this.projectRole = role));
 
         let postOp : null | ops.Operation = null;
@@ -371,6 +376,7 @@ export class MappingViewComponent implements HasPendingChanges {
                   mappingName: this.mappingName,
                   mappingShortkey,
                   version: null,
+                  status: null,
                 })
               );
             }

@@ -108,7 +108,8 @@ as
     cd.id mapping_id,
     cd.name mapping_name,
     cd.shortkey mapping_shortkey,
-    cd.old_name mapping_old_name
+    cd.old_name mapping_old_name,
+    cd.status mapping_status
   from projects p
   join case_definitions cd
   on p.id = cd.project_id

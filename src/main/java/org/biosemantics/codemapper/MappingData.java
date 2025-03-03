@@ -247,10 +247,7 @@ public class MappingData {
     }
 
     public Concept(
-        String id,
-        String name,
-        String definition,
-        Map<String, Collection<String>> codes) {
+        String id, String name, String definition, Map<String, Collection<String>> codes) {
       this.id = id;
       this.name = name;
       this.definition = definition;

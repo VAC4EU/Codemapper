@@ -22,7 +22,7 @@
     <span matTooltip="Save changes">
       <button
         (click)="openDialog(saveDialog)"
-        [disabled]="mapping.start == null || (!saveRequired && mapping.undoStack.length == 0) || !(projectRole == 'Owner' || projectRole == 'Editor')"
+        [disabled]="(info == null || info.status != 'IMPORTED') && (mapping.start == null || (!saveRequired && mapping.undoStack.length == 0) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
         mat-icon-button>
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>

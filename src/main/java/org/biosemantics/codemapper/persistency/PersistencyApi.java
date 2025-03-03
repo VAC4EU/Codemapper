@@ -363,6 +363,7 @@ public class PersistencyApi {
     public String mappingShortkey;
     public String projectName;
     public String version;
+    public String status;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -417,7 +418,7 @@ public class PersistencyApi {
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
-        "SELECT mapping_name, project_name "
+        "SELECT mapping_name, project_name, mapping_status "
             + "FROM projects_mappings_shortkey "
             + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
@@ -431,6 +432,7 @@ public class PersistencyApi {
       mapping.mappingShortkey = shortkey;
       mapping.mappingName = res.getString(1);
       mapping.projectName = res.getString(2);
+      mapping.status = res.getString(3);
       return mapping;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for mapping info", e);
@@ -538,7 +540,7 @@ public class PersistencyApi {
 
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.shortkey, cd.name, r.version "
+        "SELECT cd.shortkey, cd.name, r.version, cd.status "
             + "FROM projects p "
             + "INNER JOIN case_definitions cd "
             + "ON cd.project_id = p.id "
@@ -557,6 +559,7 @@ public class PersistencyApi {
         mapping.mappingShortkey = set.getString(1);
         mapping.mappingName = set.getString(2);
         mapping.version = set.getString(3);
+        mapping.status = set.getString(4);
         mapping.projectName = project;
         mappings.add(mapping);
       }
@@ -579,17 +582,19 @@ public class PersistencyApi {
     }
   }
 
-  public MappingInfo createMapping(String projectName, String mappingName)
+  public MappingInfo createMapping(String projectName, String mappingName, String status)
       throws CodeMapperException {
     String query =
-        "INSERT INTO case_definitions (project_id, name) "
-            + "SELECT p.id, ? FROM projects p WHERE p.name = ? "
+        "INSERT INTO case_definitions (project_id, name, status) "
+            + "SELECT p.id, ?, ? "
+            + "FROM projects p WHERE p.name = ? "
             + "RETURNING shortkey";
 
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, mappingName);
-      statement.setString(2, projectName);
+      statement.setString(2, status);
+      statement.setString(3, projectName);
       ResultSet set = statement.executeQuery();
       if (!set.next()) {
         throw CodeMapperException.server("no shortkey when creating a mapping");
@@ -772,6 +777,19 @@ public class PersistencyApi {
       return results.next();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to check project exists", e);
+    }
+  }
+
+  public void setMappingStatus(String shortkey, String status) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET status = ? WHERE shortkey = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, status);
+      statement.setString(2, shortkey);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to set mapping status", e);
     }
   }
 }

@@ -73,6 +73,7 @@ export interface MappingInfo {
   mappingName : string;
   mappingShortkey : string;
   version : string | null;
+  status: string | null;
 }
 
 export interface ProjectInfo {

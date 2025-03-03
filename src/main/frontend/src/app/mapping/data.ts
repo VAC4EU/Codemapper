@@ -337,7 +337,7 @@ export class Mapping {
           this.conceptsByCode[vocId][codeId].add(concept.id);
         }
       }
-      concept.codesTag = concept.getCodesTag(this.codes);
+      concept.codesTag = getCodesTag(concept, this.codes);
     }
     // cleanup: drop non-custom codes that are not referred to by any concepts
     for (const [vocId, codes] of Object.entries(this.codes)) {
@@ -599,23 +599,24 @@ export class Concept {
     readonly definition : string,
     public codes : { [key : VocabularyId] : Set<CodeId> } = {},
   ) { }
-  getCodesTag(codes: Codes) : Tag | null {
-    let tag: Tag | null = null;
-    let first = true;
-    for (let vocId of Object.keys(this.codes)) {
-      for (let codeId of this.codes[vocId]) {
-        let code = codes[vocId][codeId];
-        if (!code.enabled) continue;
-        if (first) {
-          tag = code.tag;
-          first = false;
-        } else if (tag != code.tag) {
-          return null;
-        }
+}
+
+function getCodesTag(concept: Concept, codes: Codes) : Tag | null {
+  let tag: Tag | null = null;
+  let first = true;
+  for (let vocId of Object.keys(concept.codes)) {
+    for (let codeId of concept.codes[vocId]) {
+      let code = codes[vocId][codeId];
+      if (!code.enabled) continue;
+      if (first) {
+        tag = code.tag;
+        first = false;
+      } else if (tag != code.tag) {
+        return null;
       }
     }
-    return tag;
   }
+  return tag;
 }
 
 export function filterConcepts(concepts : Concepts, removeCuis : ConceptId[]) : Concepts {

@@ -52,6 +52,8 @@ import org.biosemantics.codemapper.persistency.PersistencyApi.UserRole;
 @Path("persistency")
 public class PersistencyResource {
 
+  private static final String IMPORT_USER = "Codelist import";
+
   private static Logger logger = LogManager.getLogger(PersistencyResource.class);
 
   private @Context SecurityContext sc;
@@ -219,7 +221,8 @@ public class PersistencyResource {
     logger.info(String.format("Create mapping %s/%s (%s)", projectName, mappingName, user));
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
-      return api.createMapping(projectName, mappingName);
+      String status = user.getUsername().equals(IMPORT_USER) ? "IMPORTED" : null;
+      return api.createMapping(projectName, mappingName, status);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -238,6 +241,9 @@ public class PersistencyResource {
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
           user, mappingShortkey, ProjectPermission.Editor);
+      if (!user.getUsername().equals(IMPORT_USER)) {
+        api.setMappingStatus(mappingShortkey, null);
+      }
       return api.saveRevision(mappingShortkey, user.getUsername(), summary, mappingJson);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't save case definition revision");
