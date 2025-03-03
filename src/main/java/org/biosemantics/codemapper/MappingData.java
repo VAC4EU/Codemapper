@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.Map;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @XmlRootElement
 public class MappingData {
   Map<String, Object> start;
@@ -236,6 +238,7 @@ public class MappingData {
   }
 
   @XmlRootElement
+  @JsonIgnoreProperties({"codesTag"})
   public static class Concept {
     String id;
     String name;
