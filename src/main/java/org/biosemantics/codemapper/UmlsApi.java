@@ -1021,7 +1021,7 @@ public class UmlsApi {
       }
 
       Concept customConcept =
-          new Concept(CUSTOM_CUI, CUSTOM_NAME, CUSTOM_DESCRIPTION, new HashMap<>(), null);
+          new Concept(CUSTOM_CUI, CUSTOM_NAME, CUSTOM_DESCRIPTION, new HashMap<>());
 
       // add custom codes and check non-custom codes
       for (String vocId : codeIds.keySet()) {

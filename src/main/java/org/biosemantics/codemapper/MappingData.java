@@ -75,7 +75,7 @@ public class MappingData {
         conceptCodes.computeIfAbsent(codingSystem, k -> new HashSet<>()).add(code.id);
         codes.computeIfAbsent(codingSystem, k -> new HashMap<>()).putIfAbsent(code.id, code);
       }
-      Concept concept = new Concept(cui, name, definition, conceptCodes, null);
+      Concept concept = new Concept(cui, name, definition, conceptCodes);
       concepts.put(cui, concept);
     }
 
@@ -241,23 +241,20 @@ public class MappingData {
     String name;
     String definition;
     Map<String, Collection<String>> codes; // vocID -> {codeId}
-    String tag;
 
     public Concept() {
-      this(null, null, null, null, null);
+      this(null, null, null, null);
     }
 
     public Concept(
         String id,
         String name,
         String definition,
-        Map<String, Collection<String>> codes,
-        String tag) {
+        Map<String, Collection<String>> codes) {
       this.id = id;
       this.name = name;
       this.definition = definition;
       this.codes = codes;
-      this.tag = tag;
     }
 
     @Override
@@ -295,14 +292,6 @@ public class MappingData {
 
     public void setCodes(Map<String, Collection<String>> codes) {
       this.codes = codes;
-    }
-
-    public String getTag() {
-      return tag;
-    }
-
-    public void setTag(String tag) {
-      this.tag = tag;
     }
   }
 

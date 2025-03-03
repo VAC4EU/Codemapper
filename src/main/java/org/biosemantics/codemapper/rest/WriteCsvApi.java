@@ -115,7 +115,6 @@ public class WriteCsvApi {
   public static class PreparedConcept {
     public Concept concept;
     public Map<String, PreparedCode> data = new HashMap<>(); // code -> prepared code
-    public Collection<Code> descendants = new LinkedList<>(); // descendants (voc from mapping.data)
   }
 
   @XmlRootElement
@@ -150,7 +149,6 @@ public class WriteCsvApi {
 
             // unify tags
             String tag = code1.getTag();
-            if (tag == null) tag = concept.concept.getTag();
             if (tag != null) {
               prepared
                   .tags
@@ -220,24 +218,6 @@ public class WriteCsvApi {
             writtenCodes.add(code1.getId());
           }
         }
-        for (Code code : concept.descendants) {
-          if (disabled.contains(code.getId())) continue;
-          if (writtenCodes.contains(code.getId())) continue;
-          if (conceptCodes.contains(code.getId())) continue;
-          String origin = String.format("Desc: concept %s", cui);
-          writeCodeRow(
-              output,
-              voc,
-              code.getId(),
-              code.getTerm(),
-              "-",
-              "-",
-              concept.concept.getTag(),
-              origin,
-              compatibilityFormat,
-              prepared);
-          writtenCodes.add(code.getId());
-        }
         if (!wroteCode) {
           writeCodeRow(
               output,
@@ -246,7 +226,7 @@ public class WriteCsvApi {
               "",
               cui,
               concept.concept.getName(),
-              concept.concept.getTag(),
+              "-",
               "Concept without codes in " + voc,
               compatibilityFormat,
               prepared);
