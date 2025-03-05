@@ -21,7 +21,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { WelcomeViewComponent } from './mapping/welcome-view/welcome-view.component';
 import { MappingViewComponent } from './mapping/mapping-view/mapping-view.component';
 import { ProjectsViewComponent } from './mapping/projects-view/projects-view.component';
-import { ProjectViewComponent } from './mapping/project-view/project-view.component';
+import { FolderViewComponent } from './mapping/folder-view/folder-view.component';
 import { NewsViewComponent } from './mapping/news-view/news-view.component';
 import { adminGuard, authGuard, noAuthGuard } from './mapping/auth.guard';
 import { pendingChangesGuard } from './mapping/pending-changes.guard';
@@ -56,7 +56,7 @@ let routes : Routes = [
   {
     path: 'folder/:folder',
     canActivate: [authGuard],
-    component: ProjectViewComponent,
+    component: FolderViewComponent,
   },
   {
     path: 'mapping',

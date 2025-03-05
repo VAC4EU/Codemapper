@@ -121,7 +121,7 @@ create table case_definition_revisions (
   case_definition_id int not null references case_definitions(id),
   version int not null, -- unique serial per case_definition_id
   user_id int not null references users(id),
-  timestamp TIMESTAMP not null default CURRENT_TIMESTAMP,
+  timestamp TIMESTAMP WITH TIMEZONE not null default CURRENT_TIMESTAMP,
   summary text not null,
   mapping jsonb not null,
   constraint case_definition_version UNIQUE (case_definition_id, version)
@@ -142,7 +142,7 @@ as
 drop table if exists cached_descendants;
 create table cached_descendants (
   id int generated always as identity,
-  last_access timestamp DEFAULT now(),
+  last_access timestamp with timezone DEFAULT now(),
   sab varchar(20),
   ver varchar(20),
   code varchar(100),

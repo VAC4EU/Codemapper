@@ -243,7 +243,7 @@ export class FolderMappingsComponent {
   }
 
   localeDate(s: string) {
-    let date = new Date(s + 'Z');
+    let date = new Date(s);
     return date.toLocaleString();
   }
 

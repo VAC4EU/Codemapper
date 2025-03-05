@@ -31,11 +31,11 @@ import { AuthService, User } from '../auth.service';
 import { FolderMappingsComponent } from '../folder-mappings/folder-mappings.component';
 
 @Component({
-  selector: 'project-view',
-  templateUrl: './project-view.component.html',
-  styleUrls: ['./project-view.component.scss'],
+  selector: 'folder-view',
+  templateUrl: './folder-view.component.html',
+  styleUrls: ['./folder-view.component.scss'],
 })
-export class ProjectViewComponent {
+export class FolderViewComponent {
   user: User | null = null;
   folderName: string | null = null;
   role: ProjectRole | null = null;

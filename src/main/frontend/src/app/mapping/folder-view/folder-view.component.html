@@ -1,6 +1,6 @@
 <menu-banner [projectName]="folderName">
   <!-- <mat-icon>folder_open</mat-icon> -->
-  Folder: {{folderName}} (you are {{(role ?? "not member").toLowerCase()}})
+  {{folderName}}
   <span onTheRight>
     <span matTooltip="Export codelists of the selected mappings (no mappings without revisions, they have to be saved before)">
       <button (click)="mappings.openDownloadDialog(selectedFilteredMappings)" [disabled]="!mappings || !mappings.canDownload()" mat-icon-button>
@@ -11,6 +11,7 @@
 </menu-banner>
 
 <div class="center-content spaced">
+  <p>You are {{(role ?? "not member").toLowerCase()}} of this folder.</p>
   <mat-tab-group>
     <mat-tab label="Mappings">
       <folder-mappings *ngIf="user && role" [user]="user" [role]="role"></folder-mappings>
