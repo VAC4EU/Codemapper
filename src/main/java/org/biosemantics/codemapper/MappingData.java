@@ -18,13 +18,12 @@
 
 package org.biosemantics.codemapper;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @XmlRootElement
 public class MappingData {

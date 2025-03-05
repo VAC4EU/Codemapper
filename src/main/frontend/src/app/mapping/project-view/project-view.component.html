@@ -1,10 +1,10 @@
-<menu-banner [projectName]="projectName">
+<menu-banner [projectName]="folderName">
   <!-- <mat-icon>folder_open</mat-icon> -->
-  Folder: {{projectName}} (you are {{(role ?? "not member").toLowerCase()}})
+  Folder: {{folderName}} (you are {{(role ?? "not member").toLowerCase()}})
   <span onTheRight>
     <span matTooltip="Export codelists of the selected mappings (no mappings without revisions, they have to be saved before)">
-      <button mat-icon-button (click)="openDownloadDialog(selected.selected)"
-        [disabled]="!userCanDownload || selected.selected.length == 0 || !allSelectedHaveRevision()">
+      <button mat-icon-button (click)="openDownloadDialog(selection.selected)"
+        [disabled]="!userCanDownload || selection.selected.length == 0 || !allSelectedHaveRevision()">
         <mat-icon>download</mat-icon>
       </button>
     </span>
@@ -17,6 +17,22 @@
 
     <mat-tab label="Mappings">
       <div class="toolbox">
+
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            &nbsp;
+          </mat-card-header>
+          <mat-card-content matTooltip="Enter a string to filter the mappings.">
+            <mat-form-field>
+              <mat-label>Filter {{mappings.length}} mappings</mat-label>
+              <input matInput [(ngModel)]="filter" (keyup)="applyFilter(filter)" placeholder="">
+              <button mat-icon-button matSuffix (click)="filter = ''; applyFilter('')">
+                <mat-icon>backspace</mat-icon>
+              </button>
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
+
         <mat-card>
           <mat-card-header>
             New mapping
@@ -28,7 +44,7 @@
               </button>
             </span>
             <span matTooltip="Import a mapping from a CSV file (only for owners)">
-              <button (click)="importNew(projectName)" [disabled]="!userCanCreate" mat-raised-button>
+              <button (click)="importNew(folderName)" [disabled]="!userCanCreate" mat-raised-button>
                 Import codelist
               </button>
             </span>
@@ -37,32 +53,32 @@
 
         <mat-card>
           <mat-card-header>
-            {{selected.selected.length}} selected mapping{{selected.selected.length == 1 ? '' : 's'}}
+            {{selectedFilteredConcepts.length}} selected mapping(s)
           </mat-card-header>
           <mat-card-actions>
             <span matTooltip="Rename one selected mapping (only for owners)">
-              <button [disabled]="!userCanRename || selected.selected.length != 1"
+              <button [disabled]="!userCanRename || selectedFilteredConcepts.length != 1"
                 (click)="openDialog(renameDialog)" mat-raised-button>Rename</button>
             </span>
-            <button (click)="deleteSelectedMappings()" [disabled]="!userCanCreate || selected.selected.length == 0" mat-raised-button>Delete</button>
+            <button (click)="deleteSelectedMappings()" [disabled]="!userCanCreate || selectedFilteredConcepts.length == 0" mat-raised-button>Delete</button>
           </mat-card-actions>
         </mat-card>
       </div>
 
-      <table mat-table [dataSource]="mappings">
+      <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
         <tr mat-header-row *matHeaderRowDef="['select', 'name', 'status']"></tr>
         <tr mat-row *matRowDef="let mapping; columns: ['select', 'name', 'status'];"></tr>
 
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
             <mat-checkbox (change)="$event ? toggleSelectAll() : null"
-              [checked]="selected.hasValue() && isAllSelected()"
-              [indeterminate]="selected.hasValue() && !isAllSelected()">
+              [checked]="selection.hasValue() && isAllFilteredSelected()"
+              [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
             </mat-checkbox>
           </th>
           <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
-            <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selected.toggle(code) : null"
-              [checked]="selected.isSelected(code)">
+            <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(code) : null"
+              [checked]="selection.isSelected(code)">
             </mat-checkbox>
           </td>
         </ng-container>
@@ -150,7 +166,7 @@
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
     <button mat-raised-button [disabled]="!mappingName.value"
-      (click)="newMapping(projectName, mappingName.value, serverInfo.umlsVersion)" matDialogClose
+      (click)="newMapping(folderName, mappingName.value, serverInfo.umlsVersion)" matDialogClose
       color="primary">Ok</button>
   </mat-dialog-actions>
 </ng-template>
@@ -160,7 +176,7 @@
   <mat-dialog-content>
     <mat-form-field style="width:100%;">
       <mat-label>New name</mat-label>
-      <input type="text" [value]="selected.selected[0].mappingName" #newName matInput>
+      <input type="text" [value]="selection.selected[0].mappingName" #newName matInput>
     </mat-form-field>
     <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
         class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
@@ -168,7 +184,7 @@
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
-    <button mat-raised-button [disabled]="!newName.value || selected.selected.length != 1"
-      (click)="renameMapping(selected.selected[0], newName.value)" matDialogClose color="primary">Ok</button>
+    <button mat-raised-button [disabled]="!newName.value || selection.selected.length != 1"
+      (click)="renameMapping(selection.selected[0], newName.value)" matDialogClose color="primary">Ok</button>
   </mat-dialog-actions>
 </ng-template>

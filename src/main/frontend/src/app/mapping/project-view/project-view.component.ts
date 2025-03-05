@@ -17,21 +17,46 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { firstValueFrom } from 'rxjs';
-import { Component, TemplateRef } from '@angular/core';
+import {
+  Component,
+  SimpleChanges,
+  TemplateRef,
+  ViewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SelectionModel } from '@angular/cdk/collections';
-import { Title } from "@angular/platform-browser";
+import { Title } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
-import { PersistencyService, MappingInfo, ProjectRole, mappingInfoLink, UserRole, roleAtLeast as roleAtLeast, userCanDownload, userCanRename, userCanCreate } from '../persistency.service';
+import {
+  PersistencyService,
+  MappingInfo,
+  ProjectRole,
+  mappingInfoLink,
+  UserRole,
+  roleAtLeast as roleAtLeast,
+  userCanDownload,
+  userCanRename,
+  userCanCreate,
+} from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { ApiService, ImportedMapping } from '../api.service';
-import { EMPTY_SERVER_INFO, Mapping, MappingFormat, Start, StartType, ServerInfo, MappingMeta } from '../data';
+import {
+  EMPTY_SERVER_INFO,
+  Mapping,
+  MappingFormat,
+  Start,
+  StartType,
+  ServerInfo,
+  MappingMeta,
+} from '../data';
 import { AllTopics } from '../review';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort } from '@angular/material/sort';
 
-function usernameCompare(a : User | string, b : User | string) {
+function usernameCompare(a: User | string, b: User | string) {
   let a1 = typeof a == 'string' ? a : a.username;
   let b1 = typeof b == 'string' ? b : b.username;
   return a1.toLowerCase().localeCompare(b1.toLowerCase());
@@ -40,77 +65,132 @@ function usernameCompare(a : User | string, b : User | string) {
 @Component({
   selector: 'project-view',
   templateUrl: './project-view.component.html',
-  styleUrls: ['./project-view.component.scss']
+  styleUrls: ['./project-view.component.scss'],
 })
 export class ProjectViewComponent {
-  serverInfo : ServerInfo = EMPTY_SERVER_INFO;
-  projectName! : string;
-  newEventName : string = "";
-  mappings : MappingInfo[] = [];
-  role : ProjectRole | null = null;
-  selected = new SelectionModel<MappingInfo>(true, []);
-  user : User | null = null;
-  userRoles : UserRole[] = [];
-  allUsers : User[] = []; // only available for admin, owner
+  serverInfo: ServerInfo = EMPTY_SERVER_INFO;
+  folderName: string = "";
+  newEventName: string = '';
+  mappings: MappingInfo[] = [];
+  selectedMappings: MappingInfo[] = [];
+  role: ProjectRole | null = null;
+  user: User | null = null;
+  userRoles: UserRole[] = [];
+  allUsers: User[] = []; // only available for admin, owner
+  filter: string = '';
+  selection = new SelectionModel<MappingInfo>(true, []);
+  dataSource: MatTableDataSource<MappingInfo> =
+    new MatTableDataSource<MappingInfo>();
+  @ViewChild(MatSort) sort!: MatSort;
+
   constructor(
-    private api : ApiService,
-    private persistency : PersistencyService,
-    private route : ActivatedRoute,
-    private router : Router,
-    private title : Title,
-    private dialog : MatDialog,
-    private auth : AuthService,
-    private snackbar : MatSnackBar,
-  ) { }
+    private api: ApiService,
+    private persistency: PersistencyService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private title: Title,
+    private dialog: MatDialog,
+    private auth: AuthService,
+    private snackbar: MatSnackBar
+  ) {}
+
+  async ngOnInit() {
+    this.auth.user.then((user) => (this.user = user));
+    this.persistency.allUsers().subscribe((allUsers) => {
+      this.allUsers = allUsers;
+      this.allUsers.sort(usernameCompare);
+    });
+  }
+
+  async ngAfterViewInit() {
+    this.serverInfo = await firstValueFrom(this.api.serverInfo());
+    this.route.params.subscribe(async (params) => {
+      this.folderName = params['folder'];
+      await this.reloadUsersRoles();
+      await this.reload();
+    });
+  }
+
+  async reload() {
+    this.filter = '';
+    this.applyFilter('');
+    this.selection.clear();
+    this.title.setTitle(`CodeMapper: Folder ${this.folderName}`);
+    this.mappings = await firstValueFrom(
+      this.persistency.projectMappingInfos(this.folderName)
+    );
+    this.dataSource.data = Object.values(this.mappings);
+    this.dataSource.sort = this.sort;
+    this.dataSource.sortingDataAccessor = (item: any, property: string) => {
+      switch (property) {
+        case 'name':
+          return item.mappingName;
+        default:
+          return item[property];
+      }
+    };
+  }
+
+  get selectedFilteredConcepts() {
+    return Array.from(this.selection.selected).filter((m) =>
+      this.dataSource.filteredData.some((m1) => m1.mappingName == m.mappingName)
+    );
+  }
+
   get userCanDownload() {
     return userCanDownload(this.role);
   }
+
   get userCanRename() {
     return userCanRename(this.role);
   }
+
   get userCanCreate() {
     return userCanCreate(this.role);
   }
-  ngOnInit() {
-    this.api.serverInfo().subscribe(info => this.serverInfo = info);
-    this.reload();
+
+  applyFilter(filterValue: string) {
+    this.dataSource.filter = filterValue.trim().toLowerCase();
   }
-  reload() {
-    this.route.params.subscribe(params => {
-      this.projectName = params['folder'];
-      this.title.setTitle(`CodeMapper: Folder ${this.projectName}`);
-      this.persistency.projectMappingInfos(this.projectName)
-        .subscribe((mappings) => this.mappings = mappings);
-      this.auth.user.then((user) => this.user = user);
-      this.persistency.allUsers().subscribe(allUsers => {
-        this.allUsers = allUsers;
-        this.allUsers.sort(usernameCompare);
-      });
-      this.reloadUsersRoles();
-      this.selected.clear();
-    });
-  }
+
   async reloadUsersRoles() {
-    this.role = await firstValueFrom(this.persistency.getProjectRole(this.projectName));
-    this.userRoles = await firstValueFrom(this.persistency.projectUsers(this.projectName));
+    this.role = await firstValueFrom(
+      this.persistency.getProjectRole(this.folderName)
+    );
+    this.userRoles = await firstValueFrom(
+      this.persistency.projectUsers(this.folderName)
+    );
     this.userRoles.sort((a, b) => usernameCompare(a.user, b.user));
   }
-  isAllSelected() {
-    const numSelected = this.selected.selected.length;
-    const numRows = this.mappings.length;
-    return numSelected == numRows;
+
+  isAllFilteredSelected() {
+    return (
+      this.dataSource.filteredData.length <= this.selection.selected.length &&
+      this.dataSource.filteredData.every(
+        (c) => this.selection.selected.indexOf(c) != -1
+      )
+    );
   }
+
   toggleSelectAll() {
-    if (this.isAllSelected()) {
-      this.selected.clear();
+    if (this.isAllFilteredSelected()) {
+      this.selection.clear();
     } else {
-      this.mappings.forEach(row => this.selected.select(row));
+      this.selectAll();
     }
   }
-  allSelectedHaveRevision() {
-    return this.selected.selected.every(i => i.version != null)
+
+  selectAll() {
+    this.dataSource.filteredData.forEach((row) => this.selection.select(row));
   }
-  async newMapping(projectName : string, mappingName : string, umlsVersion : string) {
+  allSelectedHaveRevision() {
+    return this.selection.selected.every((i) => i.version != null);
+  }
+  async newMapping(
+    projectName: string,
+    mappingName: string,
+    umlsVersion: string
+  ) {
     if (!projectName || !mappingName) {
       return;
     }
@@ -118,8 +198,9 @@ export class ProjectViewComponent {
     let vers = await firstValueFrom(this.api.serverInfo());
     let vocabularies = Object.fromEntries(
       vocs0
-        .filter(v => vers.defaultVocabularies.includes(v.id))
-        .map(v => [v.id, v]));
+        .filter((v) => vers.defaultVocabularies.includes(v.id))
+        .map((v) => [v.id, v])
+    );
     let info = {
       formatVersion: MappingFormat.version,
       umlsVersion,
@@ -129,20 +210,22 @@ export class ProjectViewComponent {
     };
     let mapping = new Mapping(info, null, vocabularies, {}, {});
     let initial = { mappingName, projectName, mapping };
-    this.router.navigate(["/mapping"], { state: { initial } });
+    this.router.navigate(['/mapping'], { state: { initial } });
   }
-  importNew(projectName : string) {
+  importNew(projectName: string) {
     if (!projectName) {
       return;
     }
     let ignoreTermTypes = this.serverInfo.defaultIgnoreTermTypes;
-    this.dialog.open(ImportCsvDialogComponent, {data: { ignoreTermTypes }}).afterClosed()
-      .subscribe(imported => {
-        console.log("IMPORTED", imported);
-        if (typeof (imported) == 'object') {
-          let start : Start = {
+    this.dialog
+      .open(ImportCsvDialogComponent, { data: { ignoreTermTypes } })
+      .afterClosed()
+      .subscribe((imported) => {
+        console.log('IMPORTED', imported);
+        if (typeof imported == 'object') {
+          let start: Start = {
             type: StartType.CsvImport,
-            csvContent: imported.csvContent
+            csvContent: imported.csvContent,
           };
           let { mappingName, mapping } = imported as ImportedMapping;
           let { vocabularies, concepts, codes, umlsVersion } = mapping;
@@ -153,54 +236,78 @@ export class ProjectViewComponent {
             ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
             allowedTags: this.serverInfo.defaultAllowedTags,
           };
-          let mapping1 = new Mapping(meta, start, vocabularies, concepts, codes);
-          let allTopics = AllTopics.fromRaw(imported.allTopics, null, Object.keys(concepts));
-          let initial = { mappingName, projectName, mapping: mapping1, allTopics };
-          this.router.navigate(["/mapping"], { state: { initial } });
+          let mapping1 = new Mapping(
+            meta,
+            start,
+            vocabularies,
+            concepts,
+            codes
+          );
+          let allTopics = AllTopics.fromRaw(
+            imported.allTopics,
+            null,
+            Object.keys(concepts)
+          );
+          let initial = {
+            mappingName,
+            projectName,
+            mapping: mapping1,
+            allTopics,
+          };
+          this.router.navigate(['/mapping'], { state: { initial } });
         }
       });
   }
   async deleteSelectedMappings() {
-    let names = this.selected.selected.map(c => c.mappingName);
-    if (!confirm(`Do you really want to delete ${names.length} mapping(s): ${names.join(', ')}`)) return;
-    let shortkeys = this.selected.selected.map(c => c.mappingShortkey);
+    let names = this.selection.selected.map((c) => c.mappingName);
+    if (
+      !confirm(
+        `Do you really want to delete ${names.length} mapping(s): ${names.join(
+          ', '
+        )}`
+      )
+    )
+      return;
+    let shortkeys = this.selection.selected.map((c) => c.mappingShortkey);
     try {
-      await this.persistency.deleteMappings(shortkeys)
-    } catch(e) {
-      this.snackbar.open((e as Error).toString(), "Ok");
+      await this.persistency.deleteMappings(shortkeys);
+    } catch (e) {
+      this.snackbar.open((e as Error).toString(), 'Ok');
     } finally {
       this.reload();
     }
   }
-  openDialog(templateRef : TemplateRef<any>) {
+  openDialog(templateRef: TemplateRef<any>) {
     this.dialog.open(templateRef, { width: '700px' });
   }
-  openDownloadDialog(mappings : MappingInfo[]) {
+  openDownloadDialog(mappings: MappingInfo[]) {
     let data = {
-      projectName: this.projectName,
-      mappingConfigs: mappings.map(i => i.mappingShortkey),
+      projectName: this.folderName,
+      mappingConfigs: mappings.map((i) => i.mappingShortkey),
     };
-    this.dialog.open(DownloadDialogComponent, { data })
+    this.dialog.open(DownloadDialogComponent, { data });
   }
-  mappingLink(mapping : MappingInfo) {
-    return mappingInfoLink(mapping)
+  mappingLink(mapping: MappingInfo) {
+    return mappingInfoLink(mapping);
   }
-  async renameMapping(mapping : MappingInfo, newName : string) {
-    await this.persistency.mappingSetName(mapping.mappingShortkey, newName).toPromise();
+  async renameMapping(mapping: MappingInfo, newName: string) {
+    await this.persistency
+      .mappingSetName(mapping.mappingShortkey, newName)
+      .toPromise();
     mapping.mappingName = newName;
-    console.log("renamed");
+    console.log('renamed');
   }
-  addUserRole(username : string, role : ProjectRole) {
-    console.log("ROLE", role, ProjectRole);
-    this.persistency.setUserRole(this.projectName, username, role).subscribe({
-      next: _ => this.reloadUsersRoles(),
-      error: err => this.snackbar.open(err.message, "Ok"),
+  addUserRole(username: string, role: ProjectRole) {
+    console.log('ROLE', role, ProjectRole);
+    this.persistency.setUserRole(this.folderName, username, role).subscribe({
+      next: (_) => this.reloadUsersRoles(),
+      error: (err) => this.snackbar.open(err.message, 'Ok'),
     });
   }
-  selectedMappingConfigs() : string[] {
-    return this.selected.selected.map(info => info.mappingShortkey)
+  selectedMappingConfigs(): string[] {
+    return this.selection.selected.map((info) => info.mappingShortkey);
   }
-  rolesDomain() : string[] {
-    return Object.keys(ProjectRole)
+  rolesDomain(): string[] {
+    return Object.keys(ProjectRole);
   }
 }
