@@ -14,6 +14,15 @@ mat-toolbar {
     justify-content: space-between;
 }
 
+.on-the-left {
+    display: flex;
+    flex-shrink: 2;
+    min-width: 20em;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    overflow-y: hidden;
+}
+
 .on-the-right {
     display: flex;
     flex-direction: row;
