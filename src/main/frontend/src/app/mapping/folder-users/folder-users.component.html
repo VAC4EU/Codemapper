@@ -1,0 +1,48 @@
+<div class="toolbox">
+    <mat-card *ngIf="user?.admin || role == 'Owner'">
+      <mat-card-header>
+        <h4>Set user role</h4>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field>
+          <mat-label>User</mat-label>
+          <mat-select #addUserRoleName>
+            <mat-option *ngFor="let user of allUsers" value="{{user.username}}">
+              {{user.username}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Role</mat-label>
+          <mat-select #addUserRoleRole>
+            <mat-option value="">Remove from folder</mat-option>
+            <mat-option *ngFor="let role of rolesDomain()" [value]="role">{{role}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-raised-button color="primary" [disabled]="!addUserRoleName.value"
+          (click)="addUserRole(addUserRoleName.value, addUserRoleRole.value)">Set</button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <mat-table [dataSource]="userRoles">
+    <tr mat-header-row *matHeaderRowDef="['username', 'email', 'role']"></tr>
+    <tr mat-row *matRowDef="let user; columns: ['username', 'email', 'role'];"></tr>
+    <ng-container matColumnDef="username">
+      <th mat-header-cell *matHeaderCellDef>Username</th>
+      <td mat-cell *matCellDef="let userRole">
+        {{userRole.user.username}}
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef>Email</th>
+      <td mat-cell *matCellDef="let userRole">
+        {{userRole.user.email}}
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="role">
+      <th mat-header-cell *matHeaderCellDef>Role</th>
+      <td mat-cell *matCellDef="let userRole">
+        {{userRole.role?.toLowerCase() ?? "-"}}
+      </td>
+    </ng-container>
+  </mat-table>

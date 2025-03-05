@@ -22,9 +22,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
-import { Code, CodeId, Concept, ConceptId, Mapping, VocabularyId } from '../data';
+import { Code, CodeId, ConceptId, Mapping, VocabularyId } from '../data';
 import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
-import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'codes-table',

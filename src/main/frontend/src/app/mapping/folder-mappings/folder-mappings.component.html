@@ -1,0 +1,128 @@
+<div class="toolbox">
+
+    <mat-card appearance="outlined">
+        <mat-card-header>
+        </mat-card-header>
+        <mat-card-content matTooltip="Enter a string to filter the mappings.">
+            <mat-form-field>
+                <mat-label>Filter {{mappings.length}} mappings</mat-label>
+                <input matInput [(ngModel)]="filter" (keyup)="applyFilter(filter)" placeholder="">
+                <button mat-icon-button matSuffix (click)="filter = ''; applyFilter('')">
+                    <mat-icon>backspace</mat-icon>
+                </button>
+            </mat-form-field>
+        </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+        <mat-card-header>
+            New mapping
+        </mat-card-header>
+        <mat-card-actions>
+            <span matTooltip="Create a new mapping (only for owners)">
+                <button (click)="openDialog(createMapping)" [disabled]="!userCanCreate" mat-raised-button>
+                    Create
+                </button>
+            </span>
+            <span matTooltip="Import a mapping from a CSV file (only for owners)">
+                <button (click)="importNew(folderName)" [disabled]="!userCanCreate" mat-raised-button>
+                    Import codelist
+                </button>
+            </span>
+        </mat-card-actions>
+    </mat-card>
+
+    <mat-card>
+        <mat-card-header>
+            {{selectedFilteredMappings.length}} selected mapping(s)
+        </mat-card-header>
+        <mat-card-actions>
+            <span matTooltip="Rename one selected mapping (only for owners)">
+                <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
+                    (click)="openDialog(renameDialog)" mat-raised-button>Rename</button>
+            </span>
+            <button (click)="deleteSelectedMappings()"
+                [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
+        </mat-card-actions>
+    </mat-card>
+</div>
+
+<div class="table-container">
+    <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
+        <tr mat-header-row *matHeaderRowDef="['select', 'name', 'lastModification', 'status']"></tr>
+        <tr mat-row *matRowDef="let mapping; columns: ['select', 'name', 'lastModification', 'status'];"></tr>
+
+        <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+                <mat-checkbox (change)="$event ? toggleSelectAll() : null"
+                    [checked]="selection.hasValue() && isAllFilteredSelected()"
+                    [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
+                </mat-checkbox>
+            </th>
+            <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
+                <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(code) : null"
+                    [checked]="selection.isSelected(code)">
+                </mat-checkbox>
+            </td>
+        </ng-container>
+        <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Mapping name</th>
+            <td mat-cell *matCellDef="let mapping">
+                <a [routerLink]="mappingLink(mapping)" mat-menu-item>
+                    {{mapping.mappingName}}
+                </a>
+            </td>
+        </ng-container>
+        <ng-container matColumnDef="lastModification">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Last modification</th>
+            <td mat-cell *matCellDef="let mapping">
+                <span *ngIf="mapping.lastModification != null">{{localeDate(mapping.lastModification)}}</span>
+            </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let mapping">
+                <span *ngIf="mapping.version == null"
+                    matTooltip="From old version of CodeMapper, please open, review and save">LEGACY</span>
+                <span *ngIf="mapping.status == 'IMPORTED'"
+                    matTooltip="Automatically imported, please open, review and save">IMPORTED</span>
+            </td>
+        </ng-container>
+    </table>
+</div>
+
+<ng-template #createMapping>
+    <h2 matDialogTitle>Create mapping</h2>
+    <mat-dialog-content>
+        <mat-form-field appearance="fill">
+            <input type="text" placeholder="Mapping name" matInput #mappingName>
+        </mat-form-field>
+        <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
+                class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
+                class="pre">I_FLU_COV_Influenca</span>.</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button matDialogClose>Cancel</button>
+        <button mat-raised-button [disabled]="!mappingName.value"
+            (click)="newMapping(folderName, mappingName.value, serverInfo.umlsVersion)" matDialogClose
+            color="primary">Ok</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #renameDialog>
+    <h2 matDialogTitle>Rename mapping</h2>
+    <mat-dialog-content>
+        <mat-form-field style="width:100%;">
+            <mat-label>New name</mat-label>
+            <input type="text" [value]="selection.selected[0].mappingName" #newName matInput>
+        </mat-form-field>
+        <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
+                class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
+                class="pre">I_FLU_COV_Influenca</span>.</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button matDialogClose>Cancel</button>
+        <button mat-raised-button [disabled]="!newName.value || selection.selected.length != 1"
+            (click)="renameMapping(selection.selected[0], newName.value)" matDialogClose color="primary">Ok</button>
+    </mat-dialog-actions>
+</ng-template>

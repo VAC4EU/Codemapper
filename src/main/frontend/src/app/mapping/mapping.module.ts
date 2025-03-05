@@ -84,6 +84,8 @@ import { UserLogoutComponent } from './user-logout/user-logout.component';
 import { DownloadDialogComponent } from './download-dialog/download-dialog.component';
 import { LoginComponent } from './login/login.component';
 import { LoginLinkComponent } from './login-link/login-link.component';
+import { FolderMappingsComponent } from './folder-mappings/folder-mappings.component';
+import { FolderUsersComponent } from './folder-users/folder-users.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -131,6 +133,8 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     DownloadDialogComponent,
     LoginComponent,
     LoginLinkComponent,
+    FolderMappingsComponent,
+    FolderUsersComponent,
   ],
   imports: [
     HttpClientModule,
