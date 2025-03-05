@@ -74,6 +74,7 @@ export interface MappingInfo {
   mappingShortkey : string;
   version : string | null;
   status: string | null;
+  lastModification : string | null;
 }
 
 export interface ProjectInfo {

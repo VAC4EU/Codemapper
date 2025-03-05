@@ -310,4 +310,8 @@ export class ProjectViewComponent {
   rolesDomain(): string[] {
     return Object.keys(ProjectRole);
   }
+  localeDate(s: string) {
+    let date = new Date(s + 'Z');
+    return date.toLocaleString();
+  }
 }

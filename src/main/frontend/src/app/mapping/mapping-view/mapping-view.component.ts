@@ -377,6 +377,7 @@ export class MappingViewComponent implements HasPendingChanges {
                   mappingShortkey,
                   version: null,
                   status: null,
+                  lastModification: null,
                 })
               );
             }
