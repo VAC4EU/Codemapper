@@ -10,13 +10,12 @@
   </span>
 </menu-banner>
 
-<div class="center-content spaced">
-  <p>You are {{(role ?? "not member").toLowerCase()}} of this folder.</p>
+<div class="spaced">
   <mat-tab-group>
     <mat-tab label="Mappings">
       <folder-mappings *ngIf="user && role" [user]="user" [role]="role"></folder-mappings>
     </mat-tab>
-    <mat-tab label="Members">
+    <mat-tab label="Members (You are {{(role ?? 'not member').toLowerCase()}})">
       <folder-users *ngIf="folderName && user && role" [folderName]="folderName" [user]="user" [role]="role"></folder-users>
     </mat-tab>
   </mat-tab-group>

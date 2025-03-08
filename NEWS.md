@@ -9,6 +9,13 @@
 
 <section class="center-content">
 
+March 5, 2025
+---
+
+- show last modification time in the list of mappings
+- sort mappings by type, system, name
+- mark imported mappings and invite for review
+
 March 3, 2025
 ----
 

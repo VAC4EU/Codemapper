@@ -31,6 +31,23 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
 
+class NameInfo {
+  constructor(
+    public system: string,
+    public abbreviation: string,
+    public typ: string,
+    public definition: string,
+  ) {}
+  static parse(name: string) : NameInfo | null {
+    let parts = name.split('_');
+    if (parts.length == 3 || parts.length == 4) {
+      return new NameInfo(parts[0], parts[1], parts[2], parts[3] ?? parts[1])
+    } else {
+      return new NameInfo("", name, "", "");
+    }
+  }
+}
+
 @Component({
   selector: 'folder-mappings',
   templateUrl: './folder-mappings.component.html',
@@ -44,6 +61,7 @@ export class FolderMappingsComponent {
   folderName: string = '';
   newEventName: string = '';
   mappings: MappingInfo[] = [];
+  nameInfos: { [key: string]: NameInfo | null } = {};
   selectedMappings: MappingInfo[] = [];
   filter: string = '';
   selection = new SelectionModel<MappingInfo>(true, []);
@@ -77,16 +95,27 @@ export class FolderMappingsComponent {
     this.mappings = await firstValueFrom(
       this.persistency.projectMappingInfos(this.folderName)
     );
+    this.nameInfos = Object.fromEntries(this.mappings.map(m => [m.mappingShortkey, NameInfo.parse(m.mappingName)]));
     this.dataSource.data = Object.values(this.mappings);
     this.dataSource.sort = this.sort;
-    this.dataSource.sortingDataAccessor = (item: any, property: string) => {
+    this.dataSource.sortingDataAccessor = (mapping: any, property: string) => {
       switch (property) {
         case 'name':
-          return item.mappingName;
+          return this.nameInfo(mapping).abbreviation;
+        case 'type':
+          return this.nameInfo(mapping).typ;
+        case 'system':
+          return this.nameInfo(mapping).system;
+        case 'definition':
+          return this.nameInfo(mapping).definition;
         default:
-          return item[property];
+          return mapping[property];
       }
     };
+  }
+
+  nameInfo(mapping: MappingInfo) {
+    return this.nameInfos[mapping.mappingShortkey] ?? new NameInfo("", "", "", "");
   }
 
   isAllFilteredSelected() {
@@ -258,6 +287,7 @@ export class FolderMappingsComponent {
   get userCanCreate() {
     return userCanCreate(this.role);
   }
+
   canDownload() {
     return (
       this.userCanDownload &&
