@@ -292,7 +292,7 @@ export class FolderMappingsComponent {
     return (
       this.userCanDownload &&
       this.selectedFilteredMappings.length != 0 &&
-      !this.selectedFilteredMappings.some((i) => i.version != null)
+      this.selectedFilteredMappings.every(i => i.version != null)
     );
   }
 }
