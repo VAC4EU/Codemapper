@@ -237,7 +237,7 @@ public class MappingData {
   }
 
   @XmlRootElement
-  @JsonIgnoreProperties({"codesTag"})
+  @JsonIgnoreProperties({"codesTag", "tag"})
   public static class Concept {
     String id;
     String name;
