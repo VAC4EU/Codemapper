@@ -50,7 +50,8 @@
 <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
         <tr mat-header-row *matHeaderRowDef="['select', 'system', 'name', 'type', 'definition', 'status', 'lastModification']"></tr>
-        <tr mat-row *matRowDef="let mapping; columns: ['select', 'system', 'name', 'type', 'definition', 'status', 'lastModification'];" [routerLink]="mappingLink(mapping)" matTooltip="{{mapping.mappingName}}"  [matTooltipPositionAtOrigin]="true" class="row-link"></tr>
+        <tr mat-row *matRowDef="let mapping; columns: ['select', 'system', 'name', 'type', 'definition', 'status', 'lastModification'];"
+         [routerLink]="mappingLink(mapping)" matTooltip="{{mapping.mappingName}}" class="row-link"></tr>
 
         <ng-container matColumnDef="select">
             <th mat-header-cell *matHeaderCellDef>

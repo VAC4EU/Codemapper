@@ -3,7 +3,7 @@
   {{folderName}}
   <span onTheRight>
     <span matTooltip="Export codelists of the selected mappings (no mappings without revisions, they have to be saved before)">
-      <button (click)="mappings.openDownloadDialog(selectedFilteredMappings)" [disabled]="!mappings || !mappings.canDownload()" mat-icon-button>
+      <button (click)="mappings.openDownloadDialog(mappings.selectedFilteredMappings)" [disabled]="!mappings || !mappings.canDownload()" mat-icon-button>
         <mat-icon>download</mat-icon>
       </button>
     </span>

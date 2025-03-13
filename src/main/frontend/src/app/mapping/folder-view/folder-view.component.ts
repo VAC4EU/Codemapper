@@ -39,7 +39,6 @@ export class FolderViewComponent {
   user: User | null = null;
   folderName: string | null = null;
   role: ProjectRole | null = null;
-  selectedFilteredMappings: MappingInfo[] = [];
 
   @ViewChild(FolderMappingsComponent) mappings!: FolderMappingsComponent;
 
