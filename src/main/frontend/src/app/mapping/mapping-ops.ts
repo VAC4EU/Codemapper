@@ -320,31 +320,31 @@ export class EditCustomCode extends Operation {
   }
 }
 
+export type CodeTags = { [key : VocabularyId] : { [key : CodeId] : Tag | null } };
+
 export class CodesSetTag extends Operation {
 
-  constructor(
-    readonly codes: { [key: string]: { [key: string]: Tag | null } },
-  ) {
+  constructor(readonly codeTags: CodeTags) {
     super();
   }
 
   override describe() : string {
-    let count = Object.values(this.codes).map(o => Object.keys(o).length).reduce((x, y) => x + y, 0);
-    let tags = Array.from(new Set(Object.values(this.codes).map(o => Object.values(o)).reduce((x, y) => x.concat(y))));
+    let count = Object.values(this.codeTags).map(o => Object.keys(o).length).reduce((x, y) => x + y, 0);
+    let tags = Array.from(new Set(Object.values(this.codeTags).map(o => Object.values(o)).reduce((x, y) => x.concat(y))));
     let tag = tags.length == 1 ? tags[0] : undefined;
     let tagStr = tag == undefined ? "various tags" : tag == null ? "NO TAG" : tag;
     return `Codes set tags of ${count} codes to ${tagStr}`;
   }
 
   override run(mapping : Mapping) : Operation | undefined {
-    let oldCodes: { [key: string]: { [key: string]: Tag | null } } = {};
-    for (let vocId of Object.keys(this.codes)) {
-      for (let codeId of Object.keys(this.codes[vocId])) {
+    let oldCodes: CodeTags = {};
+    for (let vocId of Object.keys(this.codeTags)) {
+      for (let codeId of Object.keys(this.codeTags[vocId])) {
         let code = mapping.codes[vocId]?.[codeId];
         expect(code !== undefined);
         oldCodes[vocId] ??= {};
         oldCodes[vocId][codeId] = code.tag;
-        code.tag = this.codes[vocId][codeId];
+        code.tag = this.codeTags[vocId][codeId];
       }
     }
     return new CodesSetTag(oldCodes);

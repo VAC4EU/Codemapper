@@ -23,10 +23,11 @@ import { FormControl } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
-import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts, CodeId } from '../data';
+import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts, CodeId, Tag } from '../data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';
+import { CodeTags } from '../mapping-ops';
 
 @Component({
   selector: 'concepts',
@@ -183,10 +184,10 @@ export class ConceptsComponent implements OnInit {
 
   showTagsDialog(concepts : Concept[]) {
     let tags = new Set();
-    let codes: { [key : VocabularyId] : { [key : CodeId] : string | null } } = {};
+    let codes: CodeTags = {};
     for (let concept of concepts) {
       for (let vocId of Object.keys(concept.codes)) {
-        codes[vocId] = {};
+        codes[vocId] ??= {};
         for (let codeId of concept.codes[vocId]) {
           let code = this.mapping.codes[vocId][codeId];
           if (!code.enabled) continue;
