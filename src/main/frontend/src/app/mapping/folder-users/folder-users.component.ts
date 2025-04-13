@@ -22,7 +22,7 @@ function usernameCompare(a: User | string, b: User | string) {
 export class FolderUsersComponent {
   @Input({ required: true }) folderName!: string;
   @Input({ required: true }) user!: User;
-  @Input({ required: true }) role!: ProjectRole;
+  @Input({ required: true }) role!: ProjectRole | null;
 
   userRoles: UserRole[] = [];
   allUsers: User[] = []; // only available for admin, owner
