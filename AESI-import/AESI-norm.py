@@ -28,6 +28,7 @@ INPUT_COLUMNS = ["Coding system", "Code", "Code name", "Concept", "Concept name"
 SAB_MAPPING = {
     "e": "SNOMEDCT_US",
     "p": "MEDCODEID",
+    "ICD10": "ICD10_2019",
 }
 
 def get_mapping(filename):

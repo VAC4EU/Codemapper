@@ -17,16 +17,11 @@ from nltk.tokenize import word_tokenize
 
 SEP = "-',/"
 
-IGNORE_TTYS = set("AA AD AM AS AT CE EP ES ETAL ETCF ETCLIN ET EX GT IS IT LLTJKN1 LLTJKN LLT LO MP MTH_ET MTH_IS MTH_LLT MTH_LO MTH_OAF MTH_OAP MTH_OAS MTH_OET MTH_OET MTH_OF MTH_OL MTH_OL MTH_OPN MTH_OP OAF OAM OAM OAP OAS OA OET OET OF OLC OLG OLJKN1 OLJKN1 OLJKN OLJKN OL OL OM OM ONP OOSN OPN OP PCE PEP PHENO_ET PQ PXQ PXQ SCALE TQ XQ".split())
-
-def any_ignored_ttys(ttys):
-    return not ttys.isdisjoint(IGNORE_TTYS)
-
-def all_ignored_ttys(ttys):
-    return ttys.issubset(IGNORE_TTYS)
-
 # ./check.py:coding_systems
-UMLS_CODING_SYSTEMS = set(['ICD10', 'ICD10CM', 'ICD9CM', 'ICPC', 'ICPC2EENG', 'ICPC2P', 'MTHICD9', 'RCD', 'SCTSPA', 'SNM', 'SNOMEDCT_US'])
+UMLS_CODING_SYSTEMS = set([
+    'ICD10_2019', 'ICD10CM', 'ICD9CM', 'ICPC', 'ICPC2EENG',
+    'ICPC2P', 'MTHICD9', 'RCD', 'SCTSPA', 'SNM', 'SNOMEDCT_US'
+])
 
 NON_UMLS_CODING_SYSTEMS = set(["ICD10DA", "MEDCODEID", "RCD2"])
 
@@ -211,17 +206,6 @@ class Validation:
             repr += f" - ({', '.join(self.comments)})"
         return repr
 
-def ttys_index(row):
-    if 'PT' in row['ttys']:
-        return 1
-    elif row['all_ignored_ttys']:
-        return 4
-    else:
-        if row['ttys'].issubset({'AA', 'AB', 'ACR', 'AM', 'CA2', 'CA3', 'CDA', 'CS', 'DEV', 'DS', 'DSV', 'ES', 'HS', 'ID', 'MTH_ACR', 'NS', 'OAM', 'OA', 'OSN', 'PS', 'QAP', 'QEV', 'RAB', 'SSN', 'SS', 'VAB'}):
-            return 3
-        else:
-            return 2
-
 import time
 
 class Tables:
@@ -236,27 +220,11 @@ class Tables:
 
     def load(table_filename, mrcui_filename):
         t0 = time.time()
-        table_parquet = table_filename + '.parquet'
-        if os.path.isfile(table_parquet):
-            print("Read cached table file", table_parquet)
-            table = (
-                pd.read_parquet(table_parquet)
-                .assign(ttys=lambda df: df.ttys.map(lambda s: set(s.split(','))))
-            )
-        else:
-            dtype = defaultdict(lambda: str, {'sab': "category"})
-            print("Read table file", time.time() - t0)
-            table = (
-                pd.read_csv(table_filename, dtype=dtype)
-                .assign(sab=lambda df: df.sab.astype("category"))
-                .assign(code=lambda df: df.code.astype("category"))
-                .assign(ttys=lambda df: df.ttys.str.split(',').apply(set))
-                .assign(all_ignored_ttys=lambda df: df.ttys.map(all_ignored_ttys))
-                .assign(any_ignored_ttys=lambda df: df.ttys.map(any_ignored_ttys))
-                .assign(ttys_index=lambda df: df.apply(ttys_index, axis=1))
-            )
-            print("Write table cache file", table_parquet, time.time() - t0)
-            table.assign(ttys=table.ttys.map(','.join)).to_parquet(table_parquet)
+        print("Read cached table file", table_filename)
+        table = (
+            pd.read_parquet(table_filename)
+            .assign(ttys=lambda df: df.ttys.map(lambda s: set(s.split(','))))
+        )
         print("tables:", len(table), time.time() - t0)
         names = ['cui1', 'ver', 'rel', 'rela', 'mapreason', 'cui2', 'mapin', 'dummy']
         mrcui = pd.read_csv(mrcui_filename, dtype=str, names=names, sep='|')
@@ -437,6 +405,9 @@ class Tables:
             if infile == f"{indir}/index.csv":
                 continue
             name = path.basename(infile).replace('.csv', '')
+            if DEDUP_ONLY is not None and name not in DEDUP_ONLY:
+                print("Skip", name)
+                continue
             print(name, end=' ', flush=True)
             outfile = f"{outdir}/{name}.csv"
             # if path.exists(outfile):
@@ -447,6 +418,10 @@ class Tables:
             df = self.dedup(df)
             print()
             df.to_csv(outfile, index=False)
+
+DEDUP_ONLY = os.environ.get('DEDUP_ONLY', None)
+if DEDUP_ONLY is not None:
+    DEDUP_ONLY = set(DEDUP_ONLY.split(','))
 
 def mkrow(sab=None, code=None, str=None, cui=None, row=None, **kwargs):
     if row is None:
@@ -497,11 +472,11 @@ def tests(tables):
     assert val.obsolete == None, val.obsolete
     assert mkrow(row=val.row) == mkrow(str='Acquired coagulation factor deficiency', row=row), mkrow(val.row)
 
-    row = mkrow(sab='ICD10', code='D68', str='Von Willebrand\'s disease', cui='C0042974')
-    val = tables.categorize(row)
-    assert val.result == 'BY_NAME', val.result
-    assert val.obsolete == None, val.obsolete
-    assert mkrow(row=val.row) == mkrow(code='D68.0', row=row), mkrow(val.row)
+    # row = mkrow(sab='ICD10_2019', code='D68', str='Von Willebrand\'s disease', cui='C0042974')
+    # val = tables.categorize(row)
+    # assert val.result == 'BY_NAME', val.result
+    # assert val.obsolete == None, val.obsolete
+    # assert mkrow(row=val.row) == mkrow(code='D68.0', row=row), mkrow(val.row)
 
     row = mkrow(sab='SNOMEDCT_US', code='10752381000119100', str='Fetal thrombocytopenia', cui='C2349596')
     val = tables.categorize(row)

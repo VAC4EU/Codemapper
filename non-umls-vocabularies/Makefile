@@ -6,12 +6,15 @@ mrconso.csv:
 	  -c "COPY (SELECT DISTINCT cui, sab, code, str, lat, tty FROM mrconso ORDER BY sab, code) TO STDOUT DELIMITER ',' CSV HEADER" \
 	  > $@
 
+.PHONY: export/non-umls.csv
+export/non-umls.csv:
+	psql -h 127.0.0.1 -U codemapper -W codemapper \
+	  -c "COPY (SELECT * FROM non_umls_latest_codes) TO STDOUT WITH CSV HEADER" \
+	  > $@
+
 VOCS = ICD10DA MEDCODEID RCD2 ICDO3
 EXPORTS = $(addprefix export/, $(addsuffix .csv, $(VOCS)))
 
-export/non-umls.csv: $(EXPORTS)
-	cat $^ > $@
-	cat $^|gsed 's/,exact term\|,ICD10AM without M\|,code reference//' > $@
 
 .SECONDEXPANSION:
 $(EXPORTS): export/%.csv: $$*/$$*.csv export/ids.txt
