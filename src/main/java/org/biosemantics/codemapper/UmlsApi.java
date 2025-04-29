@@ -771,7 +771,10 @@ public class UmlsApi {
         List<String> semanticTypes2 = semanticTypes.get(cui);
         String definition = definitions.get(cui);
         String name = preferredNames.get(cui);
-        if (sourceConcepts2 == null && semanticTypes2 == null && (definition == null || definition.isEmpty()) && name == null) continue;
+        if (sourceConcepts2 == null
+            && semanticTypes2 == null
+            && (definition == null || definition.isEmpty())
+            && name == null) continue;
         UmlsConcept concept = new UmlsConcept();
         concept.setCui(cui);
         concept.setDefinition(definition);
@@ -1066,11 +1069,11 @@ public class UmlsApi {
                   messages.add(String.format("unknown concept %s", conceptId));
                   concept = customConcept;
                   mapping
-                    .concepts
-                    .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
-                    .codes
-                    .computeIfAbsent(vocId, k -> new HashSet<>())
-                    .add(codeId); 
+                      .concepts
+                      .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
+                      .codes
+                      .computeIfAbsent(vocId, k -> new HashSet<>())
+                      .add(codeId);
                 }
                 concept.codes.computeIfAbsent(vocId, k -> new HashSet<>()).add(codeId);
               }

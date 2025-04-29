@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'node:fs/promises';
 
-const timeout = 10000;
+const timeout = 60000;
 const longTimeout = 10 * timeout;
 
 async function main() {
