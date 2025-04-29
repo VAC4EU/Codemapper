@@ -58,6 +58,8 @@ def preprocess(name, df):
         if not pd.isna(row['code']) and 'E+' in row['code']:
             return '{:.0f}'.format(float(row['code']))
         return row['code']
+    if 'tags' not in df.columns:
+        df.tags = ''
     df = (
         df
         .rename(lambda s: s.lower(), axis=1)
@@ -115,7 +117,7 @@ def get_sheets(indir, outdir, max):
     count = 0
     for subdir in sorted(glob(f'{indir}/*')):
         name = path.basename(subdir)
-        globs = [glob(f'{subdir}{infix}/*.xls*') for infix in ('', '/before_merging', '/Versions')]
+        globs = [glob(f'{subdir}{infix}/*.xls*') for infix in ('', '/Review', '/Versions', '/before_merging')]
         try:
             filename = next(chain(*globs))
         except StopIteration:

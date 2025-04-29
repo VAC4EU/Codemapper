@@ -97,6 +97,7 @@ export class MappingViewComponent implements HasPendingChanges {
   saveRequired : boolean = false;
   error : string | null = null;
   projectRole : ProjectRole | null = null;
+  importWarning : string | null = null;
 
   constructor(
     private route : ActivatedRoute,
@@ -229,6 +230,7 @@ export class MappingViewComponent implements HasPendingChanges {
     this.mappingName = initial.mappingName;
     this.projectName = initial.projectName;
     this.mapping = initial.mapping as Mapping;
+    this.importWarning = initial.warning;
     if (initial.allTopics) {
       this.allTopics = initial.allTopics;
     }
@@ -336,6 +338,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   save(summary : string) {
+    if (this.importWarning != null) summary += "\n\n" + this.importWarning;
     (this.mappingShortkey == null
       ? this.persistency
         .createMapping(this.projectName, this.mappingName)

@@ -20,12 +20,12 @@
         </mat-card-header>
         <mat-card-actions>
             <span matTooltip="Create a new mapping (only for owners)">
-                <button (click)="openDialog(createMapping)" [disabled]="!userCanCreate" mat-raised-button>
+                <button class="tool-create" (click)="openDialog(createMapping)" [disabled]="!userCanCreate" mat-raised-button>
                     Create
                 </button>
             </span>
             <span matTooltip="Import a mapping from a CSV file (only for owners)">
-                <button (click)="importNew(folderName)" [disabled]="!userCanCreate" mat-raised-button>
+                <button class="tool-import-codelist" (click)="importNew(folderName)" [disabled]="!userCanCreate" mat-raised-button>
                     Import codelist
                 </button>
             </span>
@@ -41,7 +41,7 @@
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
                     (click)="openDialog(renameDialog)" mat-raised-button>Rename</button>
             </span>
-            <button (click)="deleteSelectedMappings()"
+            <button class="tool-delete" (click)="deleteSelectedMappings()"
                 [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
         </mat-card-actions>
     </mat-card>
@@ -112,7 +112,7 @@
     <h2 matDialogTitle>Create mapping</h2>
     <mat-dialog-content>
         <mat-form-field appearance="fill">
-            <input type="text" placeholder="Mapping name" matInput #mappingName>
+            <input class="mapping-name" type="text" placeholder="Mapping name" matInput #mappingName>
         </mat-form-field>
         <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
                 class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
@@ -120,7 +120,7 @@
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-button matDialogClose>Cancel</button>
-        <button mat-raised-button [disabled]="!mappingName.value"
+        <button class="create-mapping" mat-raised-button [disabled]="!mappingName.value"
             (click)="newMapping(folderName, mappingName.value, serverInfo.umlsVersion)" matDialogClose
             color="primary">Ok</button>
     </mat-dialog-actions>

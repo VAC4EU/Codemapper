@@ -9,7 +9,7 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="org.biosemantics.codemapper" level="${logging.level}" additivity="false">
+    <Logger name="org.biosemantics.codemapper" level="DEBUG" additivity="false">
       <AppenderRef ref="File"/>
     </Logger>
     <Logger name="org.biosemantics.codemapper" level="INFO" additivity="false">

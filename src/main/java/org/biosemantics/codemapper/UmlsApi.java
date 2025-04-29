@@ -767,12 +767,17 @@ public class UmlsApi {
 
       Map<String, UmlsConcept> concepts = new TreeMap<>();
       for (String cui : cuis) {
+        List<SourceConcept> sourceConcepts2 = sourceConcepts.get(cui);
+        List<String> semanticTypes2 = semanticTypes.get(cui);
+        String definition = definitions.get(cui);
+        String name = preferredNames.get(cui);
+        if (sourceConcepts2 == null && semanticTypes2 == null && (definition == null || definition.isEmpty()) && name == null) continue;
         UmlsConcept concept = new UmlsConcept();
         concept.setCui(cui);
-        concept.setDefinition(definitions.get(cui));
-        concept.setPreferredName(preferredNames.get(cui));
-        if (sourceConcepts.containsKey(cui)) concept.setSourceConcepts(sourceConcepts.get(cui));
-        if (semanticTypes.containsKey(cui)) concept.setSemanticTypes(semanticTypes.get(cui));
+        concept.setDefinition(definition);
+        concept.setPreferredName(name);
+        if (sourceConcepts2 != null) concept.setSourceConcepts(sourceConcepts2);
+        if (semanticTypes2 != null) concept.setSemanticTypes(semanticTypes2);
         concepts.put(cui, concept);
       }
       return concepts;
@@ -1033,6 +1038,10 @@ public class UmlsApi {
           Collection<String> conceptIds3 =
               conceptIds2 == null ? null : replaceRetired(retired, conceptIds2, messagesByConcept);
           Map<String, Code> mappingCodes = mapping.codes.getOrDefault(vocId, new HashMap<>());
+          Collection<String> messages =
+              messagesByCode
+                  .computeIfAbsent(vocId, key -> new HashMap<>())
+                  .computeIfAbsent(codeId, key -> new LinkedList<>());
           boolean customCode = !mappingCodes.containsKey(codeId);
           if (customCode) {
             // create custom code
@@ -1054,20 +1063,19 @@ public class UmlsApi {
               for (String conceptId : conceptIds3) {
                 Concept concept = mapping.concepts.get(conceptId);
                 if (concept == null) {
-                  String msg =
-                      String.format(
-                          "unknown concept %s for custom code %d in coding system %d",
-                          conceptId, codeId, vocId);
-                  throw CodeMapperException.user(msg);
+                  messages.add(String.format("unknown concept %s", conceptId));
+                  concept = customConcept;
+                  mapping
+                    .concepts
+                    .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
+                    .codes
+                    .computeIfAbsent(vocId, k -> new HashSet<>())
+                    .add(codeId); 
                 }
                 concept.codes.computeIfAbsent(vocId, k -> new HashSet<>()).add(codeId);
               }
             }
           } else {
-            Collection<String> messages =
-                messagesByCode
-                    .computeIfAbsent(vocId, key -> new HashMap<>())
-                    .computeIfAbsent(codeId, key -> new LinkedList<>());
             // check code validity
             if (conceptIds3 == null) {
               messages.add(
@@ -1102,35 +1110,6 @@ public class UmlsApi {
         }
       }
 
-      /*
-      // move tags from codes to concepts where possible
-      for (Concept concept : mapping.concepts.values()) {
-        List<Code> codes =
-            concept.codes.entrySet().stream()
-                .flatMap(
-                    (e) -> e.getValue().stream().map((id) -> mapping.codes.get(e.getKey()).get(id)))
-                .filter((code) -> code != null)
-                .collect(Collectors.toList());
-        Set<String> allTags =
-            codes.stream()
-                .map((code) -> code.tag)
-                .filter((tag) -> tag != null)
-                .filter(
-                    (tag) ->
-                        codes.stream().allMatch((code) -> !code.enabled || tag.equals(code.tag)))
-                .collect(Collectors.toSet());
-        if (allTags.size() == 1) {
-          String tag = allTags.iterator().next();
-          concept.tag = tag;
-          for (Code code : codes) {
-            if (code.enabled && !tag.equals(code.tag)) {
-              logger.error(String.format("Expected code tag %s, found %s", tag, code.tag));
-            }
-            code.tag = null;
-          }
-        }
-      }*/
-
       if (mapping.concepts.containsKey(CUSTOM_CUI)) {
         int numCodes =
             mapping.concepts.get(CUSTOM_CUI).codes.values().stream()
@@ -1139,7 +1118,7 @@ public class UmlsApi {
         warnings.add(
             ""
                 + numCodes
-                + " codes without valid concept were associated to a custom concept called "
+                + " codes with invalid concept were associated to a custom concept called "
                 + CUSTOM_NAME);
       }
 

@@ -21,6 +21,7 @@
     </button>
     <span matTooltip="Save changes">
       <button
+        class="tool-mapping-save"
         (click)="openDialog(saveDialog)"
         [disabled]="(info == null || info.status != 'IMPORTED') && (mapping.start == null || (!saveRequired && mapping.undoStack.length == 0) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
         mat-icon-button>
@@ -110,12 +111,13 @@
   <mat-dialog-content>
     <mat-form-field style="width:100%;">
       <mat-label>Summary</mat-label>
-      <textarea rows="5" cols="30" #summary matInput></textarea>
+      <textarea class="save-summary" rows="5" cols="30" #summary matInput></textarea>
     </mat-form-field>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>
     <button
+      class="mapping-save"
       mat-raised-button
       [disabled]="!summary.value"
       (click)="save(summary.value)"

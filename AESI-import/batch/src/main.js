@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import fs from 'node:fs/promises';
 
 const timeout = 10000;
-const longTimeout = 5 * timeout;
+const longTimeout = 10 * timeout;
 
 async function main() {
     let [baseURL, userDataDir, folder, filename] = process.argv.slice(2);
@@ -36,10 +36,11 @@ class Runner {
     }
     static async create(baseURL, userDataDir) {
         let args = ['--disable-web-security'];
-        let options = {headless: false, userDataDir, args};
+        let options = {headless: false, userDataDir, args}; // slowMo: 20
         const browser = await puppeteer.launch(options);
         const pages = await browser.pages();
         const page = pages[0];
+        // await page.setCacheEnabled(false);
         page.setDefaultTimeout(timeout);
         return new Runner(browser, page, baseURL);
     }
@@ -49,36 +50,30 @@ class Runner {
     }
     async login(username, password) {
         await this.page.goto(this.baseURL);
+        await this.page.waitForNetworkIdle();
         let logout = await this.page.$('button.logout');
         if (logout) {
             console.log("already logged in");
             return;
         }
         let url = this.baseURL + "/login";
+        await this.page.waitForNetworkIdle();
         await this.page.goto(url);
-        await this.page.locator('input.username')
-            .fill(username);
-        await this.page.locator('input.password')
-            .fill(password);
-        await this.page.locator('button.login')
-            .click();
+        await this.page.locator('input.username').fill(username);
+        await this.page.locator('input.password').fill(password);
+        await this.page.locator('button.login').click();
     }
     async importCodeList(folder, filename) {
         await this.page.goto(this.baseURL + '/folder/' + folder);
-        await this.page.locator('button.tool-import-codelist')
-            .click();
-        let file = await this.page.waitForSelector('input.mapping-file');
-        await file.uploadFile(filename);
-        await this.page.locator('button.mapping-import')
-            .setTimeout(longTimeout)
-            .click();
-        await this.page.locator('button.tool-mapping-save')
-            .click();
-        await this.page.locator('textarea.save-summary')
-            .fill('SharePoint import');
-        await this.page.locator('button.mapping-save')
-            .setTimeout(longTimeout)
-            .click();
+        await this.page.waitForNetworkIdle();
+        await this.page.click('button.tool-import-codelist');
+        let fileInput = await this.page.waitForSelector('input.mapping-file');
+        await fileInput.uploadFile(filename);
+        await this.page.locator('button.mapping-import').click();
+        await this.page.locator('button.tool-mapping-save').click();
+        await this.page.locator('textarea.save-summary').fill('SharePoint import');
+        await this.page.locator('button.mapping-save').click();
+        await this.page.waitForNetworkIdle();
         await this.page.waitForSelector('button.mapping-save', {hidden: true, timeout: longTimeout});
         await this.page.waitForNetworkIdle();
         console.log("Imported", folder, filename);

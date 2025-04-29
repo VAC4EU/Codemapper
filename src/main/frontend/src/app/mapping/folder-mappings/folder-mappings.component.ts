@@ -181,8 +181,9 @@ export class FolderMappingsComponent {
       return;
     }
     let ignoreTermTypes = this.serverInfo.defaultIgnoreTermTypes;
+    let noWarning = this.user.username == "Codelist import";
     this.dialog
-      .open(ImportCsvDialogComponent, { data: { ignoreTermTypes } })
+      .open(ImportCsvDialogComponent, { data: { ignoreTermTypes, noWarning } })
       .afterClosed()
       .subscribe((imported) => {
         console.log('IMPORTED', imported);
@@ -217,6 +218,7 @@ export class FolderMappingsComponent {
             projectName,
             mapping: mapping1,
             allTopics,
+            warning: imported.warning,
           };
           this.router.navigate(['/mapping'], { state: { initial } });
         }

@@ -11,14 +11,16 @@
   <p>
     <mat-form-field appearance="fill">
       <mat-label>Mapping name</mat-label>
-      <input type="text" [(ngModel)]="mappingName" matInput>
+      <input class="mapping-name" type="text" [(ngModel)]="mappingName" matInput>
     </mat-form-field>
   </p>
   <p>
+    <!-- not display:none for puppeteer -->
     <input
+      class="mapping-file"
       #csvFileInput
       type="file"
-      style="display: none"
+      style="height:0;width:0;overflow:hidden;visibility:hidden;"
       (change)="handleCsvFileInput($event)"
       accept="text/csv">
     <button
@@ -46,6 +48,7 @@
     matDialogClose>Cancel</button>
   <span matTooltip="Requires mapping name and CSV file">
     <button
+      class="mapping-import"
       [disabled]="csvImportFile == null || !mappingName"
       (click)="importCsv(mappingName, csvImportFile!, format.value)"
       color="primary"

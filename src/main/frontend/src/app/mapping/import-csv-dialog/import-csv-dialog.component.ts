@@ -19,8 +19,6 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../api.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -34,9 +32,9 @@ export class ImportCsvDialogComponent {
   constructor(
     private api : ApiService,
     private dialogRef : MatDialogRef<ImportCsvDialogComponent>,
-    private snackbar : MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data : {
-      ignoreTermTypes: string[]
+      ignoreTermTypes: string[],
+      noWarning: boolean,
     },
   ) { }
 
@@ -67,9 +65,10 @@ export class ImportCsvDialogComponent {
       let imported = await firstValueFrom(this.api.importCsv(file, [], format, this.data.ignoreTermTypes));
       if (imported.warnings.length) {
         let msg = "There were problems with the import: " +
-          imported.warnings.map(s => `${s}. `).join("") +
-          "Continue?";
-        if (!confirm(msg)) {
+          imported.warnings.map(s => `${s}. `).join("");
+        if (this.data.noWarning) {
+          imported.warning = msg;
+        } else if (!confirm(msg + " Continue?")) {
           return;
         }
       }

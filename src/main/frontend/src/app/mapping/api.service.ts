@@ -301,8 +301,9 @@ export interface ImportedMapping {
   allTopics : AllTopics0,
   warnings : string[],
   csvContent : string;
-  mappingName : string;
   ignoreTermTypes : string[],
+  mappingName : string;
+  warning : string | null;
 }
 
 export type Descendants = { [key : CodeId] : Code[] }
