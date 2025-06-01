@@ -45,7 +45,7 @@ def get_mapping(filename):
             if res is None:
                 res = sheet_name, df
             else:
-                print("*** Two sheets with coding systems in file", filename + ": ", data.mapping_sheet_name, ' and ', sheet_name)
+                print("*** Two sheets with coding systems in file", filename + ": ", res[0], ' and ', sheet_name)
                 exit(1)
     if res is None:
         print("*** Mapping sheet not found in", filename, "***")

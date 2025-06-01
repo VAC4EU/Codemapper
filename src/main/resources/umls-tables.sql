@@ -3,7 +3,7 @@
 
 -- sed 's|@META@|/path/to/umls/YEAR/META|' umls-tables.sql|psql umlsYEAR
 
-DROP TABLE MRCONSO;
+DROP TABLE IF EXISTS MRCONSO;
 CREATE TABLE MRCONSO (
 	CUI	char(8) NOT NULL,
 	LAT	char(3) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE MRCONSO (
 COPY MRCONSO from '@META@/MRCONSO.RRF' with delimiter as '|' null as '';
 alter table mrconso drop column dummy;
 
-DROP TABLE MRDEF;
+DROP TABLE IF EXISTS MRDEF;
 CREATE TABLE MRDEF (
 	CUI	char(8) NOT NULL,
 	AUI	varchar(9) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE MRDEF (
 COPY MRDEF from '@META@/MRDEF.RRF' with delimiter as '|' null as '';
 alter table mrdef drop column dummy;
 
-DROP TABLE MRHIER;
+DROP TABLE IF EXISTS MRHIER;
 CREATE TABLE MRHIER (
 	CUI	char(8) NOT NULL,
 	AUI	varchar(9) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE MRHIER (
 COPY MRHIER from '@META@/MRHIER.RRF' with delimiter as '|' null as '';
 ALTER TABLE mrhier DROP COLUMN dummy;
 
-DROP TABLE MRSAB;
+DROP TABLE IF EXISTS MRSAB;
 CREATE TABLE MRSAB (
 	VCUI	char(8),
 	RCUI	char(8),

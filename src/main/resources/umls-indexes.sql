@@ -3,22 +3,23 @@ ALTER TABLE mrhier ADD column ptra varchar(9)[];
 UPDATE mrhier SET ptra = string_to_array(ptr, '.');
 
 CREATE EXTENSION pg_trgm;
+CREATE INDEX mrconso_ix_aui ON mrconso(aui);
+CREATE INDEX mrconso_ix_code ON mrconso(code);
+CREATE INDEX mrconso_ix_code_gin ON mrconso USING GIN (code gin_trgm_ops);
 CREATE INDEX mrconso_ix_cui ON mrconso(cui);
 CREATE INDEX mrconso_ix_sab ON mrconso(sab);
-CREATE INDEX mrconso_ix_tty ON mrconso(tty);
 CREATE INDEX mrconso_ix_str ON mrconso(str);
-CREATE INDEX mrconso_ix_code ON mrconso(code);
-CREATE INDEX mrconso_ix_aui ON mrconso(aui);
 CREATE INDEX mrconso_ix_str_gin ON mrconso USING GIN (str gin_trgm_ops);
-CREATE INDEX mrconso_ix_code_gin ON mrconso USING GIN (code gin_trgm_ops);
-CREATE INDEX mrhier_sab ON mrhier(sab);
+CREATE INDEX mrconso_ix_tty ON mrconso(tty);
+CREATE INDEX mrcui_ix_cui1 ON mrcui(cui1);
+CREATE INDEX mrdef_ix_cui ON mrdef(cui);
 CREATE INDEX mrhier_aui ON mrhier(aui);
 CREATE INDEX mrhier_paui ON mrhier(paui);
 CREATE INDEX mrhier_ptra ON mrhier USING GIN(ptra);
-CREATE INDEX mrsty_ix_cui ON mrsty(cui);
+CREATE INDEX mrhier_rela ON mrhier(rela);
+CREATE INDEX mrhier_sab ON mrhier(sab);
 CREATE INDEX mrsab_ix_curver ON mrsab(curver);
-CREATE INDEX mrdef_ix_cui ON mrdef(cui);
-CREATE INDEX mrcui_ix_cui1 ON mrcui(cui1);
+CREATE INDEX mrsty_ix_cui ON mrsty(cui);
 VACUUM ANALYZE;
 
 -- Extract mrhier(sab,aui,ptr) into a table (sab,aui,ppaui) The result has

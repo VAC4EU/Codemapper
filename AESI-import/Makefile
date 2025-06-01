@@ -16,7 +16,7 @@ norm: AESI-norm.py $(CODELISTS)/$(NAME)
 	python3 $^ $(RESULTS)/$(NAME)/$@
 
 .PHONY: dedup
-dedup: AESI-dedup.py $(RESULTS)/$(NAME)/norm table.csv.parquet ../umls/2024AB/META/MRCUI.RRF
+dedup: AESI-dedup.py $(RESULTS)/$(NAME)/norm table.csv.parquet ../umls/2025AA-codemapper/MRCUI.RRF
 	mkdir -p $(RESULTS)/$(NAME)/$@
 	python3 $^ $(RESULTS)/$(NAME)/$@
 
@@ -25,5 +25,5 @@ final: AESI-final.py $(RESULTS)/$(NAME)/norm/index.csv $(RESULTS)/$(NAME)/dedup
 	mkdir -p $(RESULTS)/$(NAME)/$@
 	python3 $^ $(RESULTS)/$(NAME)/$@
 
-table.csv table.csv.parquet: table.py ../non-umls-vocabularies/mrconso.csv ../non-umls-vocabularies/export/non-umls.csv
+table.csv table.csv.parquet: table.py ../umls/mrconso-2025AA.csv ../non-umls-vocabularies/export/non-umls.csv
 	python3 $^ $@
