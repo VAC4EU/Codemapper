@@ -117,3 +117,29 @@ CREATE TABLE MRCUI (
 );
 copy MRCUI from '@META@/MRCUI.RRF' with delimiter as '|' null as '';
 alter table mrcui drop column dummy;
+
+-- returns a table of codes that are children of the given codes
+drop function if exists related_children;
+create function related_children (sab varchar, code varchar, lat varchar)
+returns table (sab varchar, code varchar, str varchar)
+as $$
+  select distinct m2.sab, m2.code, m2.str
+  from mrconso m1
+  inner join mrhier h on h.paui = m1.aui
+  inner join mrconso m2 on m2.cui = h.cui
+  where m1.sab = related_children.sab
+  and m1.code = related_children.code
+  and m2.lat = related_children.lat
+  and m2.suppress != 'Y'
+  order by m2.sab, m2.code
+$$ language sql;
+
+drop view if exists mrconso_preferred;
+create view mrconso_preferred
+as
+  select cui,aui,sab,tty,code,str,suppress
+  from mrconso
+  where ts = 'P'
+  and stt = 'PF'
+  and ispref = 'Y'
+  and lat = 'ENG';

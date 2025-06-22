@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import fs from 'node:fs/promises';
 
 const timeout = 60000;
-const longTimeout = 10 * timeout;
+const longTimeout = 5 * timeout;
 
 async function main() {
     let [baseURL, userDataDir, folder, filename] = process.argv.slice(2);
@@ -21,8 +21,8 @@ async function main() {
         console.error("Ignore index");
         return;
     }
-    let runner = await Runner.create(baseURL, userDataDir);
-    await runner.login('Codelist import', 'Codemapper2000');
+    let runner = await Runner.create(baseURL, userDataDir, true);
+    // await runner.login('Codelist import', 'Codemapper2000');
     await runner.importCodeList(folder, filename);
     // await runner.forever();
     await runner.close();
@@ -34,9 +34,9 @@ class Runner {
         this.page = page;
         this.baseURL = baseURL;
     }
-    static async create(baseURL, userDataDir) {
+    static async create(baseURL, userDataDir, headless) {
         let args = ['--disable-web-security'];
-        let options = {headless: false, userDataDir, args}; // slowMo: 20
+        let options = {headless, userDataDir, args}; // slowMo: 20
         const browser = await puppeteer.launch(options);
         const pages = await browser.pages();
         const page = pages[0];

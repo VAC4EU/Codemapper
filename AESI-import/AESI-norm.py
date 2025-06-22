@@ -29,14 +29,14 @@ SAB_MAPPING = {
     "e": "SNOMEDCT_US",
     "p": "MEDCODEID",
     "ICD10": "ICD10_2019",
+    "ICD9PROC": "ICD9PCS",
 }
 
 def get_mapping(filename):
-    xls = pd.ExcelFile(filename)
     sheets = pd.read_excel(filename, dtype=str, sheet_name=None)
     res = None
     for (sheet_name, df) in sheets.items():
-        df.rename(lambda s: s.strip(), axis=1, inplace=True)
+        df.rename(lambda s: str(s).strip(), axis=1, inplace=True)
         try:
             col0 = df.columns[0]
         except IndexError:
@@ -73,9 +73,11 @@ def preprocess(name, df):
 
     multi_tags = (
         df
-        .assign(tags=df.tags.replace("", "NONE"))
+        .assign(tags=df.tags.fillna("").replace("", "NONE"))
         .groupby(["sab", "code"])
-        .tags.agg(set).reset_index()
+        .tags
+        .agg(set)
+        .reset_index()
         .pipe(lambda df: df[df.tags.map(len) > 1])
     )
     if len(multi_tags):
