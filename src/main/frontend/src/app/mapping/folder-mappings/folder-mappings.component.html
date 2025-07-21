@@ -2,33 +2,28 @@
 
     <mat-card appearance="outlined">
         <mat-card-header>
+            Filter mappings
         </mat-card-header>
-        <mat-card-content matTooltip="Enter a string to filter the mappings.">
-            <mat-form-field>
-                <mat-label>Filter {{mappings.length}} mappings</mat-label>
-                <input matInput [(ngModel)]="filter" (keyup)="applyFilter(filter)" placeholder="">
-                <button mat-icon-button matSuffix (click)="filter = ''; applyFilter('')">
-                    <mat-icon>backspace</mat-icon>
-                </button>
+        <mat-card-actions class="form-group">
+            <mat-form-field appearance="fill" style="display: inline">
+                <input matInput placeholder="On name" [(ngModel)]="filterOnName" (keyup)="applyFilter()" size="10"
+                    class="input-element">
             </mat-form-field>
-        </mat-card-content>
-    </mat-card>
-
-    <mat-card>
-        <mat-card-header>
-            New mapping
-        </mat-card-header>
-        <mat-card-actions>
-            <span matTooltip="Create a new mapping (only for owners)">
-                <button class="tool-create" (click)="openDialog(createMapping)" [disabled]="!userCanCreate" mat-raised-button>
-                    Create
-                </button>
-            </span>
-            <span matTooltip="Import a mapping from a CSV file (only for owners)">
-                <button class="tool-import-codelist" (click)="importNew(folderName)" [disabled]="!userCanCreate" mat-raised-button>
-                    Import codelist
-                </button>
-            </span>
+            <button mat-raised-button matTooltip="Filter mappings by their properties" [matMenuTriggerFor]="menu"
+                class="input-element">On property</button>
+            <mat-menu #menu="matMenu" class="tagsMenu">
+                <div *ngFor="let tag of allProperties | keyvalue">
+                    {{tag.key}}:
+                    <mat-chip-listbox [ngModel]="filterOnProperties[tag.key]"
+                        (ngModelChange)="filterOnProperties[tag.key] = $event" (click)="$event.stopPropagation()"
+                        (change)="applyFilter()">
+                        <mat-chip-option *ngFor="let name of tag.value" [value]="name" class="tag {{name}}">
+                            {{name}}
+                        </mat-chip-option>
+                    </mat-chip-listbox>
+                </div>
+            </mat-menu>
+            <button mat-raised-button matTooltip="Clear filters" (click)="clearFilters()">Clear</button>
         </mat-card-actions>
     </mat-card>
 
@@ -45,17 +40,40 @@
                 [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
         </mat-card-actions>
     </mat-card>
+
+    <mat-card>
+        <mat-card-header>
+            New mapping
+        </mat-card-header>
+        <mat-card-actions>
+            <span matTooltip="Create a new mapping (only for owners)">
+                <button class="tool-create" (click)="openDialog(createMapping)" [disabled]="!userCanCreate"
+                    mat-raised-button>
+                    Create
+                </button>
+            </span>
+            <span matTooltip="Import a mapping from a CSV file (only for owners)">
+                <button class="tool-import-codelist" (click)="importNew(folderName)" [disabled]="!userCanCreate"
+                    mat-raised-button>
+                    Import codelist
+                </button>
+            </span>
+        </mat-card-actions>
+    </mat-card>
 </div>
 
 <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
-        <tr mat-header-row *matHeaderRowDef="['select', 'system', 'name', 'type', 'definition', 'status', 'lastModification']"></tr>
-        <tr mat-row *matRowDef="let mapping; columns: ['select', 'system', 'name', 'type', 'definition', 'status', 'lastModification'];"
-         [routerLink]="mappingLink(mapping)" matTooltip="{{mapping.mappingName}}" class="row-link"></tr>
+        <tr mat-header-row
+            *matHeaderRowDef="['select', 'name', 'system', 'type', 'definition', 'status', 'lastModification']"></tr>
+        <tr mat-row
+            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'definition', 'status', 'lastModification'];"
+            [routerLink]="mappingLink(mapping)" matTooltip="{{mapping.mappingName}}" class="row-link"></tr>
 
         <ng-container matColumnDef="select">
             <th mat-header-cell *matHeaderCellDef>
-                <mat-checkbox (change)="$event ? toggleSelectAll() : null"
+                <mat-checkbox matTooltip="Select/deselect all filtered mappings"
+                    (change)="$event ? toggleSelectAll() : null"
                     [checked]="selection.hasValue() && isAllFilteredSelected()"
                     [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
                 </mat-checkbox>
@@ -67,19 +85,24 @@
             </td>
         </ng-container>
         <ng-container matColumnDef="system">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>System</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                System<mat-icon *ngIf="this.filterOnProperties['system']">filter_alt</mat-icon>
+            </th>
             <td mat-cell *matCellDef="let mapping">
                 <span>{{nameInfo(mapping).system}}</span>
             </td>
         </ng-container>
         <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Abbreviation</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Name<mat-icon
+                    *ngIf="this.filterOnName">filter_alt</mat-icon></th>
             <td mat-cell *matCellDef="let mapping">
                 {{nameInfo(mapping).abbreviation}}
             </td>
         </ng-container>
         <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Type<mat-icon *ngIf="this.filterOnProperties['type']">filter_alt</mat-icon>
+            </th>
             <td mat-cell *matCellDef="let mapping">
                 <span>{{nameInfo(mapping).typ}}</span>
             </td>

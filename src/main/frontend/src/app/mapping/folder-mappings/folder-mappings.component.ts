@@ -1,4 +1,11 @@
-import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  TemplateRef,
+  ViewChild,
+} from '@angular/core';
 import {
   MappingInfo,
   mappingInfoLink,
@@ -18,7 +25,7 @@ import {
   Start,
   StartType,
 } from '../data';
-import { AuthService, User } from '../auth.service';
+import { User } from '../auth.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { ApiService, ImportedMapping } from '../api.service';
@@ -36,14 +43,14 @@ class NameInfo {
     public system: string,
     public abbreviation: string,
     public typ: string,
-    public definition: string,
+    public definition: string
   ) {}
-  static parse(name: string) : NameInfo | null {
+  static parse(name: string): NameInfo | null {
     let parts = name.split('_');
     if (parts.length == 3 || parts.length == 4) {
-      return new NameInfo(parts[0], parts[1], parts[2], parts[3] ?? parts[1])
+      return new NameInfo(parts[0], parts[1], parts[2], parts[3] ?? parts[1]);
     } else {
-      return new NameInfo("", name, "", "");
+      return new NameInfo('', name, '', '');
     }
   }
 }
@@ -56,6 +63,8 @@ class NameInfo {
 export class FolderMappingsComponent {
   @Input({ required: true }) user!: User;
   @Input({ required: true }) role!: ProjectRole;
+  @Output() numMappings = new EventEmitter<number>();
+  @ViewChild(MatSort) sort!: MatSort;
 
   serverInfo: ServerInfo = EMPTY_SERVER_INFO;
   folderName: string = '';
@@ -63,11 +72,12 @@ export class FolderMappingsComponent {
   mappings: MappingInfo[] = [];
   nameInfos: { [key: string]: NameInfo | null } = {};
   selectedMappings: MappingInfo[] = [];
-  filter: string = '';
+  filterOnName: string = '';
   selection = new SelectionModel<MappingInfo>(true, []);
   dataSource: MatTableDataSource<MappingInfo> =
     new MatTableDataSource<MappingInfo>();
-  @ViewChild(MatSort) sort!: MatSort;
+  allProperties: { [key: string]: string[] } = {}; // map property type to property values
+  filterOnProperties: { [key: string]: string | null } = {}; // map property type to property value
 
   constructor(
     private api: ApiService,
@@ -88,16 +98,45 @@ export class FolderMappingsComponent {
   }
 
   async reload() {
-    this.filter = '';
-    this.applyFilter('');
+    this.filterOnName = '';
+    this.filterOnProperties = {};
     this.selection.clear();
     this.title.setTitle(`CodeMapper: Folder ${this.folderName}`);
     this.mappings = await firstValueFrom(
       this.persistency.projectMappingInfos(this.folderName)
     );
-    this.nameInfos = Object.fromEntries(this.mappings.map(m => [m.mappingShortkey, NameInfo.parse(m.mappingName)]));
+    this.allProperties = this.getAllTags();
+    this.numMappings.emit(this.mappings.length);
+    this.nameInfos = Object.fromEntries(
+      this.mappings.map((m) => [
+        m.mappingShortkey,
+        NameInfo.parse(m.mappingName),
+      ])
+    );
     this.dataSource.data = Object.values(this.mappings);
     this.dataSource.sort = this.sort;
+    this.dataSource.filterPredicate = (info: MappingInfo, _filter: string) => {
+      console.log('FILTER', this.filterOnProperties);
+      for (let [kind, name] of Object.entries(this.filterOnProperties)) {
+        if (name == null) continue;
+        switch (kind) {
+          case 'system': {
+            if (!info.mappingName.startsWith(`${name}_`)) {
+              return false;
+            }
+            break;
+          }
+          case 'type': {
+            if (!info.mappingName.includes(`_${name}_`)) {
+              return false;
+            }
+            break;
+          }
+        }
+      }
+      let filter = this.filterOnName.toLowerCase().trim();
+      return info.mappingName.toLowerCase().includes(filter);
+    };
     this.dataSource.sortingDataAccessor = (mapping: any, property: string) => {
       switch (property) {
         case 'name':
@@ -114,8 +153,38 @@ export class FolderMappingsComponent {
     };
   }
 
+  getAllTags(): { [key: string]: string[] } {
+    let system: Set<string> = new Set();
+    let type: Set<string> = new Set();
+    for (let mapping of this.mappings) {
+      let info = NameInfo.parse(mapping.mappingName);
+      if (info != null) {
+        system.add(info.system);
+        type.add(info.typ);
+      }
+    }
+    return {
+      system: Array.from(system),
+      type: Array.from(type),
+    };
+  }
+
+  hasTagsFilter(): boolean {
+    return (
+      Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
+    );
+  }
+
+  clearFilters() {
+    this.filterOnName = '';
+    this.filterOnProperties = {};
+    this.applyFilter();
+  }
+
   nameInfo(mapping: MappingInfo) {
-    return this.nameInfos[mapping.mappingShortkey] ?? new NameInfo("", "", "", "");
+    return (
+      this.nameInfos[mapping.mappingShortkey] ?? new NameInfo('', '', '', '')
+    );
   }
 
   isAllFilteredSelected() {
@@ -145,8 +214,10 @@ export class FolderMappingsComponent {
     );
   }
 
-  applyFilter(filterValue: string) {
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+  applyFilter() {
+    setTimeout(() => {
+      this.dataSource.filter = '' + Math.random(); // just trigger filtering
+    });
   }
 
   async newMapping(
@@ -181,7 +252,7 @@ export class FolderMappingsComponent {
       return;
     }
     let ignoreTermTypes = this.serverInfo.defaultIgnoreTermTypes;
-    let noWarning = this.user.username == "Codelist import";
+    let noWarning = this.user.username == 'Codelist import';
     this.dialog
       .open(ImportCsvDialogComponent, { data: { ignoreTermTypes, noWarning } })
       .afterClosed()
@@ -294,7 +365,7 @@ export class FolderMappingsComponent {
     return (
       this.userCanDownload &&
       this.selectedFilteredMappings.length != 0 &&
-      this.selectedFilteredMappings.every(i => i.version != null)
+      this.selectedFilteredMappings.every((i) => i.version != null)
     );
   }
 }

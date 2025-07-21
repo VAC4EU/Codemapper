@@ -40,7 +40,12 @@ export class FolderViewComponent {
   folderName: string | null = null;
   role: ProjectRole | null = null;
 
+  numMappings: number = 0;
   @ViewChild(FolderMappingsComponent) mappings!: FolderMappingsComponent;
+
+  setNumMappings(n: number) {
+    this.numMappings = n;
+  }
 
   constructor(
     private persistency: PersistencyService,
