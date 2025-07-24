@@ -39,10 +39,11 @@
 <mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
 
   <mat-tab label="Mapping">
-    <div *ngIf="mapping.start != null">
+    <div *ngIf="mapping.start != null && meta != null">
       <mapping-tab
         [projectName]="projectName"
         [mapping]="mapping"
+        [meta]="meta"
         [mappingShortkey]="mappingShortkey"
         [serverInfo]="serverInfo"
         [revisions]="revisions"

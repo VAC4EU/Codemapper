@@ -31,9 +31,11 @@ import {
   Mapping,
   Revision,
   ServerInfo,
-  MappingMeta,
+  MappingDataMeta,
   MappingFormat,
   EMPTY_SERVER_INFO,
+  MappingMeta,
+  emptyMappingMeta,
 } from '../data';
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
@@ -62,7 +64,7 @@ export enum Tabs {
   History = 6,
 }
 
-const EMPTY_MAPPING_INFO : MappingMeta = {
+const EMPTY_MAPPING_INFO : MappingDataMeta = {
   formatVersion: MappingFormat.version,
   umlsVersion: null,
   allowedTags: [],
@@ -85,6 +87,7 @@ export class MappingViewComponent implements HasPendingChanges {
   mappingName : string = '(unknown)';
   projectName : string = '(unknown)';
   info : MappingInfo | null = null;
+  meta : MappingMeta | null = null;
   mapping : Mapping | null = null;
   serverInfo : ServerInfo = EMPTY_SERVER_INFO;
   version : number = -1;
@@ -158,6 +161,9 @@ export class MappingViewComponent implements HasPendingChanges {
         if (slugifyMappingInfo(this.info) != nameParam) {
           this.location.go(mappingInfoLink(this.info).join('/'));
         }
+        this.meta = await firstValueFrom(
+          this.persistency.mappingMeta(this.mappingShortkey)
+        );
         this.setNames(this.info.projectName, this.info.mappingName);
         if (this.info.status == "IMPORTED") {
           this.snackBar.open("This mapping was automatically imported, please review carefully and save it, or report any issues.", 'Ok', {duration: undefined})
@@ -324,7 +330,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   openDialog(templateRef : TemplateRef<any>) {
-    let dialogRef = this.dialog.open(templateRef, {
+    this.dialog.open(templateRef, {
       width: '700px',
     });
   }
@@ -381,6 +387,7 @@ export class MappingViewComponent implements HasPendingChanges {
                   version: null,
                   status: null,
                   lastModification: null,
+                  meta: emptyMappingMeta(),
                 })
               );
             }
@@ -411,11 +418,18 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   titleTooltip() : string {
-    let res = `You are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`;
-    if (this.saveRequired) {
-      res += `Mapping needs save.`;
+    let res: string[] = [];
+    if (this.meta?.system) {
+      res.push(`System: ${this.meta.system}`);
     }
-    return res;
+    if (this.meta?.type) {
+      res.push(`Type: ${this.meta.type}`);
+    }
+    res.push(`You are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`);
+    if (this.saveRequired) {
+      res.push(`Mapping needs save.`);
+    }
+    return res.join("\n\n");
   }
 
   async setStartIndexing(indexing : Indexing) {

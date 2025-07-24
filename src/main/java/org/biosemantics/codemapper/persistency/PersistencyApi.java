@@ -42,6 +42,10 @@ import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.rest.CodeMapperResource;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class PersistencyApi {
 
   private DataSource connectionPool;
@@ -365,6 +369,7 @@ public class PersistencyApi {
     public String version;
     public String status;
     public String lastModification;
+    public MappingMeta meta;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -405,6 +410,14 @@ public class PersistencyApi {
       }
     }
   }
+  
+  @XmlRootElement
+  public static class MappingMeta {
+    public String system;
+    public String type;
+    public String definition;
+    public Collection<String> projects;
+  }
 
   public static class ParsedMappingName {
     public String abbreviation;
@@ -419,7 +432,7 @@ public class PersistencyApi {
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
-        "SELECT mapping_name, project_name, mapping_status "
+        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
             + "FROM projects_mappings_shortkey "
             + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
@@ -429,14 +442,23 @@ public class PersistencyApi {
       if (!res.next()) {
         throw CodeMapperException.user("Invalid mapping shortkey " + shortkey);
       }
+      ObjectMapper mapper = new ObjectMapper();
       MappingInfo mapping = new MappingInfo();
       mapping.mappingShortkey = shortkey;
       mapping.mappingName = res.getString(1);
       mapping.projectName = res.getString(2);
       mapping.status = res.getString(3);
+      mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
       return mapping;
     } catch (SQLException e) {
+      e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query for mapping info", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json for mapping info", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json for mapping info", e);
     }
   }
 
@@ -541,7 +563,7 @@ public class PersistencyApi {
 
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp "
+        "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp, cd.meta::TEXT "
             + "FROM projects p "
             + "INNER JOIN case_definitions cd "
             + "ON cd.project_id = p.id "
@@ -555,6 +577,7 @@ public class PersistencyApi {
       statement.setString(1, project);
       ResultSet set = statement.executeQuery();
       List<MappingInfo> mappings = new LinkedList<>();
+      ObjectMapper mapper = new ObjectMapper();
       while (set.next()) {
         MappingInfo mapping = new MappingInfo();
         mapping.mappingShortkey = set.getString(1);
@@ -562,13 +585,65 @@ public class PersistencyApi {
         mapping.version = set.getString(3);
         mapping.status = set.getString(4);
         mapping.lastModification = set.getString(5);
+        mapping.meta = mapper.readValue(set.getString(6), MappingMeta.class);
         mapping.projectName = project;
         mappings.add(mapping);
       }
       return mappings;
     } catch (SQLException e) {
       e.printStackTrace();
-      throw CodeMapperException.server("Cannot execute query to get case definition names", e);
+      throw CodeMapperException.server("Cannot execute query to get case definition infos", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json to get case definition infos", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to get case definition infos", e);
+    }
+  }
+
+  public MappingMeta getMappingMeta(String shortkey) throws CodeMapperException {
+    String query = "SELECT meta::TEXT FROM case_definitions WHERE shortkey = ?";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, shortkey);
+      ResultSet set = statement.executeQuery();
+      if (!set.next()) {
+        throw CodeMapperException.user("unknown mapping shortkey: " + shortkey);
+      }
+      String metaJson = set.getString(1);
+      ObjectMapper mapper = new ObjectMapper();
+      return mapper.readValue(metaJson, MappingMeta.class);
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to get case definition meta", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json to get case definition meta", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to get case definition meta", e);
+    }
+  }
+
+  public void setMappingMeta(String shortkey, MappingMeta meta) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET meta = ?::jsonb where shortkey = ?";
+    ObjectMapper mapper = new ObjectMapper();
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, mapper.writeValueAsString(meta));
+      statement.setString(2, shortkey);
+      int num = statement.executeUpdate();
+      if (num != 1) {
+        throw CodeMapperException.server("Updated not exactly one mapping meta");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to set case definition meta", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to set case definition meta", e);
     }
   }
 

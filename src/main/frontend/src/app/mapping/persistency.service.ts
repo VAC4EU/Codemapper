@@ -19,7 +19,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { JSONObject, Mapping, Revision, ServerInfo } from './data';
+import { JSONObject, Mapping, Revision, ServerInfo, MappingMeta } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, firstValueFrom, map } from 'rxjs';
 import { User } from './auth.service';
@@ -75,6 +75,7 @@ export interface MappingInfo {
   version : string | null;
   status: string | null;
   lastModification : string | null;
+  meta: MappingMeta;
 }
 
 export interface ProjectInfo {
@@ -118,6 +119,15 @@ export class PersistencyService {
 
   mappingInfo(shortkey : string) {
     return this.http.get<MappingInfo>(this.url + `/mapping/${shortkey}/info`);
+  }
+
+  mappingMeta(shortkey : string) {
+    return this.http.get<MappingMeta>(this.url + `/mapping/${shortkey}/meta`);
+  }
+
+  setMappingMeta(shortkey: string | null, meta: MappingMeta) {
+    let url = `${this.url}/mapping/${shortkey}/meta`;
+    return this.http.post<MappingMeta>(url, meta);
   }
 
   mappingInfoByOldName(projectName : string, mappingName : string) {

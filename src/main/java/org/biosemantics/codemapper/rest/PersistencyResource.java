@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
@@ -166,6 +167,36 @@ public class PersistencyResource {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       return api.getMappingInfoByOldName(projectName, mappingName);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @GET
+  @Path("mapping/{shortkey}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public PersistencyApi.MappingMeta getMappingMeta(
+      @PathParam("shortkey") String shortkey, @Context User user) {
+    try {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Reviewer);
+      return api.getMappingMeta(shortkey);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("mapping/{shortkey}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  public void setMappingMeta(
+      @PathParam("shortkey") String shortkey, @Context User user, PersistencyApi.MappingMeta meta) {
+    try {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Owner);
+      api.setMappingMeta(shortkey, meta);
     } catch (CodeMapperException e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);

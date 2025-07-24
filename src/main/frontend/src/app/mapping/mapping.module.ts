@@ -86,6 +86,7 @@ import { LoginComponent } from './login/login.component';
 import { LoginLinkComponent } from './login-link/login-link.component';
 import { FolderMappingsComponent } from './folder-mappings/folder-mappings.component';
 import { FolderUsersComponent } from './folder-users/folder-users.component';
+import { EditMetaComponent } from './edit-meta/edit-meta.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -135,6 +136,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     LoginLinkComponent,
     FolderMappingsComponent,
     FolderUsersComponent,
+    EditMetaComponent,
   ],
   imports: [
     HttpClientModule,

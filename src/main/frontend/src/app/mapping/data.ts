@@ -25,40 +25,41 @@ export type Tag = string;
 
 export type JSONPrimitive = string | number | boolean | null;
 export type JSONValue = JSONPrimitive | JSONObject | JSONArray;
-export type JSONObject = { [key : string] : JSONValue };
-export interface JSONArray extends Array<JSONValue> { }
+export type JSONObject = { [key: string]: JSONValue };
+export interface JSONArray extends Array<JSONValue> {}
 
-export type Vocabularies = { [key : VocabularyId] : Vocabulary }
+export type Vocabularies = { [key: VocabularyId]: Vocabulary };
 
-export type Concepts = { [key : ConceptId] : Concept }
+export type Concepts = { [key: ConceptId]: Concept };
 
-export type Codes = { [key : VocabularyId] : { [key : CodeId] : Code } }
+export type Codes = { [key: VocabularyId]: { [key: CodeId]: Code } };
 
-export type Tags = { [key : VocabularyId] : { [key : CodeId] : Tag } }
+export type Tags = { [key: VocabularyId]: { [key: CodeId]: Tag } };
 
 export interface ConceptsCodes {
-  concepts : Concepts,
-  codes : Codes
+  concepts: Concepts;
+  codes: Codes;
 }
 
-export type CustomConcepts = { [key : ConceptId] : { [key : VocabularyId] : CodeId[] } }
+export type CustomConcepts = {
+  [key: ConceptId]: { [key: VocabularyId]: CodeId[] };
+};
 
 export interface CustomCodes {
-  codes : Codes,
-  concepts : CustomConcepts,
+  codes: Codes;
+  concepts: CustomConcepts;
 }
 
-export class RemapError {
-}
+export class RemapError {}
 
 export interface Span {
-  id : string;
-  label : string;
-  start : number;
-  end : number;
+  id: string;
+  label: string;
+  start: number;
+  end: number;
 }
 
-export type Start = Indexing | CsvImport | null
+export type Start = Indexing | CsvImport | null;
 
 export enum StartType {
   Indexing,
@@ -66,62 +67,79 @@ export enum StartType {
 }
 
 export interface Indexing {
-  type : StartType.Indexing;
-  text : string;
-  spans : Span[];
-  concepts : Concept[];
-  selected : ConceptId[];
+  type: StartType.Indexing;
+  text: string;
+  spans: Span[];
+  concepts: Concept[];
+  selected: ConceptId[];
 }
 
 export interface CsvImport {
-  type : StartType.CsvImport;
-  csvContent : string;
+  type: StartType.CsvImport;
+  csvContent: string;
 }
 
-export function emptyIndexing(text : string = "") : Indexing {
+export function emptyIndexing(text: string = ''): Indexing {
   return {
     type: StartType.Indexing,
     text,
     spans: [],
     concepts: [],
     selected: [],
-  }
+  };
 }
 
 export enum MappingFormat {
-  version = 1
+  version = 1,
+}
+
+export interface MappingDataMeta {
+  formatVersion: MappingFormat;
+  umlsVersion: string | null; // null indicates import from old CodeMapper format
+  allowedTags: string[];
+  ignoreTermTypes: string[];
+  ignoreSemanticTypes: string[];
 }
 
 export interface MappingMeta {
-  formatVersion : MappingFormat;
-  umlsVersion : string | null; // null indicates import from old CodeMapper format
-  allowedTags : string[];
-  ignoreTermTypes : string[];
-  ignoreSemanticTypes : string[];
+  system: string | null;
+  type: string | null;
+  projects: string[];
+  definition: string | null;
+}
+
+export function emptyMappingMeta(): MappingMeta {
+  return {
+    system: null,
+    type: null,
+    projects: [],
+    definition: null,
+  };
 }
 
 export interface MappingData {
-  meta : MappingMeta,
-  vocabularies : Vocabularies,
-  concepts : Concepts,
-  codes : Codes,
-  umlsVersion : string,
+  meta: MappingDataMeta;
+  vocabularies: Vocabularies;
+  concepts: Concepts;
+  codes: Codes;
+  umlsVersion: string;
 }
 
 export class Mapping {
-  conceptsByCode : { [key : VocabularyId] : { [key : CodeId] : Set<ConceptId> } } = {};
-  undoStack : [String, Operation][] = [];
-  redoStack : [String, Operation][] = [];
+  conceptsByCode: { [key: VocabularyId]: { [key: CodeId]: Set<ConceptId> } } =
+    {};
+  undoStack: [String, Operation][] = [];
+  redoStack: [String, Operation][] = [];
   constructor(
-    public meta : MappingMeta,
-    public start : Start,
-    public vocabularies : Vocabularies,
-    public concepts : Concepts,
-    public codes : Codes,
+    public meta: MappingDataMeta,
+    public start: Start,
+    public vocabularies: Vocabularies,
+    public concepts: Concepts,
+    public codes: Codes
   ) {
     this.cleanupRecacheCheck();
   }
-  numVocabularies() : number {
+  numVocabularies(): number {
     return Object.keys(this.vocabularies).length;
   }
   allTags() {
@@ -135,7 +153,7 @@ export class Mapping {
     }
     return Array.from(tags);
   }
-  static jsonifyReplacer(field : string, value : any) : any {
+  static jsonifyReplacer(field: string, value: any): any {
     if (this instanceof Mapping) {
       switch (field) {
         case 'undoStack':
@@ -150,13 +168,19 @@ export class Mapping {
     return value;
   }
   public clone() {
-    let res = new Mapping(this.meta, this.start, this.vocabularies, this.concepts, this.codes);
+    let res = new Mapping(
+      this.meta,
+      this.start,
+      this.vocabularies,
+      this.concepts,
+      this.codes
+    );
     res.undoStack = this.undoStack;
     res.redoStack = this.redoStack;
     return res;
   }
-  public getCustomCodes() : CustomCodes {
-    let res : CustomCodes = { codes: {}, concepts: {} };
+  public getCustomCodes(): CustomCodes {
+    let res: CustomCodes = { codes: {}, concepts: {} };
     for (let [vocId, codes] of Object.entries(this.codes)) {
       for (let [codeId, code] of Object.entries(codes)) {
         if (code.custom) {
@@ -172,19 +196,21 @@ export class Mapping {
     }
     return res;
   }
-  public setCustomCodes(custom : CustomCodes) {
+  public setCustomCodes(custom: CustomCodes) {
     for (let vocId of Object.keys(custom.codes)) {
       for (let code of Object.values(custom.codes[vocId])) {
         this.codes[vocId] ??= {};
         if (this.codes[vocId][code.id] !== undefined) {
-          throw new Error(`Custom code ${code.id} in ${vocId} already defined as regular code`);
+          throw new Error(
+            `Custom code ${code.id} in ${vocId} already defined as regular code`
+          );
         }
         this.codes[vocId][code.id] = code;
       }
     }
     for (let conceptId of Object.keys(custom.concepts)) {
       if (this.concepts[conceptId] === undefined) {
-        throw new Error(`Custom code with unavailable concept ${conceptId}`)
+        throw new Error(`Custom code with unavailable concept ${conceptId}`);
       }
       for (let vocId of Object.keys(custom.concepts[conceptId])) {
         for (let codeId of custom.concepts[conceptId][vocId]) {
@@ -194,8 +220,8 @@ export class Mapping {
       }
     }
   }
-  public getTags() : Tags {
-    let tags : Tags = {};
+  public getTags(): Tags {
+    let tags: Tags = {};
     for (let vocId of Object.keys(this.codes)) {
       for (let code of Object.values(this.codes[vocId])) {
         if (code.tag != null) {
@@ -206,7 +232,7 @@ export class Mapping {
     }
     return tags;
   }
-  public setTags(tags : Tags) {
+  public setTags(tags: Tags) {
     for (let vocId of Object.keys(tags)) {
       if (this.codes[vocId]) {
         for (let codeId of Object.keys(tags[vocId])) {
@@ -217,8 +243,8 @@ export class Mapping {
       }
     }
   }
-  public getCodesDisabled() : { [key : VocabularyId] : Set<CodeId> } {
-    let res : { [key : VocabularyId] : Set<CodeId> } = {};
+  public getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
+    let res: { [key: VocabularyId]: Set<CodeId> } = {};
     for (let vocId of Object.keys(this.codes)) {
       res[vocId] ??= new Set();
       for (let code of Object.values(this.codes[vocId])) {
@@ -229,7 +255,7 @@ export class Mapping {
     }
     return res;
   }
-  public setCodesDisabled(disabled : { [key : VocabularyId] : Set<CodeId> }) {
+  public setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
     for (let vocId of Object.keys(disabled)) {
       for (let codeId of disabled[vocId]) {
         if (this.codes[vocId]?.[codeId]) {
@@ -238,9 +264,10 @@ export class Mapping {
       }
     }
   }
-  public getLost(remapConcepts : Concepts, remapCodes : Codes) : ConceptsCodes {
-    let lost : ConceptsCodes = {
-      concepts: {}, codes: {}
+  public getLost(remapConcepts: Concepts, remapCodes: Codes): ConceptsCodes {
+    let lost: ConceptsCodes = {
+      concepts: {},
+      codes: {},
     };
     for (let [cui, concept] of Object.entries(this.concepts)) {
       let hasLostCode = false;
@@ -254,7 +281,13 @@ export class Mapping {
             if (!remapCodes[voc]?.[code]) {
               lost.codes[voc] ??= {};
               let oldCode = this.codes[voc][code];
-              lost.codes[voc][code] = new Code(code, oldCode.term, true, oldCode.enabled, oldCode.tag);
+              lost.codes[voc][code] = new Code(
+                code,
+                oldCode.term,
+                true,
+                oldCode.enabled,
+                oldCode.tag
+              );
             }
           }
         }
@@ -263,7 +296,7 @@ export class Mapping {
     }
     return lost;
   }
-  public setLost(lost : ConceptsCodes) {
+  public setLost(lost: ConceptsCodes) {
     for (let [cui, concept] of Object.entries(lost.concepts)) {
       if (this.concepts[cui]) {
         for (let [voc, codes] of Object.entries(concept.codes)) {
@@ -285,25 +318,25 @@ export class Mapping {
       }
     }
   }
-  public runIntern(op : Operation) {
+  public runIntern(op: Operation) {
     let inv = op.run(this);
     this.cleanupRecacheCheck();
     return inv;
   }
-  public run(op : Operation) {
-    console.log("Run", op);
+  public run(op: Operation) {
+    console.log('Run', op);
     let inv = this.runIntern(op);
     this.redoStack = [];
     if (inv !== undefined) {
       this.undoStack.push([op.describe(), inv]);
     } else {
-      console.log("no inverse operation");
+      console.log('no inverse operation');
     }
   }
   public undo() {
     let op = this.undoStack.pop();
     if (op !== undefined) {
-      console.log("Undo", op[0]);
+      console.log('Undo', op[0]);
       let inv = this.runIntern(op[1]);
       if (inv !== undefined) {
         this.redoStack.push([op[0], inv]);
@@ -313,7 +346,7 @@ export class Mapping {
   public redo() {
     let op = this.redoStack.pop();
     if (op !== undefined) {
-      console.log("Redo", op[0]);
+      console.log('Redo', op[0]);
       let inv = this.runIntern(op[1]);
       if (inv !== undefined) {
         this.undoStack.push([op[1].describe(), inv]);
@@ -342,7 +375,10 @@ export class Mapping {
     // cleanup: drop non-custom codes that are not referred to by any concepts
     for (const [vocId, codes] of Object.entries(this.codes)) {
       for (const codeId of Object.keys(codes)) {
-        if (this.conceptsByCode[vocId]?.[codeId] == undefined && !this.codes[vocId]?.[codeId]?.custom) {
+        if (
+          this.conceptsByCode[vocId]?.[codeId] == undefined &&
+          !this.codes[vocId]?.[codeId]?.custom
+        ) {
           delete this.codes[vocId][codeId];
         }
       }
@@ -353,53 +389,60 @@ export class Mapping {
     //     code.custom || exists conceptId: concepts[conceptId].codes[vocId].contains(codeId]
     // - every custom code has exactly one concept
   }
-  getConceptsByCode(vocId : VocabularyId, codeId : CodeId) : ConceptId[] {
+  getConceptsByCode(vocId: VocabularyId, codeId: CodeId): ConceptId[] {
     return Array.from(this.conceptsByCode[vocId]?.[codeId] ?? []);
   }
-  setCodeConcept(vocId : VocabularyId, codeId : CodeId, conceptIds : ConceptId[]) {
+  setCodeConcept(vocId: VocabularyId, codeId: CodeId, conceptIds: ConceptId[]) {
     for (const id of this.getConceptsByCode(vocId, codeId)) {
       this.concepts[id].codes[vocId].delete(codeId);
     }
     for (const id of conceptIds) {
-      this.concepts[id].codes[vocId] ??= new Set()
+      this.concepts[id].codes[vocId] ??= new Set();
       this.concepts[id].codes[vocId].add(codeId);
     }
   }
-  static importJSON(json0 : JSONValue, info : ServerInfo) : Mapping {
+  static importJSON(json0: JSONValue, info: ServerInfo): Mapping {
     let json = json0 as JSONObject;
-    let start : Start = null;
+    let start: Start = null;
     if (json['start']) {
       let start0 = json['start'] as JSONObject;
       if (!start0['type']) {
-        if (["text", "spans", "concepts", "selected"].every(s => start0.hasOwnProperty(s))) {
+        if (
+          ['text', 'spans', 'concepts', 'selected'].every((s) =>
+            start0.hasOwnProperty(s)
+          )
+        ) {
           start0['type'] = StartType.Indexing;
         }
-        if (["csvContent"].every(s => start0.hasOwnProperty(s))) {
+        if (['csvContent'].every((s) => start0.hasOwnProperty(s))) {
           start0['type'] = StartType.CsvImport;
         }
       }
       start = start0 as unknown as Start;
     }
-    let vocabularies : Vocabularies = {};
+    let vocabularies: Vocabularies = {};
     for (const vocJson0 of Object.values(json['vocabularies'] as JSONObject)) {
       let vocJson = vocJson0 as JSONObject;
-      let id = vocJson["id"] as VocabularyId;
-      let name = vocJson["name"] as string;
-      let version = vocJson["version"] as string | null;
-      let custom = vocJson["custom"] as boolean;
+      let id = vocJson['id'] as VocabularyId;
+      let name = vocJson['name'] as string;
+      let version = vocJson['version'] as string | null;
+      let custom = vocJson['custom'] as boolean;
       let voc = new Vocabulary(id, name, version, custom);
       vocabularies[voc.id] = voc;
     }
-    let concepts : Concepts = {};
-    let conceptTags: { [key : VocabularyId] : { [key : CodeId] : Set<string> } } = {};
+    let concepts: Concepts = {};
+    let conceptTags: { [key: VocabularyId]: { [key: CodeId]: Set<string> } } =
+      {};
     for (const conceptJson0 of Object.values(json['concepts'] as JSONObject)) {
       let conceptJson = conceptJson0 as JSONObject;
-      let id = conceptJson["id"] as ConceptId;
-      let name = conceptJson["name"] as string;
-      let definition = conceptJson["definition"] as string;
+      let id = conceptJson['id'] as ConceptId;
+      let name = conceptJson['name'] as string;
+      let definition = conceptJson['definition'] as string;
       let conceptTag = getTag(conceptJson);
-      let codes : { [key : VocabularyId] : Set<CodeId> } = {};
-      for (let [vocId, codeIds0] of Object.entries(conceptJson['codes'] as JSONObject)) {
+      let codes: { [key: VocabularyId]: Set<CodeId> } = {};
+      for (let [vocId, codeIds0] of Object.entries(
+        conceptJson['codes'] as JSONObject
+      )) {
         codes[vocId] = new Set();
         for (let codeId0 of codeIds0 as JSONArray) {
           let codeId = codeId0 as string;
@@ -414,8 +457,10 @@ export class Mapping {
       let concept = new Concept(id, name, definition, codes);
       concepts[concept.id] = concept;
     }
-    let codes : Codes = {};
-    for (let [vocId, codesJson] of Object.entries(json['codes'] as JSONObject)) {
+    let codes: Codes = {};
+    for (let [vocId, codesJson] of Object.entries(
+      json['codes'] as JSONObject
+    )) {
       codes[vocId] = {};
       for (let codeJson0 of Object.values(codesJson as JSONObject)) {
         let codeJson = codeJson0 as JSONObject;
@@ -430,9 +475,11 @@ export class Mapping {
     }
     let meta;
     if (json['meta']) {
-      meta = json['meta'] as unknown as MappingMeta;
+      meta = json['meta'] as unknown as MappingDataMeta;
       if (meta.formatVersion !== MappingFormat.version) {
-        throw new Error(`Mapping data is in version ${meta.formatVersion}, expected version ${MappingFormat.version}`);
+        throw new Error(
+          `Mapping data is in version ${meta.formatVersion}, expected version ${MappingFormat.version}`
+        );
       }
       if (meta['ignoreTermTypes'] === undefined) {
         meta.ignoreTermTypes = [...info.defaultIgnoreTermTypes];
@@ -441,9 +488,9 @@ export class Mapping {
         meta.ignoreSemanticTypes = [...info.defaultIgnoreSemanticTypes];
       }
     } else {
-      let umlsVersion = json["umlsVersion"] as string;
+      let umlsVersion = json['umlsVersion'] as string;
       if (umlsVersion === undefined) {
-        throw new Error("umls version missing in mapping JSON, assume current");
+        throw new Error('umls version missing in mapping JSON, assume current');
       }
       meta = {
         formatVersion: MappingFormat.version,
@@ -454,27 +501,34 @@ export class Mapping {
       };
     }
     let res = new Mapping(meta, start, vocabularies, concepts, codes);
-    console.log("Import mapping", json0, res);
+    console.log('Import mapping', json0, res);
     return res;
   }
-  static importV1(v0 : JSONValue, serverInfo : ServerInfo) : Mapping {
+  static importV1(v0: JSONValue, serverInfo: ServerInfo): Mapping {
     let v = v0 as JSONObject;
-    let vocabularies : { [key : VocabularyId] : Vocabulary } = {};
+    let vocabularies: { [key: VocabularyId]: Vocabulary } = {};
     for (const id0 of v['codingSystems'] as JSONArray) {
       let id = id0 as string;
-      vocabularies[id] = new Vocabulary(id, "unknown (imported mapping)", "unknown (imported mapping)", false);
+      vocabularies[id] = new Vocabulary(
+        id,
+        'unknown (imported mapping)',
+        'unknown (imported mapping)',
+        false
+      );
     }
-    let concepts : { [key : ConceptId] : Concept } = {};
-    let codes : { [key : VocabularyId] : { [key : CodeId] : Code } } = {};
-    let tags: { [key : VocabularyId] : { [key : CodeId] : Set<string> } } = {};
-    for (const concept0 of (v['mapping'] as JSONObject)['concepts'] as JSONArray) {
+    let concepts: { [key: ConceptId]: Concept } = {};
+    let codes: { [key: VocabularyId]: { [key: CodeId]: Code } } = {};
+    let tags: { [key: VocabularyId]: { [key: CodeId]: Set<string> } } = {};
+    for (const concept0 of (v['mapping'] as JSONObject)[
+      'concepts'
+    ] as JSONArray) {
       let conceptJson = concept0 as JSONObject;
-      let tag = conceptJson['tag'] as string | null
+      let tag = conceptJson['tag'] as string | null;
       let concept = new Concept(
         conceptJson['cui'] as string,
         conceptJson['preferredName'] as string,
         conceptJson['definition'] as string,
-        {},
+        {}
       );
       concepts[concept.id] = concept;
       for (let sourceConcept0 of conceptJson['sourceConcepts'] as JSONArray) {
@@ -486,7 +540,7 @@ export class Mapping {
           sourceConcept['preferredTerm'] as string,
           false,
           sourceConcept['selected'] as boolean,
-          null,
+          null
         );
         concept.codes[vocabularyId] ??= new Set();
         concept.codes[vocabularyId].add(code.id);
@@ -507,26 +561,32 @@ export class Mapping {
     }
     let indexing = v['indexing'] as JSONObject;
     let text = indexing['caseDefinition'] as string;
-    let spans = (indexing['spans'] as JSONArray)
-      .map(s0 => {
-        let s = s0 as JSONObject;
-        let id = s['id'] as string;
-        let label = s['label'] as string;
-        let start = s['start'] as number;
-        let end = s['end'] as number;
-        return { id, label, start, end };
-      });
+    let spans = (indexing['spans'] as JSONArray).map((s0) => {
+      let s = s0 as JSONObject;
+      let id = s['id'] as string;
+      let label = s['label'] as string;
+      let start = s['start'] as number;
+      let end = s['end'] as number;
+      return { id, label, start, end };
+    });
     let selected = Object.entries(v['cuiAssignment'] as JSONObject)
-      .filter(([cui, state]) => state as string == "include")
+      .filter(([cui, state]) => (state as string) == 'include')
       .map(([cui, state]) => cui as string);
-    let startConcepts = Object.values(indexing['concepts'] as JSONObject)
-      .map(c0 => {
+    let startConcepts = Object.values(indexing['concepts'] as JSONObject).map(
+      (c0) => {
         let c = c0 as JSONObject;
         let id = c['cui'] as string;
         let name = c['preferredName'] as string;
-        return new Concept(id, name, "");
-      });
-    let start : Start = { type: StartType.Indexing, text, spans, concepts: startConcepts, selected };
+        return new Concept(id, name, '');
+      }
+    );
+    let start: Start = {
+      type: StartType.Indexing,
+      text,
+      spans,
+      concepts: startConcepts,
+      selected,
+    };
     let info = {
       formatVersion: MappingFormat.version,
       umlsVersion: null,
@@ -535,11 +595,11 @@ export class Mapping {
       ignoreSemanticTypes: serverInfo.defaultIgnoreSemanticTypes,
     };
     let res = new Mapping(info, start, vocabularies, concepts, codes);
-    console.log("Import mapping v1", v0, res);
+    console.log('Import mapping v1', v0, res);
     return res;
   }
 
-  addConceptsCodes(concepts : Concepts, codes : Codes) {
+  addConceptsCodes(concepts: Concepts, codes: Codes) {
     for (let [id, concept] of Object.entries(concepts)) {
       this.concepts[id] = concept;
     }
@@ -552,16 +612,16 @@ export class Mapping {
   }
 }
 
-function getTag(json : any) {
-  if ("tag" in json) {
-    return json["tag"] as string | null;
-  } else if ("tags" in json) {
-    let tags : string[] = (json["tags"] as JSONArray).map(v => v as string);
+function getTag(json: any) {
+  if ('tag' in json) {
+    return json['tag'] as string | null;
+  } else if ('tags' in json) {
+    let tags: string[] = (json['tags'] as JSONArray).map((v) => v as string);
     if (tags.length == 0) {
       return null;
     } else {
       if (tags.length > 1) {
-        console.warn("Taking only the first tag", tags);
+        console.warn('Taking only the first tag', tags);
       }
       return tags[0];
     }
@@ -570,7 +630,10 @@ function getTag(json : any) {
   }
 }
 
-function formatTag(tag: string | null, tags: Set<string> | undefined) : string | null {
+function formatTag(
+  tag: string | null,
+  tags: Set<string> | undefined
+): string | null {
   let tags0 = new Set(tags ?? new Set<string>());
   if (tag != null) tags0.add(tag);
   let tags1 = Array.from(tags0);
@@ -581,27 +644,27 @@ function formatTag(tag: string | null, tags: Set<string> | undefined) : string |
 
 export class Vocabulary {
   constructor(
-    readonly id : VocabularyId,
-    readonly name : string,
-    readonly version : string | null,
-    readonly custom : boolean,
-  ) { }
-  static compare(v1 : Vocabulary, v2 : Vocabulary) : number {
-    return v1.id.localeCompare(v2.id)
+    readonly id: VocabularyId,
+    readonly name: string,
+    readonly version: string | null,
+    readonly custom: boolean
+  ) {}
+  static compare(v1: Vocabulary, v2: Vocabulary): number {
+    return v1.id.localeCompare(v2.id);
   }
 }
 
 export class Concept {
-  codesTag : Tag | null = null;
+  codesTag: Tag | null = null;
   constructor(
-    readonly id : ConceptId,
-    readonly name : string,
-    readonly definition : string,
-    public codes : { [key : VocabularyId] : Set<CodeId> } = {},
-  ) { }
+    readonly id: ConceptId,
+    readonly name: string,
+    readonly definition: string,
+    public codes: { [key: VocabularyId]: Set<CodeId> } = {}
+  ) {}
 }
 
-function getCodesTag(concept: Concept, codes: Codes) : Tag | null {
+function getCodesTag(concept: Concept, codes: Codes): Tag | null {
   let tag: Tag | null = null;
   let first = true;
   for (let vocId of Object.keys(concept.codes)) {
@@ -619,8 +682,11 @@ function getCodesTag(concept: Concept, codes: Codes) : Tag | null {
   return tag;
 }
 
-export function filterConcepts(concepts : Concepts, removeCuis : ConceptId[]) : Concepts {
-  let res : Concepts = {};
+export function filterConcepts(
+  concepts: Concepts,
+  removeCuis: ConceptId[]
+): Concepts {
+  let res: Concepts = {};
   for (let cui in concepts) {
     if (!removeCuis.includes(cui)) {
       res[cui] = concepts[cui];
@@ -631,26 +697,28 @@ export function filterConcepts(concepts : Concepts, removeCuis : ConceptId[]) : 
 
 export class Code {
   constructor(
-    readonly id : CodeId,
-    readonly term : string,
-    readonly custom : boolean,
-    public enabled : boolean,
-    public tag : Tag | null = null,
-  ) { }
-  static custom(id : CodeId, term : string) : Code {
+    readonly id: CodeId,
+    readonly term: string,
+    readonly custom: boolean,
+    public enabled: boolean,
+    public tag: Tag | null = null
+  ) {}
+  static custom(id: CodeId, term: string): Code {
     return new Code(id, term, true, true, null);
   }
-  static empty(custom : boolean) {
-    return new Code("", "", custom, true, null)
+  static empty(custom: boolean) {
+    return new Code('', '', custom, true, null);
   }
-  public sameAs(other : Code) : boolean {
-    return this.id == other.id
-      && this.term == other.term
-      && this.custom == other.custom;
+  public sameAs(other: Code): boolean {
+    return (
+      this.id == other.id &&
+      this.term == other.term &&
+      this.custom == other.custom
+    );
   }
 }
 
-export function tagsInCodes(codes : Code[]) : Tag[] {
+export function tagsInCodes(codes: Code[]): Tag[] {
   let tags = new Set<Tag>();
   for (let code of codes) {
     if (code.tag != null) {
@@ -662,35 +730,35 @@ export function tagsInCodes(codes : Code[]) : Tag[] {
 
 /// Server version info
 export interface ServerInfo {
-  contactEmail : string;
-  projectVersion : string;
-  umlsVersion : string;
-  url : string;
-  defaultVocabularies : string[];
-  defaultAllowedTags : string[];
-  defaultIgnoreTermTypes : string[];
-  defaultIgnoreSemanticTypes : string[];
+  contactEmail: string;
+  projectVersion: string;
+  umlsVersion: string;
+  url: string;
+  defaultVocabularies: string[];
+  defaultAllowedTags: string[];
+  defaultIgnoreTermTypes: string[];
+  defaultIgnoreSemanticTypes: string[];
 }
 
-export const EMPTY_SERVER_INFO : ServerInfo = {
-  contactEmail: "",
-  projectVersion: "",
-  umlsVersion: "",
-  url: "",
+export const EMPTY_SERVER_INFO: ServerInfo = {
+  contactEmail: '',
+  projectVersion: '',
+  umlsVersion: '',
+  url: '',
   defaultAllowedTags: [],
   defaultIgnoreTermTypes: [],
   defaultIgnoreSemanticTypes: [],
-  defaultVocabularies: []
-}
+  defaultVocabularies: [],
+};
 
 export interface Revision {
-  version : number;
-  author : string;
-  timestamp : string;
-  summary : string;
-  mapping : string;
+  version: number;
+  author: string;
+  timestamp: string;
+  summary: string;
+  mapping: string;
 }
 
-export function cuiOfId(id : string) : string {
+export function cuiOfId(id: string): string {
   return 'C' + Array(8 - id.length).join('0') + id;
 }

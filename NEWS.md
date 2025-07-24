@@ -12,7 +12,8 @@
 Dev
 ---
 
-- Filter mappings by system and type
+- display and edit mapping metadata
+- use metadata to filter mappings
 
 May 31, 2025
 ---

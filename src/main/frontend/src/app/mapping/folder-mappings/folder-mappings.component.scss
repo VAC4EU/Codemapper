@@ -19,27 +19,29 @@ table {
   padding: 0.5em;
 }
 
-.tag.type {
-  color: red;
-}
-.tag.system {
-  color: green;
-}
-::ng-deep .inputForm {
-  @include mat.form-field-density(-2);
+.column-filter-indicator {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    .form-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    mat-form-field {
-      height: 40px;
-    }
-    
-    button.mat-button {
-      height: 40px;
-    }
+button.mat-button {
+  height: 40px;
+}
+
+.filters {
+}
+
+.filterOnName {
+  width: 8em;
+}
+
+::ng-deep .filterOnName {
+  @include mat.form-field-density(-4);
+}

@@ -1,19 +1,19 @@
 <div class="toolbox">
 
     <mat-card appearance="outlined">
-        <mat-card-header>
-            Filter mappings
+        <mat-card-header matTooltip="Filter the mappings in the table">
+            Filter mappings ({{hasFilters() ? this.dataSource.filteredData.length : 'all'}})
         </mat-card-header>
-        <mat-card-actions class="form-group">
-            <mat-form-field appearance="fill" style="display: inline">
-                <input matInput placeholder="On name" [(ngModel)]="filterOnName" (keyup)="applyFilter()" size="10"
+        <mat-card-actions class="filters">
+            <mat-form-field appearance="fill" class="filterOnName" style="display: inline">
+                <input matInput placeholder="On&nbsp;name" [(ngModel)]="filterOnName" (keyup)="applyFilter()" size="10"
                     class="input-element">
             </mat-form-field>
             <button mat-raised-button matTooltip="Filter mappings by their properties" [matMenuTriggerFor]="menu"
-                class="input-element">On property</button>
+                class="input-element">On&nbsp;metadata<mat-icon *ngIf="this.filterOnProperties['system']">filter_alt</mat-icon></button>
             <mat-menu #menu="matMenu" class="tagsMenu">
                 <div *ngFor="let tag of allProperties | keyvalue">
-                    {{tag.key}}:
+                    {{tag.key}}s:
                     <mat-chip-listbox [ngModel]="filterOnProperties[tag.key]"
                         (ngModelChange)="filterOnProperties[tag.key] = $event" (click)="$event.stopPropagation()"
                         (change)="applyFilter()">
@@ -28,13 +28,17 @@
     </mat-card>
 
     <mat-card>
-        <mat-card-header>
-            {{selectedFilteredMappings.length}} selected mapping(s)
+        <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
+            Edit mapping ({{selectedFilteredMappings.length}} selected)
         </mat-card-header>
         <mat-card-actions>
             <span matTooltip="Rename one selected mapping (only for owners)">
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
-                    (click)="openDialog(renameDialog)" mat-raised-button>Rename</button>
+                    (click)="openDialog(renameDialog)" mat-raised-button>Edit name</button>
+            </span>
+            <span matTooltip="Edit the metadata of one selected mapping (only for owners)">
+                <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
+                    (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
             </span>
             <button class="tool-delete" (click)="deleteSelectedMappings()"
                 [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
@@ -65,10 +69,10 @@
 <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
         <tr mat-header-row
-            *matHeaderRowDef="['select', 'name', 'system', 'type', 'definition', 'status', 'lastModification']"></tr>
+            *matHeaderRowDef="['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification']; sticky: true"></tr>
         <tr mat-row
-            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'definition', 'status', 'lastModification'];"
-            [routerLink]="mappingLink(mapping)" matTooltip="{{mapping.mappingName}}" class="row-link"></tr>
+            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type','projects', 'status', 'lastModification'];"
+            [routerLink]="mappingLink(mapping)" matTooltip="Definition: {{mapping.meta?.definition ?? 'n/a'}}" class="row-link"></tr>
 
         <ng-container matColumnDef="select">
             <th mat-header-cell *matHeaderCellDef>
@@ -86,31 +90,34 @@
         </ng-container>
         <ng-container matColumnDef="system">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                System<mat-icon *ngIf="this.filterOnProperties['system']">filter_alt</mat-icon>
+                System<mat-icon class="column-filter-indicator" *ngIf="this.filterOnProperties['system']">filter_alt</mat-icon>
             </th>
             <td mat-cell *matCellDef="let mapping">
-                <span>{{nameInfo(mapping).system}}</span>
+                <span>{{mapping.meta.system}}</span>
             </td>
         </ng-container>
         <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Name<mat-icon
-                    *ngIf="this.filterOnName">filter_alt</mat-icon></th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Name<mat-icon class="column-filter-indicator" *ngIf="this.filterOnName">filter_alt</mat-icon>
+            </th>
             <td mat-cell *matCellDef="let mapping">
-                {{nameInfo(mapping).abbreviation}}
+                {{mapping.mappingName}}
             </td>
         </ng-container>
         <ng-container matColumnDef="type">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Type<mat-icon *ngIf="this.filterOnProperties['type']">filter_alt</mat-icon>
+                Type<mat-icon class="column-filter-indicator" *ngIf="this.filterOnProperties['type']">filter_alt</mat-icon>
             </th>
             <td mat-cell *matCellDef="let mapping">
-                <span>{{nameInfo(mapping).typ}}</span>
+                <span>{{mapping.meta.type}}</span>
             </td>
         </ng-container>
-        <ng-container matColumnDef="definition">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Definition</th>
+        <ng-container matColumnDef="projects">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Projects<mat-icon class="column-filter-indicator" *ngIf="this.filterOnProperties['projects']">filter_alt</mat-icon>
+            </th>
             <td mat-cell *matCellDef="let mapping">
-                <span>{{nameInfo(mapping).definition}}</span>
+                <span>{{mapping.meta.projects.join(', ')}}</span>
             </td>
         </ng-container>
         <ng-container matColumnDef="lastModification">
@@ -150,15 +157,12 @@
 </ng-template>
 
 <ng-template #renameDialog>
-    <h2 matDialogTitle>Rename mapping</h2>
+    <h2 matDialogTitle>Edit name</h2>
     <mat-dialog-content>
         <mat-form-field style="width:100%;">
-            <mat-label>New name</mat-label>
+            <mat-label>Name</mat-label>
             <input type="text" [value]="selection.selected[0].mappingName" #newName matInput>
         </mat-form-field>
-        <p>Recommendated format: system, abbreviation, type, and optionally a definition separated by <span
-                class="pre">_</span>, for example <span class="pre">I_FLU_COV</span> or <span
-                class="pre">I_FLU_COV_Influenca</span>.</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-button matDialogClose>Cancel</button>

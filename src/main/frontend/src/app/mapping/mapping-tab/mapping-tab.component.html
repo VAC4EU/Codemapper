@@ -4,6 +4,34 @@
 
     <mat-expansion-panel>
       <mat-expansion-panel-header>
+        <mat-panel-title>Metadata</mat-panel-title>
+        <mat-panel-description>The metadata of the mapping</mat-panel-description>
+      </mat-expansion-panel-header>
+      <table>
+        <tr><td>Type:</td><td>{{meta.type}}</td></tr>
+        <tr><td>System:</td><td>{{meta.system}}</td></tr>
+        <tr><td>Definition:</td><td>{{meta.definition}}</td></tr>
+        <tr><td>Projects:</td><td>{{meta.projects.join(', ')}}</td></tr>
+      </table>
+      <button mat-raised-button (click)="editMappingMeta()">Edit</button>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Versions</mat-panel-title>
+        <mat-panel-description>
+          All versions of the mapping
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <span>Use the button on the right to export the codelist at that version.</span>
+      <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
+      <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [mappingShortkey]="mappingShortkey"
+        [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">
+      </history>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
         <mat-panel-title>Start</mat-panel-title>
         <mat-panel-description>The start of the mapping</mat-panel-description>
       </mat-expansion-panel-header>
@@ -19,20 +47,6 @@
         </p>
         <pre class="csv-import">{{mapping.start.csvContent}}</pre>
       </div>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Versions</mat-panel-title>
-        <mat-panel-description>
-          All versions of the mapping
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-      <span>Use the button on the right to export the codelist at that version.</span>
-      <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
-      <history *ngIf="mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [mappingShortkey]="mappingShortkey"
-        [mapping]="mapping" [revisions]="revisions" [version]="version" [projectRole]="projectRole" [userCanDownload]="userCanDownload">
-      </history>
     </mat-expansion-panel>
 
     <mat-expansion-panel>

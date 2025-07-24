@@ -56,9 +56,11 @@ create table case_definitions (
   old_name char(255) -- fixed old name
   project_id int not null references projects(id),
   state mediumtext,
+  meta JSONB default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb,
   primary key (id)
   unique (shortkey)
 );
+
 -- -- MIGRATION
 -- alter table case_definitions add column old_name char(255);
 -- update case_definitions set old_name = name;
@@ -109,7 +111,8 @@ as
     cd.name mapping_name,
     cd.shortkey mapping_shortkey,
     cd.old_name mapping_old_name,
-    cd.status mapping_status
+    cd.status mapping_status,
+    cd.meta mapping_meta
   from projects p
   join case_definitions cd
   on p.id = cd.project_id
@@ -220,3 +223,35 @@ create index case_definition_revisions_version on case_definition_revisions(vers
 
 alter table case_definitions alter column state drop not null;
 alter table users add column anonymous boolean default false;
+
+-- 2025/07 add metadata
+
+ALTER TABLE case_definitions
+ADD COLUMN meta JSONB default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb;
+
+UPDATE case_definitions
+SET meta['system'] = to_json(CASE 
+        WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 2
+        THEN split_part(name, '_', 1)
+        ELSE NULL
+    END::text)::jsonb,
+    meta['type'] = to_json(CASE 
+        WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 2
+        THEN split_part(name, '_', 3)
+        ELSE NULL
+    END::text)::jsonb,
+    meta['definition'] = to_json(CASE 
+        WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 3
+        THEN split_part(name, '_', 4)
+        ELSE NULL
+    END::text)::jsonb
+WHERE project_id = 47;
+
+UPDATE case_definitions
+SET name =
+  CASE 
+    WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 2
+    THEN split_part(name, '_', 2)
+    ELSE name
+  END
+WHERE project_id = 47;

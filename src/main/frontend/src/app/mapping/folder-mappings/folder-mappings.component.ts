@@ -20,10 +20,11 @@ import {
   EMPTY_SERVER_INFO,
   Mapping,
   MappingFormat,
-  MappingMeta,
+  MappingDataMeta,
   ServerInfo,
   Start,
   StartType,
+  MappingMeta,
 } from '../data';
 import { User } from '../auth.service';
 import { MatTableDataSource } from '@angular/material/table';
@@ -37,6 +38,7 @@ import { firstValueFrom } from 'rxjs';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
+import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 
 class NameInfo {
   constructor(
@@ -116,61 +118,55 @@ export class FolderMappingsComponent {
     this.dataSource.data = Object.values(this.mappings);
     this.dataSource.sort = this.sort;
     this.dataSource.filterPredicate = (info: MappingInfo, _filter: string) => {
-      console.log('FILTER', this.filterOnProperties);
-      for (let [kind, name] of Object.entries(this.filterOnProperties)) {
-        if (name == null) continue;
-        switch (kind) {
-          case 'system': {
-            if (!info.mappingName.startsWith(`${name}_`)) {
+      for (let [prop, value] of Object.entries(this.filterOnProperties)) {
+        if (value == null || info.meta == null) continue;
+        if (['system', 'type'].includes(prop)) {
+            if (info.meta[prop as keyof MappingMeta] != value) {
               return false;
             }
-            break;
-          }
-          case 'type': {
-            if (!info.mappingName.includes(`_${name}_`)) {
+        }
+        if ('project' == prop) {
+            if (!(info.meta?.projects ?? []).includes(value)) {
               return false;
             }
-            break;
-          }
         }
       }
       let filter = this.filterOnName.toLowerCase().trim();
       return info.mappingName.toLowerCase().includes(filter);
     };
     this.dataSource.sortingDataAccessor = (mapping: any, property: string) => {
-      switch (property) {
-        case 'name':
-          return this.nameInfo(mapping).abbreviation;
-        case 'type':
-          return this.nameInfo(mapping).typ;
-        case 'system':
-          return this.nameInfo(mapping).system;
-        case 'definition':
-          return this.nameInfo(mapping).definition;
-        default:
-          return mapping[property];
-      }
+      property = { name: 'mappingName' }[property] ?? property;
+      return mapping[property] ?? mapping.meta?.[property];
     };
   }
 
   getAllTags(): { [key: string]: string[] } {
-    let system: Set<string> = new Set();
-    let type: Set<string> = new Set();
+    let systems: Set<string> = new Set();
+    let types: Set<string> = new Set();
+    let projects: Set<string> = new Set();
     for (let mapping of this.mappings) {
-      let info = NameInfo.parse(mapping.mappingName);
-      if (info != null) {
-        system.add(info.system);
-        type.add(info.typ);
+      let system = mapping.meta?.system;
+      if (system != null) {
+        systems.add(system);
+      }
+      let type = mapping.meta?.type;
+      if (type != null) {
+        types.add(type);
+      }
+      for (let project of mapping.meta?.projects ?? []) {
+        projects.add(project)
       }
     }
     return {
-      system: Array.from(system),
-      type: Array.from(type),
+      system: Array.from(systems),
+      type: Array.from(types),
+      project: Array.from(projects),
     };
   }
 
-  hasTagsFilter(): boolean {
+  hasFilters(): boolean {
     return (
+      this.filterOnName != '' ||
       Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
     );
   }
@@ -265,7 +261,7 @@ export class FolderMappingsComponent {
           };
           let { mappingName, mapping } = imported as ImportedMapping;
           let { vocabularies, concepts, codes, umlsVersion } = mapping;
-          let meta: MappingMeta = {
+          let meta: MappingDataMeta = {
             formatVersion: MappingFormat.version,
             umlsVersion,
             ignoreTermTypes,
@@ -326,6 +322,26 @@ export class FolderMappingsComponent {
       mappingConfigs: mappings.map((i) => i.mappingShortkey),
     };
     this.dialog.open(DownloadDialogComponent, { data });
+  }
+
+  openMetaDataDialog(info: MappingInfo) {
+    this.dialog
+      .open(EditMetaComponent, { data: { meta: info.meta } })
+      .afterClosed()
+      .subscribe(async (meta) => {
+        if (meta) {
+          try {
+            await firstValueFrom(
+              this.persistency.setMappingMeta(info.mappingShortkey, meta)
+            );
+            info.meta = meta;
+          } catch (e) {
+            let msg = `Could not save metadata`;
+            console.error(msg, e);
+            alert(msg);
+          }
+        }
+      });
   }
 
   mappingLink(mapping: MappingInfo) {
