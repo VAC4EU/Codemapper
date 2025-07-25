@@ -157,11 +157,15 @@ export class FolderMappingsComponent {
         projects.add(project)
       }
     }
-    return {
+    let allTags = {
       system: Array.from(systems),
       type: Array.from(types),
       project: Array.from(projects),
     };
+    for (let tags of Object.values(allTags)) {
+      tags.sort();
+    }
+    return allTags;
   }
 
   hasFilters(): boolean {

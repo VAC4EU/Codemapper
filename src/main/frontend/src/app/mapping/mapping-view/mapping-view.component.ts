@@ -420,16 +420,16 @@ export class MappingViewComponent implements HasPendingChanges {
   titleTooltip() : string {
     let res: string[] = [];
     if (this.meta?.system) {
-      res.push(`System: ${this.meta.system}`);
+      res.push(`system: ${this.meta.system}`);
     }
     if (this.meta?.type) {
-      res.push(`Type: ${this.meta.type}`);
+      res.push(`type: ${this.meta.type}`);
     }
-    res.push(`You are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`);
+    res.push(`you are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`);
     if (this.saveRequired) {
-      res.push(`Mapping needs save.`);
+      res.push(`mapping needs save.`);
     }
-    return res.join("\n\n");
+    return res.join(", ");
   }
 
   async setStartIndexing(indexing : Indexing) {

@@ -90,7 +90,7 @@ export class MappingTabComponent {
       .open(EditMetaComponent, { data: { meta: this.meta } })
       .afterClosed()
       .subscribe(async (meta) => {
-        if (meta != null) {
+        if (meta) {
           try {
             await firstValueFrom(
               this.persistency.setMappingMeta(this.mappingShortkey, meta)
