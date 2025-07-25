@@ -1,4 +1,4 @@
-import { Component, Input, SimpleChange } from '@angular/core';
+import { Component, Input, SimpleChanges } from '@angular/core';
 import {
   PersistencyService,
   ProjectRole,
@@ -40,8 +40,9 @@ export class FolderUsersComponent {
     });
   }
 
- ngOnChange(change: SimpleChange) {
-    if (change.currentValue['folderName']) {
+  ngOnChanges(change: SimpleChanges) {
+    console.log('FOLDER USERS ON CHANGE', change);
+    if (change['folderName']) {
       this.reloadUsersRoles();
     }
   }

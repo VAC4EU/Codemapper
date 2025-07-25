@@ -166,9 +166,12 @@ export class FolderMappingsComponent {
 
   hasFilters(): boolean {
     return (
-      this.filterOnName != '' ||
-      Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
+      this.filterOnName != '' || this.hasFilterOnProperties()
     );
+  }
+
+  hasFilterOnProperties(): boolean {
+    return Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
   }
 
   clearFilters() {
