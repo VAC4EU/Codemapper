@@ -32,9 +32,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import javax.sql.DataSource;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlRootElement;
+
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.Comment;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
@@ -42,6 +44,7 @@ import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.rest.CodeMapperResource;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -360,6 +363,13 @@ public class PersistencyApi {
       throw CodeMapperException.server("Cannot execute query to create comments", e);
     }
   }
+  
+  @XmlRootElement
+  @JsonIgnoreProperties(ignoreUnknown=true)
+  public static class DataMeta {
+    public Boolean includeDescendants;
+    // ...
+  }
 
   @XmlRootElement
   public static class MappingInfo {
@@ -370,6 +380,7 @@ public class PersistencyApi {
     public String status;
     public String lastModification;
     public MappingMeta meta;
+    public DataMeta latestDataMeta;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -432,8 +443,10 @@ public class PersistencyApi {
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
-        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
-            + "FROM projects_mappings_shortkey "
+        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT, r.mapping->'meta'::TEXT  "
+            + "FROM projects_mappings_shortkey pm "
+            + "JOIN case_definition_latest_revision r "
+            + "ON r.case_definition_id = pm.mapping_id "
             + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
@@ -448,7 +461,10 @@ public class PersistencyApi {
       mapping.mappingName = res.getString(1);
       mapping.projectName = res.getString(2);
       mapping.status = res.getString(3);
+      mapping.version = res.getString(4);
       mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
+      if (res.getString(5) != null) 
+        mapping.latestDataMeta = mapper.readValue(res.getString(5), DataMeta.class);
       return mapping;
     } catch (SQLException e) {
       e.printStackTrace();
@@ -467,7 +483,8 @@ public class PersistencyApi {
     String query =
         "SELECT mapping_shortkey, mapping_name, project_name "
             + "FROM projects_mappings_shortkey "
-            + "WHERE project_name = ? AND mapping_old_name = ?";
+            + "WHERE project_name = ? "
+            + "AND mapping_old_name = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, projectName);
@@ -563,7 +580,7 @@ public class PersistencyApi {
 
   public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp, cd.meta::TEXT "
+        "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp, cd.meta::TEXT, r.mapping->'meta'::TEXT "
             + "FROM projects p "
             + "INNER JOIN case_definitions cd "
             + "ON cd.project_id = p.id "
@@ -580,13 +597,17 @@ public class PersistencyApi {
       ObjectMapper mapper = new ObjectMapper();
       while (set.next()) {
         MappingInfo mapping = new MappingInfo();
+        mapping.projectName = project;
         mapping.mappingShortkey = set.getString(1);
         mapping.mappingName = set.getString(2);
         mapping.version = set.getString(3);
         mapping.status = set.getString(4);
         mapping.lastModification = set.getString(5);
         mapping.meta = mapper.readValue(set.getString(6), MappingMeta.class);
-        mapping.projectName = project;
+        String dataMeta = set.getString(7);
+        if (dataMeta != null) {
+        mapping.latestDataMeta = mapper.readValue(dataMeta, DataMeta.class);
+        }
         mappings.add(mapping);
       }
       return mappings;

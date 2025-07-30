@@ -19,7 +19,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { JSONObject, Mapping, Revision, ServerInfo, MappingMeta } from './data';
+import { JSONObject, Mapping, Revision, ServerInfo, MappingMeta, DataMeta } from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, firstValueFrom, map } from 'rxjs';
 import { User } from './auth.service';
@@ -76,6 +76,7 @@ export interface MappingInfo {
   status: string | null;
   lastModification : string | null;
   meta: MappingMeta;
+  latestDataMeta: DataMeta | null;
 }
 
 export interface ProjectInfo {
@@ -157,7 +158,7 @@ export class PersistencyService {
 
   loadLegacyMapping(shortkey : string, serverInfo : ServerInfo) : Observable<Mapping> {
     return this.http.get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
-      .pipe(map((json) => Mapping.importV1(json, serverInfo)));
+      .pipe(map((json) => Mapping.importLegacyJSON(json, serverInfo)));
   }
 
   loadLatestRevisionMapping(shortkey : string, serverInfo : ServerInfo) : Observable<{ version : number, mapping : Mapping }> {

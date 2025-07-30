@@ -14,6 +14,7 @@ Dev
 
 - display and edit mapping metadata
 - use metadata to filter mappings
+- batch processing of mappings
 
 May 31, 2025
 ---

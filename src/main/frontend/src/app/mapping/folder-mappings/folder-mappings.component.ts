@@ -20,12 +20,14 @@ import {
   EMPTY_SERVER_INFO,
   Mapping,
   MappingFormat,
-  MappingDataMeta,
+  DataMeta,
   ServerInfo,
   Start,
   StartType,
   MappingMeta,
+  DEFAULT_INCLUDE_DESCENDANTS,
 } from '../data';
+import * as ops from '../mapping-ops';
 import { User } from '../auth.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
@@ -81,6 +83,12 @@ export class FolderMappingsComponent {
   allProperties: { [key: string]: string[] } = {}; // map property type to property values
   filterOnProperties: { [key: string]: string | null } = {}; // map property type to property value
 
+  DEFAULT_OPERATIONS = [
+    new ops.SetIncludeDescendants(true),
+    new ops.SetIncludeDescendants(false),
+  ];
+  operations: ops.Operation[] = [];
+
   constructor(
     private api: ApiService,
     private persistency: PersistencyService,
@@ -121,14 +129,14 @@ export class FolderMappingsComponent {
       for (let [prop, value] of Object.entries(this.filterOnProperties)) {
         if (value == null || info.meta == null) continue;
         if (['system', 'type'].includes(prop)) {
-            if (info.meta[prop as keyof MappingMeta] != value) {
-              return false;
-            }
+          if (info.meta[prop as keyof MappingMeta] != value) {
+            return false;
+          }
         }
         if ('project' == prop) {
-            if (!(info.meta?.projects ?? []).includes(value)) {
-              return false;
-            }
+          if (!(info.meta?.projects ?? []).includes(value)) {
+            return false;
+          }
         }
       }
       let filter = this.filterOnName.toLowerCase().trim();
@@ -154,7 +162,7 @@ export class FolderMappingsComponent {
         types.add(type);
       }
       for (let project of mapping.meta?.projects ?? []) {
-        projects.add(project)
+        projects.add(project);
       }
     }
     let allTags = {
@@ -169,13 +177,13 @@ export class FolderMappingsComponent {
   }
 
   hasFilters(): boolean {
-    return (
-      this.filterOnName != '' || this.hasFilterOnProperties()
-    );
+    return this.filterOnName != '' || this.hasFilterOnProperties();
   }
 
   hasFilterOnProperties(): boolean {
-    return Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
+    return (
+      Object.values(this.filterOnProperties).filter((v) => v != null).length > 0
+    );
   }
 
   clearFilters() {
@@ -223,6 +231,10 @@ export class FolderMappingsComponent {
     });
   }
 
+  allDefaultStatus(mappings: MappingInfo[]): boolean {
+    return mappings.every((info) => info.version != null && info.status == null);
+  }
+
   async newMapping(
     projectName: string,
     mappingName: string,
@@ -244,6 +256,7 @@ export class FolderMappingsComponent {
       allowedTags: this.serverInfo.defaultAllowedTags,
       ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
       ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
+      includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
     };
     let mapping = new Mapping(info, null, vocabularies, {}, {});
     let initial = { mappingName, projectName, mapping };
@@ -268,12 +281,13 @@ export class FolderMappingsComponent {
           };
           let { mappingName, mapping } = imported as ImportedMapping;
           let { vocabularies, concepts, codes, umlsVersion } = mapping;
-          let meta: MappingDataMeta = {
+          let meta: DataMeta = {
             formatVersion: MappingFormat.version,
             umlsVersion,
             ignoreTermTypes,
             ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
             allowedTags: this.serverInfo.defaultAllowedTags,
+            includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
           };
           let mapping1 = new Mapping(
             meta,
@@ -390,5 +404,36 @@ export class FolderMappingsComponent {
       this.selectedFilteredMappings.length != 0 &&
       this.selectedFilteredMappings.every((i) => i.version != null)
     );
+  }
+  async batchProcess(
+    mappingInfos: MappingInfo[],
+    operations: ops.Operation[],
+    summary: string
+  ) {
+    for (let index in mappingInfos) {
+      let shortkey = mappingInfos[index].mappingShortkey;
+      try {
+        let { version, mapping } = await firstValueFrom(
+          this.persistency.loadLatestRevisionMapping(shortkey, this.serverInfo)
+        );
+        console.log('BATCH PROCESS', mappingInfos[index], version, mapping);
+        mapping.cleanupRecacheCheck();
+        for (let op of operations) {
+          console.log('BATCH OPERATION', shortkey, op);
+          mapping.run(op);
+          op.afterRunCallback();
+        }
+        let newVersion = await firstValueFrom(
+          this.persistency.saveRevision(shortkey, mapping, summary)
+        );
+        let newMappingInfo = await firstValueFrom(
+          this.persistency.mappingInfo(shortkey)
+        );
+        Object.assign(mappingInfos[index], newMappingInfo);
+        console.log('BATCH PROCESSED', mapping, newVersion);
+      } catch (err) {
+        console.error('could not load mapping', mappingInfos[index], err);
+      }
+    }
   }
 }

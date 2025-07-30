@@ -31,8 +31,6 @@ import {
   Mapping,
   Revision,
   ServerInfo,
-  MappingDataMeta,
-  MappingFormat,
   EMPTY_SERVER_INFO,
   MappingMeta,
   emptyMappingMeta,
@@ -63,14 +61,6 @@ export enum Tabs {
   Tools = 5,
   History = 6,
 }
-
-const EMPTY_MAPPING_INFO : MappingDataMeta = {
-  formatVersion: MappingFormat.version,
-  umlsVersion: null,
-  allowedTags: [],
-  ignoreTermTypes: [],
-  ignoreSemanticTypes: [],
-};
 
 function parseNameShortkey(name : string) : string | null {
   let ix = name.lastIndexOf('-');
@@ -388,6 +378,7 @@ export class MappingViewComponent implements HasPendingChanges {
                   status: null,
                   lastModification: null,
                   meta: emptyMappingMeta(),
+                  latestDataMeta: null,
                 })
               );
             }

@@ -48,6 +48,10 @@
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
                     (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
             </span>
+            <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
+                <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0 || !allDefaultStatus(selectedFilteredMappings)"
+                    (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
+            </span>
             <button class="tool-delete" (click)="deleteSelectedMappings()"
                 [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
         </mat-card-actions>
@@ -77,10 +81,10 @@
 <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
         <tr mat-header-row
-            *matHeaderRowDef="['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification']; sticky: true">
+            *matHeaderRowDef="['select', 'name', 'system', 'type', 'descendants', 'projects', 'status', 'lastModification']; sticky: true">
         </tr>
         <tr mat-row
-            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type','projects', 'status', 'lastModification'];"
+            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'descendants', 'projects', 'status', 'lastModification'];"
             [routerLink]="mappingLink(mapping)" matTooltip="Definition: {{mapping.meta?.definition ?? 'n/a'}}"
             class="row-link"></tr>
 
@@ -124,6 +128,14 @@
                 <span>{{mapping.meta.type}}</span>
             </td>
         </ng-container>
+        <ng-container matColumnDef="descendants">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                Descendants
+            </th>
+            <td mat-cell *matCellDef="let mapping">
+                <span *ngIf="mapping.latestDataMeta?.includeDescendants">Yes</span>
+            </td>
+        </ng-container>
         <ng-container matColumnDef="projects">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
                 Projects<mat-icon class="column-filter-indicator"
@@ -140,12 +152,11 @@
             </td>
         </ng-container>
         <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Note</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
             <td mat-cell *matCellDef="let mapping">
                 <span *ngIf="mapping.version == null"
-                    matTooltip="From old version of CodeMapper, please open, review and save"> LEGACY</span>
-                <span *ngIf="mapping.status == 'IMPORTED'"
-                    matTooltip="Automatically imported, please open, review and save"> IMPORTED</span>
+                    matTooltip="From old version of CodeMapper, please open, review and save">LEGACY</span>
+                <span *ngIf="mapping.status">{{mapping.status}}</span>
             </td>
         </ng-container>
     </table>
@@ -181,5 +192,37 @@
         <button mat-button matDialogClose>Cancel</button>
         <button mat-raised-button [disabled]="!newName.value || selection.selected.length != 1"
             (click)="renameMapping(selection.selected[0], newName.value)" matDialogClose color="primary">Ok</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #batchProcessDialog>
+    <h2 matDialogTitle>Batch process ({{operations.length}} operation{{operations.length == 1 ? '' : 's'}})</h2>
+    <mat-dialog-content>
+        <p>
+            This allows for applying a number of operations on the selected mappings. Use the menu "Add operation"
+            to add them. After processing each mapping with the operations, a new revision is created
+            with the given "Summary".
+        </p>
+        <button mat-stroked-button [matMenuTriggerFor]="addOperationsMenu">Add operation</button>
+        <mat-menu #addOperationsMenu="matMenu">
+            <button *ngFor="let op of DEFAULT_OPERATIONS" mat-menu-item (click)="operations.push(op)">{{op.describe()}}</button>
+        </mat-menu>
+        <mat-list>
+            <mat-list-item *ngFor="let op of operations; index as i">
+                {{i+1}}: {{op.describe()}}
+                <button mat-icon-button (click)="operations.splice(i, 1)">
+                    <mat-icon matListItemIcon>close</mat-icon>
+                </button>
+            </mat-list-item>
+        </mat-list>
+        <mat-form-field style="width:100%;">
+            <mat-label>Summary</mat-label>
+            <textarea #summary matInput></textarea>
+        </mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button matDialogClose>Cancel</button>
+        <button mat-raised-button [disabled]="!operations || !summary.value || selection.selected.length == 0"
+            (click)="batchProcess(selection.selected, operations, summary.value)" matDialogClose color="primary">Ok</button>
     </mat-dialog-actions>
 </ng-template>

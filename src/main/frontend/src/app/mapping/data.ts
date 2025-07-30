@@ -93,14 +93,28 @@ export enum MappingFormat {
   version = 1,
 }
 
-export interface MappingDataMeta {
+/// Meta data that influences the generation of codes (one per revision)
+export interface DataMeta {
   formatVersion: MappingFormat;
   umlsVersion: string | null; // null indicates import from old CodeMapper format
   allowedTags: string[];
   ignoreTermTypes: string[];
   ignoreSemanticTypes: string[];
+  includeDescendants: boolean;
 }
 
+export const DEFAULT_INCLUDE_DESCENDANTS = false;
+
+export const EMPTY_MAPPING_INFO : DataMeta = {
+  formatVersion: MappingFormat.version,
+  umlsVersion: null,
+  allowedTags: [],
+  ignoreTermTypes: [],
+  ignoreSemanticTypes: [],
+  includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
+};
+
+/// Meta data that is purely descriptive (one per mapping)
 export interface MappingMeta {
   system: string | null;
   type: string | null;
@@ -118,7 +132,7 @@ export function emptyMappingMeta(): MappingMeta {
 }
 
 export interface MappingData {
-  meta: MappingDataMeta;
+  meta: DataMeta;
   vocabularies: Vocabularies;
   concepts: Concepts;
   codes: Codes;
@@ -131,7 +145,7 @@ export class Mapping {
   undoStack: [String, Operation][] = [];
   redoStack: [String, Operation][] = [];
   constructor(
-    public meta: MappingDataMeta,
+    public meta: DataMeta,
     public start: Start,
     public vocabularies: Vocabularies,
     public concepts: Concepts,
@@ -401,6 +415,7 @@ export class Mapping {
       this.concepts[id].codes[vocId].add(codeId);
     }
   }
+
   static importJSON(json0: JSONValue, info: ServerInfo): Mapping {
     let json = json0 as JSONObject;
     let start: Start = null;
@@ -420,6 +435,7 @@ export class Mapping {
       }
       start = start0 as unknown as Start;
     }
+
     let vocabularies: Vocabularies = {};
     for (const vocJson0 of Object.values(json['vocabularies'] as JSONObject)) {
       let vocJson = vocJson0 as JSONObject;
@@ -457,6 +473,7 @@ export class Mapping {
       let concept = new Concept(id, name, definition, codes);
       concepts[concept.id] = concept;
     }
+
     let codes: Codes = {};
     for (let [vocId, codesJson] of Object.entries(
       json['codes'] as JSONObject
@@ -473,9 +490,10 @@ export class Mapping {
         codes[vocId][code.id] = code;
       }
     }
+
     let meta;
     if (json['meta']) {
-      meta = json['meta'] as unknown as MappingDataMeta;
+      meta = json['meta'] as unknown as DataMeta;
       if (meta.formatVersion !== MappingFormat.version) {
         throw new Error(
           `Mapping data is in version ${meta.formatVersion}, expected version ${MappingFormat.version}`
@@ -486,6 +504,9 @@ export class Mapping {
       }
       if (meta['ignoreSemanticTypes'] === undefined) {
         meta.ignoreSemanticTypes = [...info.defaultIgnoreSemanticTypes];
+      }
+      if (meta['includeDescendants'] === undefined) {
+        meta.includeDescendants = DEFAULT_INCLUDE_DESCENDANTS;
       }
     } else {
       let umlsVersion = json['umlsVersion'] as string;
@@ -498,13 +519,16 @@ export class Mapping {
         allowedTags: info.defaultAllowedTags,
         ignoreTermTypes: [...info.defaultIgnoreTermTypes],
         ignoreSemanticTypes: [...info.defaultIgnoreSemanticTypes],
+        includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
       };
     }
+
     let res = new Mapping(meta, start, vocabularies, concepts, codes);
     console.log('Import mapping', json0, res);
     return res;
   }
-  static importV1(v0: JSONValue, serverInfo: ServerInfo): Mapping {
+  
+  static importLegacyJSON(v0: JSONValue, serverInfo: ServerInfo): Mapping {
     let v = v0 as JSONObject;
     let vocabularies: { [key: VocabularyId]: Vocabulary } = {};
     for (const id0 of v['codingSystems'] as JSONArray) {
@@ -593,6 +617,7 @@ export class Mapping {
       allowedTags: serverInfo.defaultAllowedTags,
       ignoreTermTypes: serverInfo.defaultIgnoreTermTypes,
       ignoreSemanticTypes: serverInfo.defaultIgnoreSemanticTypes,
+      includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
     };
     let res = new Mapping(info, start, vocabularies, concepts, codes);
     console.log('Import mapping v1', v0, res);
