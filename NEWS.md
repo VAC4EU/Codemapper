@@ -15,6 +15,8 @@ Dev
 - display and edit mapping metadata
 - use metadata to filter mappings
 - batch processing of mappings
+- configure inclusion of descendant codes per mapping
+- metadata download
 
 May 31, 2025
 ---

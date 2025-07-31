@@ -15,7 +15,7 @@ import {
   userCanDownload,
   userCanRename,
 } from '../persistency.service';
-import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
+import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
 import {
   EMPTY_SERVER_INFO,
   Mapping,
@@ -142,9 +142,13 @@ export class FolderMappingsComponent {
       let filter = this.filterOnName.toLowerCase().trim();
       return info.mappingName.toLowerCase().includes(filter);
     };
-    this.dataSource.sortingDataAccessor = (mapping: any, property: string) => {
-      property = { name: 'mappingName' }[property] ?? property;
-      return mapping[property] ?? mapping.meta?.[property];
+    this.dataSource.sortingDataAccessor = (mapping0: any, property: string) => {
+      let mapping = mapping0 as MappingInfo;
+      switch (property) {
+        case 'descendants': return mapping.latestDataMeta?.includeDescendants;
+        case 'name': return mapping.mappingName;
+        default: return mapping0[property] ?? mapping0.meta?.[property]; 
+      }
     };
   }
 
@@ -341,6 +345,7 @@ export class FolderMappingsComponent {
     let data = {
       projectName: this.folderName,
       mappingConfigs: mappings.map((i) => i.mappingShortkey),
+      includeDescendants: IncludeDescendants.PerMapping,
     };
     this.dialog.open(DownloadDialogComponent, { data });
   }

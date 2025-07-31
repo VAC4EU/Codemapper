@@ -18,6 +18,10 @@
 
 package org.biosemantics.codemapper.persistency;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,22 +36,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.sql.DataSource;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlRootElement;
-
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.Comment;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.rest.CodeMapperResource;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PersistencyApi {
 
@@ -363,9 +360,9 @@ public class PersistencyApi {
       throw CodeMapperException.server("Cannot execute query to create comments", e);
     }
   }
-  
+
   @XmlRootElement
-  @JsonIgnoreProperties(ignoreUnknown=true)
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public static class DataMeta {
     public Boolean includeDescendants;
     // ...
@@ -421,7 +418,7 @@ public class PersistencyApi {
       }
     }
   }
-  
+
   @XmlRootElement
   public static class MappingMeta {
     public String system;
@@ -463,7 +460,7 @@ public class PersistencyApi {
       mapping.status = res.getString(3);
       mapping.version = res.getString(4);
       mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
-      if (res.getString(5) != null) 
+      if (res.getString(5) != null)
         mapping.latestDataMeta = mapper.readValue(res.getString(5), DataMeta.class);
       return mapping;
     } catch (SQLException e) {
@@ -606,7 +603,7 @@ public class PersistencyApi {
         mapping.meta = mapper.readValue(set.getString(6), MappingMeta.class);
         String dataMeta = set.getString(7);
         if (dataMeta != null) {
-        mapping.latestDataMeta = mapper.readValue(dataMeta, DataMeta.class);
+          mapping.latestDataMeta = mapper.readValue(dataMeta, DataMeta.class);
         }
         mappings.add(mapping);
       }

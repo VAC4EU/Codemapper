@@ -32,7 +32,6 @@ public class MappingData {
   Map<String, Concept> concepts; // cui -> concept
   Map<String, Map<String, Code>> codes; // voc -> code -> code info
   Map<String, Vocabulary> vocabularies; // voc -> voc info
-  String umlsVersion;
   MappingMeta meta;
 
   public MappingMeta getMeta() {
@@ -49,17 +48,17 @@ public class MappingData {
       Map<String, Concept> concepts,
       Map<String, Map<String, Code>> codes,
       Map<String, Vocabulary> vocabularies,
-      String umlsVersion) {
+      MappingMeta meta) {
     this.concepts = concepts;
     this.codes = codes;
     this.vocabularies = vocabularies;
-    this.umlsVersion = umlsVersion;
+    this.meta = meta;
   }
 
   public static MappingData fromUmlsConcepts(
       Map<String, UmlsConcept> umlsConcepts,
       Map<String, Vocabulary> vocabularies,
-      String umlsVersion) {
+      MappingMeta meta) {
 
     Map<String, Concept> concepts = new HashMap<>();
     Map<String, Map<String, Code>> codes = new HashMap<>();
@@ -80,7 +79,7 @@ public class MappingData {
       concepts.put(cui, concept);
     }
 
-    return new MappingData(concepts, codes, vocabularies, umlsVersion);
+    return new MappingData(concepts, codes, vocabularies, meta);
   }
 
   public void setCodeEnabled(String vocId, String codeId, boolean enabled)
@@ -121,14 +120,6 @@ public class MappingData {
     this.vocabularies = vocabularies;
   }
 
-  public String getUmlsVersion() {
-    return umlsVersion;
-  }
-
-  public void setUmlsVersion(String umlsVersion) {
-    this.umlsVersion = umlsVersion;
-  }
-
   public Map<String, Object> getStart() {
     return start;
   }
@@ -143,6 +134,24 @@ public class MappingData {
     String[] allowedTags;
     String[] ignoreTermTypes;
     String[] ignoreSemanticTypes;
+    boolean includeDescendants;
+
+    public MappingMeta() {}
+
+    public MappingMeta(
+        int formatVersion,
+        String umlsVersion,
+        String[] allowedTags,
+        String[] ignoreTermTypes,
+        String[] ignoreSemanticTypes,
+        boolean includeDescendants) {
+      this.formatVersion = formatVersion;
+      this.umlsVersion = umlsVersion;
+      this.allowedTags = allowedTags;
+      this.ignoreTermTypes = ignoreTermTypes;
+      this.ignoreSemanticTypes = ignoreSemanticTypes;
+      this.includeDescendants = includeDescendants;
+    }
 
     public int getFormatVersion() {
       return formatVersion;
@@ -182,6 +191,14 @@ public class MappingData {
 
     public void setIgnoreSemanticTypes(String[] ignoreSemanticTypes) {
       this.ignoreSemanticTypes = ignoreSemanticTypes;
+    }
+
+    public boolean isIncludeDescendants() {
+      return includeDescendants;
+    }
+
+    public void setIncludeDescendants(boolean includeDescendants) {
+      this.includeDescendants = includeDescendants;
     }
   }
 

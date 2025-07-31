@@ -502,6 +502,7 @@ export class Mapping {
       if (meta['ignoreTermTypes'] === undefined) {
         meta.ignoreTermTypes = [...info.defaultIgnoreTermTypes];
       }
+      meta.ignoreTermTypes.sort();
       if (meta['ignoreSemanticTypes'] === undefined) {
         meta.ignoreSemanticTypes = [...info.defaultIgnoreSemanticTypes];
       }

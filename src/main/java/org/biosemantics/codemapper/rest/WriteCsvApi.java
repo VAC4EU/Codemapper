@@ -46,6 +46,9 @@ public class WriteCsvApi {
   static final String[] HEADERS = {
     "mapping", "coding_system", "code", "code_name", "concept", "concept_name", "tag", "origin"
   };
+  static final String[] META_HEADERS = {
+    "name", "version", "umls", "system", "type", "includeDescendants", "url"
+  };
   static final String[] COMPATIBILITY_HEADERS = {
     "event_definition",
     "coding_system",
@@ -76,6 +79,24 @@ public class WriteCsvApi {
     writeHeaders(output, compatibilityFormat);
     for (PreparedMapping prepared : prepareds) {
       writePrepared(output, prepared, compatibilityFormat);
+    }
+  }
+
+  public void writeMetaCSV(OutputStream output, String projectName, Collection<Mapping> mappings)
+      throws IOException {
+    writeRawRow(output, META_HEADERS);
+    for (Mapping mapping : mappings) {
+      String url =
+          CodeMapperApplication.getCodeMapperURL() + "/mapping/" + mapping.info.mappingShortkey;
+      writeRawRow(
+          output,
+          mapping.info.mappingName,
+          mapping.info.version,
+          mapping.data.getMeta().getUmlsVersion(),
+          mapping.info.meta.system,
+          mapping.info.meta.type,
+          "" + mapping.data.getMeta().isIncludeDescendants(),
+          url);
     }
   }
 

@@ -194,8 +194,7 @@ public class PersistencyResource {
   public void setMappingMeta(
       @PathParam("shortkey") String shortkey, @Context User user, PersistencyApi.MappingMeta meta) {
     try {
-      AuthentificationApi.assertMappingProjectRolesImplies(
-          user, shortkey, ProjectPermission.Owner);
+      AuthentificationApi.assertMappingProjectRolesImplies(user, shortkey, ProjectPermission.Owner);
       api.setMappingMeta(shortkey, meta);
     } catch (CodeMapperException e) {
       e.printStackTrace();

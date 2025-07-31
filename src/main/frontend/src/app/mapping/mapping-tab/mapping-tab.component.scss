@@ -25,3 +25,20 @@ pre {
 .tags-list {
     list-style-type: none; 
 }
+
+.termTypeList {
+  display: inline;
+  list-style: none;
+}
+
+.termTypeList li {
+  display: inline;
+}
+
+.termTypeList li:after {
+  content: ", ";
+}
+
+.termTypeList li:last-child:after {
+    content: "";
+}
