@@ -9,14 +9,13 @@
 
 <section class="center-content">
 
-Dev
+August 2, 2025
 ---
 
-- display and edit mapping metadata
-- use metadata to filter mappings
-- batch processing of mappings
+- display, edit and filter by mapping metadata in project view
 - configure inclusion of descendant codes per mapping
 - metadata download
+- start batch processing of mappings
 
 May 31, 2025
 ---

@@ -227,24 +227,45 @@ alter table users add column anonymous boolean default false;
 -- 2025/07 add metadata
 
 ALTER TABLE case_definitions
-ADD COLUMN meta JSONB default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb;
+ADD COLUMN meta JSONB not null default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb;
+
+drop view if exists projects_mappings_shortkey;
+create view projects_mappings_shortkey
+as
+  select
+    p.id project_id,
+    p.name project_name,
+    cd.id mapping_id,
+    cd.name mapping_name,
+    cd.shortkey mapping_shortkey,
+    cd.old_name mapping_old_name,
+    cd.status mapping_status,
+    cd.meta mapping_meta
+  from projects p
+  join case_definitions cd
+  on p.id = cd.project_id
+  order by p.name, cd.name;
 
 UPDATE case_definitions
-SET meta['system'] = to_json(CASE 
+set meta = jsonb_set(meta, ARRAY['system'], to_jsonb(CASE 
         WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 2
         THEN split_part(name, '_', 1)
         ELSE NULL
-    END::text)::jsonb,
-    meta['type'] = to_json(CASE 
+    END::text), true)
+WHERE project_id = 47;
+UPDATE case_definitions
+set meta = jsonb_set(meta, ARRAY['type'], to_jsonb(CASE 
         WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 2
         THEN split_part(name, '_', 3)
         ELSE NULL
-    END::text)::jsonb,
-    meta['definition'] = to_json(CASE 
+    END::text), true)
+WHERE project_id = 47;
+UPDATE case_definitions
+set meta = jsonb_set(meta, ARRAY['definition'], to_jsonb(CASE 
         WHEN length(name) - LENGTH(REPLACE(name,'_','')) >= 3
         THEN split_part(name, '_', 4)
         ELSE NULL
-    END::text)::jsonb
+    END::text), true)
 WHERE project_id = 47;
 
 UPDATE case_definitions

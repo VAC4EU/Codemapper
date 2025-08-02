@@ -4,10 +4,20 @@
 
     <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
-        <mat-panel-title>Metadata and configuration</mat-panel-title>
-        <mat-panel-description>The metadata and configuration of the mapping</mat-panel-description>
+        <mat-panel-title>Configuration</mat-panel-title>
+        <mat-panel-description>Configurations that change the codelist</mat-panel-description>
       </mat-expansion-panel-header>
-      <h4>Metadata</h4>
+      <mat-checkbox checked="mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
+        Include descendant codes
+      </mat-checkbox>
+      <p>The mapping needs to be saved after changes.</p>
+</mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Metadata</mat-panel-title>
+        <mat-panel-description>Descriptive information about the mapping</mat-panel-description>
+      </mat-expansion-panel-header>
       <table>
         <tr>
           <td>Type:</td>
@@ -27,8 +37,8 @@
         </tr>
       </table>
       <button mat-raised-button (click)="editMappingMeta()">Edit</button>
-      <h4>Include descendant codes</h4>
-      {{mapping.meta.includeDescendants ? 'Yes' : 'No'}}
+
+      <!--
       <h4>Allowed tags</h4>
       <p *ngIf="mapping.meta.allowedTags.length == 0">None.</p>
       <ul class="tags-list">
@@ -44,6 +54,7 @@
       <ul>
         <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
       </ul>
+      -->
     </mat-expansion-panel>
 
     <mat-expansion-panel>

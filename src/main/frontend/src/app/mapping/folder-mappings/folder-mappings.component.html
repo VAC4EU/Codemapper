@@ -44,7 +44,7 @@
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
                     (click)="openDialog(renameDialog)" mat-raised-button>Edit name</button>
             </span>
-            <span matTooltip="Edit the metadata of one selected mapping (only for owners)">
+            <span matTooltip="Edit the properties of one selected mapping (only for owners)">
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
                     (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
             </span>

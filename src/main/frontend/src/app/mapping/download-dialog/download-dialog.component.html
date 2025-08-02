@@ -11,9 +11,12 @@
         <mat-hint *ngIf="format.value == 'csv_compat'">For existing workflows, without meta
             data (use format "Metadata" to download that separately)</mat-hint>
     </mat-form-field>
+    <p>
+        Descendant codes are included according to the mapping properties.
+    </p>
 </div>
 <div mat-dialog-actions>
     <button mat-raised-button (click)="close()">Cancel</button>
-    <button mat-raised-button enabled="enabled" (click)="download(format.value)"
-        matDialogClose color="primary"><mat-icon>download</mat-icon>Download</button>
+    <button mat-raised-button enabled="enabled" (click)="download(format.value)" matDialogClose
+        color="primary"><mat-icon>download</mat-icon>Download</button>
 </div>

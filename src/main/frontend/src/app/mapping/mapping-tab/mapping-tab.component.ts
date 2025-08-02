@@ -58,6 +58,11 @@ export class MappingTabComponent {
     return start != null && start.type == StartType.CsvImport;
   }
 
+  toggleIncludeDescendants() {
+    let value = !this.mapping.meta.includeDescendants;
+    this.run.emit(new ops.SetIncludeDescendants(value));
+  }
+
   remap() {
     if (this.serverInfo.umlsVersion != null) {
       (async () => {

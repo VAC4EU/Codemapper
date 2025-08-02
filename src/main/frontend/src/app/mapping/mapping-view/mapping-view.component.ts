@@ -410,18 +410,35 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   titleTooltip() : string {
-    let res: string[] = [];
+    let snippets: string[] = [];
     if (this.meta?.system) {
-      res.push(`system: ${this.meta.system}`);
+      snippets.push(`system: ${this.meta.system}`);
     }
     if (this.meta?.type) {
-      res.push(`type: ${this.meta.type}`);
+      snippets.push(`type: ${this.meta.type}`);
     }
-    res.push(`you are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`);
+    snippets.push(`${this.mapping?.meta.includeDescendants ? 'include' : 'exclude'} descendant codes`);
+    let res = snippets.join(', ') + '.';
+    res = res[0].toUpperCase() + res.slice(1);
     if (this.saveRequired) {
-      res.push(`mapping needs save.`);
+      res += ` Mapping needs save.`
     }
-    return res.join(", ");
+    res += ` You are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`;
+    return res;
+  }
+
+  shortMeta() : string {
+    let snippets: string[] = [];
+    if (this.meta?.system) {
+      snippets.push(this.meta.system);
+    }
+    if (this.meta?.type) {
+      snippets.push(this.meta.type);
+    }
+    if (this.mapping?.meta.includeDescendants) {
+      snippets.push('Incl Desc');
+    }
+    return snippets.join('/');
   }
 
   async setStartIndexing(indexing : Indexing) {
