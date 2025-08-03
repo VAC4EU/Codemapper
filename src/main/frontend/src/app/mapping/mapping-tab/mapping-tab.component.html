@@ -7,7 +7,7 @@
         <mat-panel-title>Configuration</mat-panel-title>
         <mat-panel-description>Configurations that change the codelist</mat-panel-description>
       </mat-expansion-panel-header>
-      <mat-checkbox checked="mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
+      <mat-checkbox [checked]="mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
         Include descendant codes
       </mat-checkbox>
       <p>The mapping needs to be saved after changes.</p>

@@ -4,15 +4,20 @@
     <mat-form-field>
         <mat-label>Format</mat-label>
         <mat-select #format required value="csv_compat">
-            <mat-option value="csv">Codes</mat-option>
-            <mat-option value="csv_compat">Codes (compatibility)</mat-option>
+            <!-- <mat-option value="csv">Codes</mat-option> -->
+            <mat-option value="csv_compat">Codelist</mat-option>
             <mat-option value="csv_meta">Metadata</mat-option>
         </mat-select>
         <mat-hint *ngIf="format.value == 'csv_compat'">For existing workflows, without meta
             data (use format "Metadata" to download that separately)</mat-hint>
     </mat-form-field>
-    <p>
-        Descendant codes are included according to the mapping properties.
+    <p *ngIf="data.includeDescendants == IncludeDescendants.PerMapping">
+        Descendant codes are included per mapping according to the mapping configuration.
+    </p>
+    <p *ngIf="data.includeDescendants != IncludeDescendants.PerMapping">
+        Descendant codes are
+        <span *ngIf="data.includeDescendants == IncludeDescendants.No">not</span>
+        included (according to the mapping configuration).
     </p>
 </div>
 <div mat-dialog-actions>

@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -305,12 +306,14 @@ public class CodeMapperResource {
       String metaSuffix = format.equals("csv_meta") ? " - meta" : "";
       String filename;
       if (mappings.size() == 1) {
-        filename =
-            String.format(
-                "%s%s.%s",
-                mappings.stream().findFirst().get().info.withoutDefinition(),
-                metaSuffix,
-                WriteCsvApi.FILE_EXTENSION);
+        Mapping mapping = mappings.stream().findFirst().get();
+        String name =
+            Arrays.asList(
+                    mapping.info.meta.system, mapping.info.mappingName, mapping.info.meta.type)
+                .stream()
+                .filter(s -> s != null)
+                .collect(Collectors.joining("_"));
+        filename = String.format("%s%s.%s", name, metaSuffix, WriteCsvApi.FILE_EXTENSION);
       } else {
         filename =
             String.format(

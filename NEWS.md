@@ -9,7 +9,7 @@
 
 <section class="center-content">
 
-August 2, 2025
+August 3, 2025
 ---
 
 - display, edit and filter by mapping metadata in project view
