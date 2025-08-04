@@ -13,12 +13,12 @@
                     <mat-icon>backspace</mat-icon>
                 </button>
             </mat-form-field>
-            <button mat-raised-button matTooltip="Filter mappings by their properties" [matMenuTriggerFor]="menu"
-                class="input-element">Properties<mat-icon
+            <button mat-raised-button matTooltip="Filter mappings by their metadata" [matMenuTriggerFor]="menu"
+                class="input-element">On&nbsp;metadata<mat-icon
                     *ngIf="this.hasFilterOnProperties()">filter_alt</mat-icon></button>
             <mat-menu #menu="matMenu" class="tagsMenu">
                 <div class="filter-properties-title">
-                    <h3>Filter mappings on properties</h3>
+                    <h3>Filter mappings on metadata</h3>
                     <button mat-icon-button (click)="clearFilters()"><mat-icon>close</mat-icon></button>
                 </div>
                 <div *ngFor="let tag of allProperties | keyvalue">
@@ -48,10 +48,12 @@
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
                     (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
             </span>
+            <!--
             <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
                 <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0 || !allDefaultStatus(selectedFilteredMappings)"
                     (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
             </span>
+            -->
             <button class="tool-delete" (click)="deleteSelectedMappings()"
                 [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
         </mat-card-actions>
@@ -81,10 +83,10 @@
 <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
         <tr mat-header-row
-            *matHeaderRowDef="['select', 'name', 'system', 'type', 'descendants', 'projects', 'status', 'lastModification']; sticky: true">
+            *matHeaderRowDef="['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification']; sticky: true">
         </tr>
         <tr mat-row
-            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'descendants', 'projects', 'status', 'lastModification'];"
+            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification'];"
             [routerLink]="mappingLink(mapping)" matTooltip="Definition: {{mapping.meta?.definition ?? 'n/a'}}"
             class="row-link"></tr>
 
@@ -212,7 +214,8 @@
         </p>
         <button mat-stroked-button [matMenuTriggerFor]="addOperationsMenu">Add operation</button>
         <mat-menu #addOperationsMenu="matMenu">
-            <button *ngFor="let op of DEFAULT_OPERATIONS" mat-menu-item (click)="operations.push(op)">{{op.describe()}}</button>
+            <button *ngFor="let op of DEFAULT_OPERATIONS" mat-menu-item
+                (click)="operations.push(op)">{{op.describe()}}</button>
         </mat-menu>
         <mat-list>
             <mat-list-item *ngFor="let op of operations; index as i">
@@ -230,6 +233,7 @@
     <mat-dialog-actions align="end">
         <button mat-button matDialogClose>Cancel</button>
         <button mat-raised-button [disabled]="!operations || !summary.value || selection.selected.length == 0"
-            (click)="batchProcess(selection.selected, operations, summary.value)" matDialogClose color="primary">Ok</button>
+            (click)="batchProcess(selection.selected, operations, summary.value)" matDialogClose
+            color="primary">Ok</button>
     </mat-dialog-actions>
 </ng-template>

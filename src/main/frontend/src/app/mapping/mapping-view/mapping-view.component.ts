@@ -330,6 +330,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.projectName,
       mappingConfigs: [this.mappingShortkey],
       includeDescendants: includeDescendants(this.mapping?.meta.includeDescendants ?? false),
+      mappings: {[this.mappingShortkey!]: {name: this.mappingName, meta: this.meta}},
     };
     this.dialog.open(DownloadDialogComponent, { data })
   }
@@ -434,9 +435,6 @@ export class MappingViewComponent implements HasPendingChanges {
     }
     if (this.meta?.type) {
       snippets.push(this.meta.type);
-    }
-    if (this.mapping?.meta.includeDescendants) {
-      snippets.push('Incl Desc');
     }
     return snippets.join('/');
   }

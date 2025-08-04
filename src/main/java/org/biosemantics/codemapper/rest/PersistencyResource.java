@@ -104,7 +104,7 @@ public class PersistencyResource {
       @PathParam("project") String project, @Context User user) {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer);
-      return api.getMappingInfos(project);
+      return api.getLatestMappingInfos(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
       e.printStackTrace();

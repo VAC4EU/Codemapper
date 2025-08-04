@@ -439,15 +439,30 @@ public class PersistencyApi {
   }
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
-    String query =
-        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT, r.mapping->'meta'::TEXT  "
-            + "FROM projects_mappings_shortkey pm "
-            + "JOIN case_definition_latest_revision r "
-            + "ON r.case_definition_id = pm.mapping_id "
-            + "WHERE mapping_shortkey = ?";
+    return getMappingInfo(shortkey, null);
+  }
+
+  public MappingInfo getMappingInfo(String shortkey, Integer version) throws CodeMapperException {
+    String query;
+    if (version == null)
+      query =
+          "SELECT mapping_name, project_name, mapping_status, version, mapping_meta::TEXT, r.mapping->'meta'::TEXT "
+              + "FROM projects_mappings_shortkey pm "
+              + "JOIN case_definition_latest_revision r "
+              + "ON r.case_definition_id = pm.mapping_id "
+              + "WHERE mapping_shortkey = ?";
+    else
+      query =
+          "SELECT mapping_name, project_name, mapping_status, version, mapping_meta::TEXT, r.mapping->'meta'::TEXT "
+              + "FROM projects_mappings_shortkey pm "
+              + "JOIN case_definition_revisions r "
+              + "ON r.case_definition_id = pm.mapping_id "
+              + "WHERE mapping_shortkey = ? "
+              + "AND r.version = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
+      if (version != null) statement.setInt(2, version);
       ResultSet res = statement.executeQuery();
       if (!res.next()) {
         throw CodeMapperException.user("Invalid mapping shortkey " + shortkey);
@@ -459,9 +474,9 @@ public class PersistencyApi {
       mapping.projectName = res.getString(2);
       mapping.status = res.getString(3);
       mapping.version = res.getString(4);
-      mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
+      mapping.meta = mapper.readValue(res.getString(5), MappingMeta.class);
       if (res.getString(5) != null)
-        mapping.latestDataMeta = mapper.readValue(res.getString(5), DataMeta.class);
+        mapping.latestDataMeta = mapper.readValue(res.getString(6), DataMeta.class);
       return mapping;
     } catch (SQLException e) {
       e.printStackTrace();
@@ -575,7 +590,7 @@ public class PersistencyApi {
     }
   }
 
-  public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
+  public List<MappingInfo> getLatestMappingInfos(String project) throws CodeMapperException {
     String query =
         "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp, cd.meta::TEXT, r.mapping->'meta'::TEXT "
             + "FROM projects p "

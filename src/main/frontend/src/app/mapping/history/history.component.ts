@@ -18,11 +18,11 @@
 
 import { Input, TemplateRef } from '@angular/core';
 import { Component } from '@angular/core';
-import { Mapping, Revision } from '../data';
+import { Mapping, MappingMeta, Revision } from '../data';
 import { ApiService } from '../api.service';
-import { ProjectRole } from '../persistency.service';
+import { MappingInfo, ProjectRole } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
-import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
+import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
 
 @Component({
   selector: 'history',
@@ -31,8 +31,9 @@ import { DownloadDialogComponent } from '../download-dialog/download-dialog.comp
 })
 export class HistoryComponent {
   @Input({ required: true }) projectName! : string;
-  @Input({ required: true }) mappingShortkey! : string;
   @Input({ required: true }) mapping! : Mapping;
+  @Input({ required: true }) info! : MappingInfo;
+  @Input({ required: true }) meta! : MappingMeta;
   @Input({ required: true }) revisions! : Revision[];
   @Input({ required: true }) version! : number;
   @Input({ required: true }) projectRole : ProjectRole | null = null;
@@ -50,14 +51,17 @@ export class HistoryComponent {
   }
 
   openDownloadDialog(version : number) {
+    let config = `${this.info.mappingShortkey}@${version}`;
     let data = {
       projectName: this.projectName,
-      mappingConfigs: [`${this.mappingShortkey}@${version}`],
+      mappingConfigs: [config],
+      includeDescendants: IncludeDescendants.PerMapping,
+      mappings: { [config]: {name: this.info.mappingName, meta: this.meta}},
     };
     this.dialog.open(DownloadDialogComponent, { data })
   }
 
   selectedMappingConfig() {
-    return `${this.mappingShortkey}@v${this.downloadVersion}`;
+    return `${this.info.mappingShortkey}@v${this.downloadVersion}`;
   }
 }

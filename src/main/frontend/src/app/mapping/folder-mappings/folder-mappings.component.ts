@@ -345,6 +345,9 @@ export class FolderMappingsComponent {
     let data = {
       projectName: this.folderName,
       mappingConfigs: mappings.map((i) => i.mappingShortkey),
+      mappings: Object.fromEntries(
+        mappings.map(i => [i.mappingShortkey, { name: i.mappingName, meta: i.meta }])
+      ),
       includeDescendants: IncludeDescendants.PerMapping,
     };
     this.dialog.open(DownloadDialogComponent, { data });

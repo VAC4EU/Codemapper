@@ -42,9 +42,9 @@
     <div *ngIf="mapping.start != null && meta != null">
       <mapping-tab
         [projectName]="projectName"
+        [info]="info!"
         [mapping]="mapping"
         [meta]="meta"
-        [mappingShortkey]="mappingShortkey"
         [serverInfo]="serverInfo"
         [revisions]="revisions"
         [version]="version"
@@ -114,6 +114,12 @@
       <mat-label>Summary</mat-label>
       <textarea class="save-summary" rows="5" cols="30" #summary matInput></textarea>
     </mat-form-field>
+  Modifications
+  <ol>
+    <li *ngFor="let step of mapping?.undoStack">
+      {{step[0]}}
+    </li>
+  </ol>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button matDialogClose>Cancel</button>

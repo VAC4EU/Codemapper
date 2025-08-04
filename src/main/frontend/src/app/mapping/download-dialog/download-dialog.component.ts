@@ -1,6 +1,8 @@
 import { Component, Inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MappingInfo } from '../persistency.service';
+import { MappingMeta } from '../data';
 
 export enum IncludeDescendants {
   Yes = 0,
@@ -27,19 +29,33 @@ export class DownloadDialogComponent {
     public data : {
       projectName : string;
       mappingConfigs : string[];
+      mappings: { [key: string]: {name: string, meta: MappingMeta}};
       includeDescendants : IncludeDescendants;
     }
   ) {
     this.numMappings = data.mappingConfigs.length;
   }
 
-  download(format : string) {
+  defaultFilename(): string {
+    if (this.data.mappingConfigs.length == 1) {
+      let config = this.data.mappingConfigs[0];
+      let {name, meta} = this.data.mappings[config];
+      if (meta.system && meta.type) {
+        return `${meta.system}_${name}_${meta.type}`;
+      }
+    }
+    let s = this.data.mappingConfigs.length == 1 ? '' : 's';
+    return `${this.data.projectName}`
+  }
+
+  download(content : string, filename : string) {
     let url = new URL(this.api.codeListsUrl);
+    url.searchParams.set('content', content);
+    url.searchParams.set('filename', filename);
     url.searchParams.set('project', this.data.projectName);
     for (let mappingConfig of this.data.mappingConfigs) {
       url.searchParams.append('mappings', mappingConfig);
     }
-    url.searchParams.set('format', '' + format);
     window.open(url, '_blank');
   }
   close() {

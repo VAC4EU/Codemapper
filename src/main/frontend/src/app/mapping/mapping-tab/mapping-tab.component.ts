@@ -19,7 +19,7 @@ import {
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { PersistencyService, ProjectRole } from '../persistency.service';
+import { MappingInfo, PersistencyService, ProjectRole } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 import { firstValueFrom } from 'rxjs';
@@ -31,7 +31,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class MappingTabComponent {
   @Input({ required: true }) projectName!: string;
-  @Input({ required: true }) mappingShortkey!: string | null;
+  @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) mapping!: Mapping;
   @Input({ required: true }) meta!: MappingMeta;
   @Input({ required: true }) serverInfo!: ServerInfo;
@@ -98,7 +98,7 @@ export class MappingTabComponent {
         if (meta) {
           try {
             await firstValueFrom(
-              this.persistency.setMappingMeta(this.mappingShortkey, meta)
+              this.persistency.setMappingMeta(this.info.mappingShortkey, meta)
             );
             this.meta = meta;
           } catch (e) {
