@@ -777,14 +777,6 @@ export const EMPTY_SERVER_INFO: ServerInfo = {
   defaultVocabularies: [],
 };
 
-export interface Revision {
-  version: number;
-  author: string;
-  timestamp: string;
-  summary: string;
-  mapping: string;
-}
-
 export function cuiOfId(id: string): string {
   return 'C' + Array(8 - id.length).join('0') + id;
 }

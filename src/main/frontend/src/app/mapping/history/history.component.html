@@ -11,7 +11,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let rev of revisions">
-            <td>{{rev.version}}<span *ngIf="rev.version == version"> (current)</span></td>
+            <td>{{rev.version}}<span *ngIf="rev.version == latestVersion"> (current)</span></td>
             <td><span class="author">{{rev.author}}</span></td>
             <td><span class="timestamp" matTooltip="{{rev.timestamp|date:'medium'}}">{{rev.timestamp | date:'mediumDate'}}</span></td>
             <td><span matTooltip="{{rev.summary}}" matTooltipClass="pre-line-tooltip">{{firstLine(rev.summary)}}</span></td>

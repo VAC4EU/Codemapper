@@ -1,7 +1,7 @@
-<menu-banner [projectName]="projectName" omitSpacer="true">
+<menu-banner [projectName]="info.projectName" omitSpacer="true">
   <span matTooltip="{{titleTooltip()}}">
     <!-- <mat-icon>schema</mat-icon> -->
-    <button routerLink="/folder/{{projectName}}" class="project-link" mat-button>{{projectName}}:</button> <span *ngIf="mapping"><span class="name" (click)="dump()">{{mappingName}}</span><span *ngIf="saveRequired">*</span><span *ngIf="meta"> ({{shortMeta()}})</span></span>
+    <button routerLink="/folder/{{info.projectName}}" class="project-link" mat-button>{{info.projectName}}:</button> <span *ngIf="mapping"><span class="name" (click)="dump()">{{info.meta.definition ?? info.mappingName}}</span><span *ngIf="saveRequired">*</span><span *ngIf="info.meta.system || info.meta.type"> ({{shortMeta()}})</span></span>
   </span>
   <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
   <ng-container *ngIf="mapping != null" onTheRight>
@@ -39,17 +39,17 @@
 <mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
 
   <mat-tab label="Mapping">
-    <div *ngIf="mapping.start != null && meta != null">
+    <div *ngIf="mapping.start != null && info.meta != null">
       <mapping-tab
-        [projectName]="projectName"
+        [projectName]="info.projectName"
+        [shortkey]="shortkey"
+        [latest]="latest"
         [info]="info!"
         [mapping]="mapping"
-        [meta]="meta"
         [serverInfo]="serverInfo"
         [revisions]="revisions"
-        [version]="version"
         [vocabularies]="vocabularies"
-        [userCanDownload]="userCanDownload && !!mappingShortkey && !saveRequired && mapping.undoStack.length == 0"
+        [userCanDownload]="userCanDownload && !!shortkey && !saveRequired && mapping.undoStack.length == 0"
         [userCanEdit]="userCanEdit"
         [projectRole]="projectRole"
         (run)="run($event)"></mapping-tab>

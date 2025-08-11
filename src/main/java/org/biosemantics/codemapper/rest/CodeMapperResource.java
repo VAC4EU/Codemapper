@@ -56,7 +56,6 @@ import org.biosemantics.codemapper.descendants.DescendantsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
-import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.rest.WriteCsvApi.Mapping;
 
 @Path("code-mapper")
@@ -336,13 +335,12 @@ public class CodeMapperResource {
     PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
     List<Mapping> mappings = new LinkedList<>();
     for (MappingConfig config : mappingConfigs) {
-      MappingInfo info = persistencyApi.getMappingInfo(config.shortkey, config.version);
       Mapping mapping = new Mapping();
-      mapping.info = info;
+      mapping.info = persistencyApi.getMappingInfo(config.shortkey, config.version);
       if (config.version == null) {
-        mapping.revision = persistencyApi.getLatestRevision(info.mappingShortkey);
+        mapping.revision = persistencyApi.getLatestRevision(config.shortkey);
       } else {
-        mapping.revision = persistencyApi.getRevision(info.mappingShortkey, config.version);
+        mapping.revision = persistencyApi.getRevision(config.shortkey, config.version);
       }
       if (mapping.revision == null) {
         String msg =

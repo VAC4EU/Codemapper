@@ -13,16 +13,18 @@ import {
   StartType,
   ServerInfo,
   Vocabularies,
-  Revision,
-  MappingMeta,
 } from '../data';
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MappingInfo, PersistencyService, ProjectRole } from '../persistency.service';
+import {
+  MappingInfo,
+  PersistencyService,
+  ProjectRole,
+  RevisionInfo,
+} from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'mapping-tab',
@@ -31,15 +33,15 @@ import { firstValueFrom } from 'rxjs';
 })
 export class MappingTabComponent {
   @Input({ required: true }) projectName!: string;
+  @Input({ required: true }) shortkey!: string | null;
   @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) mapping!: Mapping;
-  @Input({ required: true }) meta!: MappingMeta;
   @Input({ required: true }) serverInfo!: ServerInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
+  @Input({ required: true }) latest: RevisionInfo | null = null;
+  @Input({ required: true }) revisions: RevisionInfo[] = [];
   @Input() userCanDownload: boolean = false;
   @Input() userCanEdit: boolean = false;
-  @Input() revisions: Revision[] = [];
-  @Input() version: number = -1;
   @Output() run = new EventEmitter<ops.Operation>();
   @Input({ required: true }) projectRole: ProjectRole | null = null;
 
@@ -92,19 +94,22 @@ export class MappingTabComponent {
 
   editMappingMeta() {
     this.dialog
-      .open(EditMetaComponent, { data: { meta: this.meta } })
+      .open(EditMetaComponent, {
+        data: { name: this.info.mappingName, meta: this.info.meta },
+      })
       .afterClosed()
-      .subscribe(async (meta) => {
-        if (meta) {
-          try {
-            await firstValueFrom(
-              this.persistency.setMappingMeta(this.info.mappingShortkey, meta)
-            );
-            this.meta = meta;
-          } catch (e) {
-            let msg = `Could not save metadata`;
-            console.error(msg, e);
-            alert(msg);
+      .subscribe(async (result) => {
+        if (result) {
+          if (!this.shortkey) {
+            EditMetaComponent.set(this.info, result);
+          } else {
+            try {
+              await EditMetaComponent.save(this.info, this.persistency, this.shortkey, result);
+            } catch (e) {
+              let msg = `Could not save name or meta`;
+              console.error(msg, e);
+              alert(msg);
+            }
           }
         }
       });

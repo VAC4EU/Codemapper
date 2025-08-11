@@ -38,16 +38,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
-import org.biosemantics.codemapper.persistency.MappingRevision;
+import org.biosemantics.codemapper.persistency.RevisionInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi.ProjectInfo;
+import org.biosemantics.codemapper.persistency.PersistencyApi.Revision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.UserRole;
 
 @Path("persistency")
@@ -107,6 +109,22 @@ public class PersistencyResource {
       return api.getLatestMappingInfos(project);
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definitions");
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @GET
+  @Path("projects/{project}/latest-mapping-revisions")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Map<String, RevisionInfo> getLatestMappingRevision(
+      @PathParam("project") String project, @Context User user) {
+    logger.info(String.format("Get latest mapping revisions for folder %s (%s)", project, user));
+    try {
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer);
+      return api.getLatestFolderMappingRevisions(project);
+    } catch (CodeMapperException e) {
+      System.err.println("Couldn't get case definition");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -205,15 +223,15 @@ public class PersistencyResource {
   @GET
   @Path("mapping/{mappingShortkey}/latest-revision")
   @Produces(MediaType.APPLICATION_JSON)
-  public MappingRevision getLatestRevision(
+  public Revision getLatestRevision(
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     logger.info(String.format("Get latest revision %s (%s)", mappingShortkey, user));
     try {
       AuthentificationApi.assertMappingProjectRolesImplies(
           user, mappingShortkey, ProjectPermission.Reviewer);
-      MappingRevision mappingJson = api.getLatestRevision(mappingShortkey);
-      if (mappingJson != null) return mappingJson;
-      else throw new NotFoundException();
+      Revision mappingJson = api.getLatestRevision(mappingShortkey);
+      if (mappingJson == null) throw new NotFoundException();
+      return mappingJson;
     } catch (CodeMapperException e) {
       System.err.println("Couldn't get case definition");
       e.printStackTrace();
@@ -224,7 +242,7 @@ public class PersistencyResource {
   @GET
   @Path("mapping/{mappingShortkey}/revisions")
   @Produces(MediaType.APPLICATION_JSON)
-  public List<MappingRevision> getRevisions(
+  public List<RevisionInfo> getRevisions(
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     logger.info(String.format("Get revisions %s (%s)", mappingShortkey, user));
 
@@ -241,8 +259,8 @@ public class PersistencyResource {
 
   @POST
   @Path("mapping")
-  @Produces(MediaType.APPLICATION_JSON)
-  public MappingInfo saveCaseDefinitionRevision(
+  @Produces(MediaType.TEXT_PLAIN)
+  public String saveCaseDefinitionRevision(
       @FormParam("projectName") String projectName,
       @FormParam("mappingName") String mappingName,
       @Context User user) {
@@ -256,11 +274,12 @@ public class PersistencyResource {
       throw new InternalServerErrorException(e);
     }
   }
+  
 
   @POST
   @Path("mapping/{mappingShortkey}/save-revision")
   @Produces(MediaType.APPLICATION_JSON)
-  public int saveCaseDefinitionRevision(
+  public RevisionInfo saveCaseDefinitionRevision(
       @PathParam("mappingShortkey") String mappingShortkey,
       @FormParam("mapping") String mappingJson,
       @FormParam("summary") String summary,

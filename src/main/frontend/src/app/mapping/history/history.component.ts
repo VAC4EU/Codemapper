@@ -16,11 +16,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, TemplateRef } from '@angular/core';
+import { Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { Mapping, MappingMeta, Revision } from '../data';
+import { Mapping, MappingMeta } from '../data';
 import { ApiService } from '../api.service';
-import { MappingInfo, ProjectRole } from '../persistency.service';
+import { MappingInfo, ProjectRole, RevisionInfo } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
 
@@ -34,8 +34,8 @@ export class HistoryComponent {
   @Input({ required: true }) mapping! : Mapping;
   @Input({ required: true }) info! : MappingInfo;
   @Input({ required: true }) meta! : MappingMeta;
-  @Input({ required: true }) revisions! : Revision[];
-  @Input({ required: true }) version! : number;
+  @Input({ required: true }) revisions! : RevisionInfo[];
+  @Input({ required: true }) latestVersion! : number | null;
   @Input({ required: true }) projectRole : ProjectRole | null = null;
   @Input() userCanDownload : boolean = false;
 

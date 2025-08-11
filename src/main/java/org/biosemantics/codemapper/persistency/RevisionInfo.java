@@ -18,27 +18,25 @@
 
 package org.biosemantics.codemapper.persistency;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.xml.bind.annotation.XmlRootElement;
-import org.biosemantics.codemapper.CodeMapperException;
-import org.biosemantics.codemapper.MappingData;
 
 @XmlRootElement
-public class MappingRevision {
+public class RevisionInfo {
   int version;
   String author;
   String timestamp;
   String summary;
-  String mapping;
 
-  public MappingRevision(
-      int version, String author, String timestamp, String summary, String mapping) {
+  public RevisionInfo() {
+    super();
+  }
+
+  public RevisionInfo(
+      int version, String author, String timestamp, String summary) {
     this.version = version;
     this.author = author;
     this.timestamp = timestamp;
     this.summary = summary;
-    this.mapping = mapping;
   }
 
   public int getVersion() {
@@ -71,22 +69,5 @@ public class MappingRevision {
 
   public void setSummary(String summary) {
     this.summary = summary;
-  }
-
-  public String getMapping() {
-    return mapping;
-  }
-
-  public void setMapping(String mapping) {
-    this.mapping = mapping;
-  }
-
-  public MappingData parseMappingData() throws CodeMapperException {
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      return mapper.readValue(mapping, MappingData.class);
-    } catch (JsonProcessingException e) {
-      throw CodeMapperException.server("could no parse mapping", e);
-    }
   }
 }

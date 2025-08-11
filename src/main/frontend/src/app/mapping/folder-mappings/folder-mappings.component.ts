@@ -11,11 +11,15 @@ import {
   mappingInfoLink,
   PersistencyService,
   ProjectRole,
+  RevisionInfos,
   userCanCreate,
   userCanDownload,
   userCanRename,
 } from '../persistency.service';
-import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
+import {
+  DownloadDialogComponent,
+  IncludeDescendants,
+} from '../download-dialog/download-dialog.component';
 import {
   EMPTY_SERVER_INFO,
   Mapping,
@@ -26,6 +30,7 @@ import {
   StartType,
   MappingMeta,
   DEFAULT_INCLUDE_DESCENDANTS,
+  emptyMappingMeta,
 } from '../data';
 import * as ops from '../mapping-ops';
 import { User } from '../auth.service';
@@ -42,23 +47,6 @@ import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 
-class NameInfo {
-  constructor(
-    public system: string,
-    public abbreviation: string,
-    public typ: string,
-    public definition: string
-  ) {}
-  static parse(name: string): NameInfo | null {
-    let parts = name.split('_');
-    if (parts.length == 3 || parts.length == 4) {
-      return new NameInfo(parts[0], parts[1], parts[2], parts[3] ?? parts[1]);
-    } else {
-      return new NameInfo('', name, '', '');
-    }
-  }
-}
-
 @Component({
   selector: 'folder-mappings',
   templateUrl: './folder-mappings.component.html',
@@ -74,7 +62,7 @@ export class FolderMappingsComponent {
   folderName: string = '';
   newEventName: string = '';
   mappings: MappingInfo[] = [];
-  nameInfos: { [key: string]: NameInfo | null } = {};
+  latests: RevisionInfos = {};
   selectedMappings: MappingInfo[] = [];
   filterOnName: string = '';
   selection = new SelectionModel<MappingInfo>(true, []);
@@ -115,14 +103,11 @@ export class FolderMappingsComponent {
     this.mappings = await firstValueFrom(
       this.persistency.projectMappingInfos(this.folderName)
     );
+    this.latests = await firstValueFrom(
+      this.persistency.projectLatestMappings(this.folderName)
+    );
     this.allProperties = this.getAllTags();
     this.numMappings.emit(this.mappings.length);
-    this.nameInfos = Object.fromEntries(
-      this.mappings.map((m) => [
-        m.mappingShortkey,
-        NameInfo.parse(m.mappingName),
-      ])
-    );
     this.dataSource.data = Object.values(this.mappings);
     this.dataSource.sort = this.sort;
     this.dataSource.filterPredicate = (info: MappingInfo, _filter: string) => {
@@ -140,14 +125,20 @@ export class FolderMappingsComponent {
         }
       }
       let filter = this.filterOnName.toLowerCase().trim();
-      return info.mappingName.toLowerCase().includes(filter);
+      return (
+        info.mappingName.toLowerCase().includes(filter) ||
+        (info.meta?.definition ?? '').toLowerCase().includes(filter)
+      );
     };
     this.dataSource.sortingDataAccessor = (mapping0: any, property: string) => {
       let mapping = mapping0 as MappingInfo;
       switch (property) {
-        case 'descendants': return mapping.latestDataMeta?.includeDescendants;
-        case 'name': return mapping.mappingName;
-        default: return mapping0[property] ?? mapping0.meta?.[property]; 
+        // case 'descendants':
+        //  return this.latests[mapping.mappingShortkey].meta.includeDescendants;
+        case 'name':
+          return mapping.mappingName;
+        default:
+          return mapping0[property] ?? mapping0.meta?.[property];
       }
     };
   }
@@ -196,12 +187,6 @@ export class FolderMappingsComponent {
     this.applyFilter();
   }
 
-  nameInfo(mapping: MappingInfo) {
-    return (
-      this.nameInfos[mapping.mappingShortkey] ?? new NameInfo('', '', '', '')
-    );
-  }
-
   isAllFilteredSelected() {
     return (
       this.dataSource.filteredData.length <= this.selection.selected.length &&
@@ -236,35 +221,12 @@ export class FolderMappingsComponent {
   }
 
   allDefaultStatus(mappings: MappingInfo[]): boolean {
-    return mappings.every((info) => info.version != null && info.status == null);
-  }
-
-  async newMapping(
-    projectName: string,
-    mappingName: string,
-    umlsVersion: string
-  ) {
-    if (!projectName || !mappingName) {
-      return;
-    }
-    let vocs0 = await firstValueFrom(this.api.vocabularies());
-    let vers = await firstValueFrom(this.api.serverInfo());
-    let vocabularies = Object.fromEntries(
-      vocs0
-        .filter((v) => vers.defaultVocabularies.includes(v.id))
-        .map((v) => [v.id, v])
+    return mappings.every(
+      (info) => {
+        let latest = this.latests[info.mappingShortkey!];
+        return latest.version != null && info.status == null;
+      }
     );
-    let info = {
-      formatVersion: MappingFormat.version,
-      umlsVersion,
-      allowedTags: this.serverInfo.defaultAllowedTags,
-      ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
-      ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
-      includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
-    };
-    let mapping = new Mapping(info, null, vocabularies, {}, {});
-    let initial = { mappingName, projectName, mapping };
-    this.router.navigate(['/mapping'], { state: { initial } });
   }
 
   importNew(projectName: string) {
@@ -327,7 +289,7 @@ export class FolderMappingsComponent {
       )
     )
       return;
-    let shortkeys = this.selection.selected.map((c) => c.mappingShortkey);
+    let shortkeys = this.selection.selected.map((c) => c.mappingShortkey!);
     try {
       await this.persistency.deleteMappings(shortkeys);
     } catch (e) {
@@ -346,7 +308,10 @@ export class FolderMappingsComponent {
       projectName: this.folderName,
       mappingConfigs: mappings.map((i) => i.mappingShortkey),
       mappings: Object.fromEntries(
-        mappings.map(i => [i.mappingShortkey, { name: i.mappingName, meta: i.meta }])
+        mappings.map((i) => [
+          i.mappingShortkey,
+          { name: i.mappingName, meta: i.meta },
+        ])
       ),
       includeDescendants: IncludeDescendants.PerMapping,
     };
@@ -355,17 +320,16 @@ export class FolderMappingsComponent {
 
   openMetaDataDialog(info: MappingInfo) {
     this.dialog
-      .open(EditMetaComponent, { data: { meta: info.meta } })
+      .open(EditMetaComponent, {
+        data: { name: info.mappingName, meta: info.meta },
+      })
       .afterClosed()
-      .subscribe(async (meta) => {
-        if (meta) {
+      .subscribe(async (result) => {
+        if (result) {
           try {
-            await firstValueFrom(
-              this.persistency.setMappingMeta(info.mappingShortkey, meta)
-            );
-            info.meta = meta;
+            await EditMetaComponent.save(info, this.persistency, info.mappingShortkey!, result);
           } catch (e) {
-            let msg = `Could not save metadata`;
+            let msg = `Could not save name or meta`;
             console.error(msg, e);
             alert(msg);
           }
@@ -373,20 +337,59 @@ export class FolderMappingsComponent {
       });
   }
 
+  openCreateMappingDialog() {
+    this.dialog
+      .open(EditMetaComponent, {
+        data: {
+          title: "Create new mapping",
+          name: '',
+          meta: emptyMappingMeta() },
+      })
+      .afterClosed()
+      .subscribe(async (result) => {
+        if (result) {
+          this.newMapping(
+            this.folderName,
+            result.name,
+            result.meta,
+            this.serverInfo.umlsVersion
+          );
+        }
+      });
+  }
+
+  async newMapping(
+    projectName: string,
+    mappingName: string,
+    meta: MappingMeta,
+    umlsVersion: string
+  ) {
+    let vocs0 = await firstValueFrom(this.api.vocabularies());
+    let vers = await firstValueFrom(this.api.serverInfo());
+    let vocabularies = Object.fromEntries(
+      vocs0
+        .filter((v) => vers.defaultVocabularies.includes(v.id))
+        .map((v) => [v.id, v])
+    );
+    let info = {
+      formatVersion: MappingFormat.version,
+      umlsVersion,
+      allowedTags: this.serverInfo.defaultAllowedTags,
+      ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
+      ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
+      includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
+    };
+    let mapping = new Mapping(info, null, vocabularies, {}, {});
+    let initial = { mappingName, projectName, mapping, meta };
+    this.router.navigate(['/mapping'], { state: { initial } });
+  }
+
   mappingLink(mapping: MappingInfo) {
     return mappingInfoLink(mapping);
   }
 
-  async renameMapping(mapping: MappingInfo, newName: string) {
-    await firstValueFrom(
-      this.persistency.mappingSetName(mapping.mappingShortkey, newName)
-    );
-    mapping.mappingName = newName;
-    console.log('renamed');
-  }
-
   selectedMappingConfigs(): string[] {
-    return this.selectedFilteredMappings.map((info) => info.mappingShortkey);
+    return this.selectedFilteredMappings.map((info) => info.mappingShortkey!);
   }
 
   localeDate(s: string) {
@@ -410,7 +413,7 @@ export class FolderMappingsComponent {
     return (
       this.userCanDownload &&
       this.selectedFilteredMappings.length != 0 &&
-      this.selectedFilteredMappings.every((i) => i.version != null)
+      this.selectedFilteredMappings.every((i) => this.latests[i.mappingShortkey!])
     );
   }
   async batchProcess(
@@ -419,12 +422,12 @@ export class FolderMappingsComponent {
     summary: string
   ) {
     for (let index in mappingInfos) {
-      let shortkey = mappingInfos[index].mappingShortkey;
+      let shortkey = mappingInfos[index].mappingShortkey!;
       try {
-        let { version, mapping } = await firstValueFrom(
+        let { info, mapping } = await firstValueFrom(
           this.persistency.loadLatestRevisionMapping(shortkey, this.serverInfo)
         );
-        console.log('BATCH PROCESS', mappingInfos[index], version, mapping);
+        console.log('BATCH PROCESS', mappingInfos[index], info.version, mapping);
         mapping.cleanupRecacheCheck();
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);

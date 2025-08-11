@@ -34,9 +34,9 @@ import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
-import org.biosemantics.codemapper.persistency.MappingRevision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingMeta;
+import org.biosemantics.codemapper.persistency.PersistencyApi.Revision;
 
 public class WriteCsvApi {
   static final String NO_CODE = "-";
@@ -57,7 +57,7 @@ public class WriteCsvApi {
     "type"
   };
   static final String[] META_HEADERS = {
-    "system", "name", "type", "version", "umls_version", "descendant_codes", "coding_systems", "url"
+    "system", "abbreviation", "type", "definition", "version", "umls_version", "descendant_codes", "coding_systems", "url"
   };
   static final String[] CODING_SYSTEMS_HEADERS = {
     "umls_version", "coding_system", "coding_system_version"
@@ -94,7 +94,8 @@ public class WriteCsvApi {
           mapping.info.meta.system,
           mapping.info.mappingName,
           mapping.info.meta.type,
-          mapping.info.version,
+          mapping.info.meta.definition,
+          "" + mapping.revision.version,
           mapping.data.getMeta().getUmlsVersion(),
           "" + mapping.data.getMeta().isIncludeDescendants(),
           codingSystems,
@@ -124,7 +125,7 @@ public class WriteCsvApi {
 
   public static class Mapping {
     MappingInfo info;
-    MappingRevision revision;
+    Revision revision;
     MappingData data;
     Map<String, Descendants> descendants;
     boolean includeDescendants;

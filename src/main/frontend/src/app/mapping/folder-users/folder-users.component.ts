@@ -41,7 +41,6 @@ export class FolderUsersComponent {
   }
 
   ngOnChanges(change: SimpleChanges) {
-    console.log('FOLDER USERS ON CHANGE', change);
     if (change['folderName']) {
       this.reloadUsersRoles();
     }

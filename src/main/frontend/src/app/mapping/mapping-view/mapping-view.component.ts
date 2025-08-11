@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { of, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { Component, TemplateRef } from '@angular/core';
 import { Location } from '@angular/common';
 import { Title } from '@angular/platform-browser';
@@ -24,12 +24,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
-import { map } from 'rxjs';
 import {
   Indexing,
   Vocabularies,
   Mapping,
-  Revision,
   ServerInfo,
   EMPTY_SERVER_INFO,
   MappingMeta,
@@ -39,10 +37,12 @@ import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
 import { ApiService, TypesInfo } from '../api.service';
 import {
+  emptyMappingInfo,
   MappingInfo,
   mappingInfoLink,
   PersistencyService,
   ProjectRole,
+  RevisionInfo,
   slugifyMappingInfo,
   userCanDownload,
   userCanEdit,
@@ -50,7 +50,10 @@ import {
 import { AuthService } from '../auth.service';
 import { HasPendingChanges } from '../pending-changes.guard';
 import { ReviewOperation } from '../review';
-import { DownloadDialogComponent, includeDescendants } from '../download-dialog/download-dialog.component';
+import {
+  DownloadDialogComponent,
+  includeDescendants,
+} from '../download-dialog/download-dialog.component';
 
 export enum Tabs {
   Start = 0,
@@ -62,7 +65,7 @@ export enum Tabs {
   History = 6,
 }
 
-function parseNameShortkey(name : string) : string | null {
+function parseNameShortkey(name: string): string | null {
   let ix = name.lastIndexOf('-');
   return name.substring(ix == -1 ? 0 : ix + 1);
 }
@@ -73,38 +76,36 @@ function parseNameShortkey(name : string) : string | null {
   styleUrls: ['./mapping-view.component.scss'],
 })
 export class MappingViewComponent implements HasPendingChanges {
-  mappingShortkey : string | null = null; // null means mapping is not saved
-  mappingName : string = '(unknown)';
-  projectName : string = '(unknown)';
-  info : MappingInfo | null = null;
-  meta : MappingMeta | null = null;
-  mapping : Mapping | null = null;
-  serverInfo : ServerInfo = EMPTY_SERVER_INFO;
-  version : number = -1;
-  revisions : Revision[] = [];
-  allTopics : AllTopics = new AllTopics();
-  reviewData : ReviewData = new ReviewData();
-  vocabularies! : Vocabularies;
-  selectedIndex : number = 1;
-  saveReviewRequired : boolean = false;
-  saveRequired : boolean = false;
-  error : string | null = null;
-  projectRole : ProjectRole | null = null;
-  importWarning : string | null = null;
+  shortkey: string | null = null;
+  info: MappingInfo = emptyMappingInfo();
+  latest: RevisionInfo | null = null;
+  revisions: RevisionInfo[] = [];
+  mapping: Mapping | null = null;
+  vocabularies!: Vocabularies;
+  allTopics: AllTopics = new AllTopics();
+  reviewData: ReviewData = new ReviewData();
+
+  serverInfo: ServerInfo = EMPTY_SERVER_INFO;
+  selectedIndex: number = 1;
+  saveReviewRequired: boolean = false;
+  saveRequired: boolean = false;
+  error: string | null = null;
+  projectRole: ProjectRole | null = null;
+  importWarning: string | null = null;
 
   constructor(
-    private route : ActivatedRoute,
-    private router : Router,
-    private persistency : PersistencyService,
-    private apiService : ApiService,
-    private title : Title,
-    private dialog : MatDialog,
-    private snackBar : MatSnackBar,
-    private auth : AuthService,
-    private location : Location
-  ) { }
+    private route: ActivatedRoute,
+    private router: Router,
+    private persistency: PersistencyService,
+    private apiService: ApiService,
+    private title: Title,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private auth: AuthService,
+    private location: Location
+  ) {}
 
-  get hasPendingChanges() : boolean {
+  get hasPendingChanges(): boolean {
     return this.mapping != null && this.mapping.undoStack.length > 0;
   }
 
@@ -127,7 +128,7 @@ export class MappingViewComponent implements HasPendingChanges {
     if (!nameParam) {
       let initial =
         this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
-      if (initial && initial.mapping instanceof Mapping) {
+      if (initial?.mapping instanceof Mapping) {
         await this.setInitialMapping(initial);
         if (this.projectRole != ProjectRole.Owner) {
           this.snackBar.open(
@@ -139,48 +140,55 @@ export class MappingViewComponent implements HasPendingChanges {
         this.snackBar.open('No mapping', 'Ok');
       }
     } else {
-      this.mappingShortkey = parseNameShortkey(nameParam);
-      if (this.mappingShortkey == null) {
+      this.shortkey = parseNameShortkey(nameParam);
+      if (this.shortkey == null) {
         this.snackBar.open('Invalid mapping name', 'Ok');
         return;
       }
       try {
         this.info = await firstValueFrom(
-          this.persistency.mappingInfo(this.mappingShortkey)
+          this.persistency.mappingInfo(this.shortkey)
         );
         if (slugifyMappingInfo(this.info) != nameParam) {
           this.location.go(mappingInfoLink(this.info).join('/'));
         }
-        this.meta = await firstValueFrom(
-          this.persistency.mappingMeta(this.mappingShortkey)
+        this.setTitle(this.info.projectName, this.info.mappingName);
+        this.info.meta = await firstValueFrom(
+          this.persistency.mappingMeta(this.shortkey)
         );
-        this.setNames(this.info.projectName, this.info.mappingName);
-        if (this.info.status == "IMPORTED") {
-          this.snackBar.open("This mapping was automatically imported, please review carefully and save it, or report any issues.", 'Ok', {duration: undefined})
+        if (this.info.status == 'IMPORTED') {
+          this.snackBar.open(
+            'This mapping was automatically imported, please review carefully and save it, or report any issues.',
+            'Ok',
+            { duration: undefined }
+          );
         }
         this.persistency
           .getProjectRole(this.info.projectName)
           .subscribe((role) => (this.projectRole = role));
-
-        let postOp : null | ops.Operation = null;
+        let postOp: null | ops.Operation = null;
         try {
-          ({ version: this.version, mapping: this.mapping } =
-            await firstValueFrom(
-              this.persistency.loadLatestRevisionMapping(
-                this.mappingShortkey,
-                this.serverInfo
-              )
-            ));
+          ({ info: this.latest, mapping: this.mapping } = await firstValueFrom(
+            this.persistency.loadLatestRevisionMapping(
+              this.shortkey!,
+              this.serverInfo
+            )
+          ));
         } catch (err) {
           if ((err as HttpErrorResponse).status == 404) {
             try {
               let messages;
               ({
-                version: this.version,
                 mapping: this.mapping,
                 postOp,
                 messages,
-              } = await this.loadLegacyMapping(this.mappingShortkey));
+              } = await this.loadLegacyMapping(this.shortkey));
+              this.latest = {
+                version: -1,
+                author: '?',
+                timestamp: '?',
+                summary: '?',
+              };
               messages.unshift(
                 `The mapping was automatically imported from the old version of CodeMapper and remapped. Please review and save.`
               );
@@ -188,12 +196,12 @@ export class MappingViewComponent implements HasPendingChanges {
                 panelClass: 'remap-snackbar',
               });
             } catch (err) {
-              let msg = "";
+              let msg = '';
               if ((err as HttpErrorResponse).status != 404) {
                 console.error('error while loading legacy mapping', err);
                 msg = ` (${(err as any).error})`;
               }
-              this.snackBar.open("Could not load mapping" + msg, 'Ok');
+              this.snackBar.open('Could not load mapping' + msg, 'Ok');
               return;
             }
           } else {
@@ -213,19 +221,23 @@ export class MappingViewComponent implements HasPendingChanges {
     }
   }
 
-  setNames(projectName : string, mappingName : string) {
+  setTitle(projectName: string, mappingName: string) {
     this.title.setTitle(`CodeMapper: ${mappingName} (${projectName})`);
-    this.projectName = projectName;
-    this.mappingName = mappingName;
   }
 
-  async setInitialMapping(initial : any) {
+  async setInitialMapping(initial: any) {
     console.log('Initial mapping', initial.mapping);
+    this.mapping = initial.mapping as Mapping;
+    this.latest = null;
+    this.info = {
+      mappingShortkey: null,
+      mappingName: initial.mappingName,
+      projectName: initial.projectName,
+      meta: (initial.meta as MappingMeta) ?? emptyMappingMeta(),
+      status: null,
+    };
     this.saveRequired = true;
     this.saveReviewRequired = true;
-    this.mappingName = initial.mappingName;
-    this.projectName = initial.projectName;
-    this.mapping = initial.mapping as Mapping;
     this.importWarning = initial.warning;
     if (initial.allTopics) {
       this.allTopics = initial.allTopics;
@@ -234,14 +246,12 @@ export class MappingViewComponent implements HasPendingChanges {
       this.selectedIndex = 0;
     }
     this.updateMapping(this.mapping);
-    this.setNames(initial.projectName, initial.mappingName);
     this.projectRole = await firstValueFrom(
-      this.persistency.getProjectRole(this.projectName)
+      this.persistency.getProjectRole(this.info.projectName)
     );
   }
 
-  async loadLegacyMapping(mappingShortkey : string) {
-    this.version = -1;
+  async loadLegacyMapping(mappingShortkey: string) {
     let mapping = await firstValueFrom(
       this.persistency.loadLegacyMapping(mappingShortkey, this.serverInfo)
     );
@@ -249,13 +259,13 @@ export class MappingViewComponent implements HasPendingChanges {
       await this.apiService.remapData(mapping, this.vocabularies, mapping.meta);
     let umlsVersion = this.serverInfo.umlsVersion;
     let postOp = new ops.Remap(umlsVersion, conceptsCodes, vocabularies);
-    return { version: -1, mapping, postOp, messages };
+    return { mapping, postOp, messages };
   }
 
   async reloadReviews() {
-    if (this.mapping && this.mappingShortkey != null) {
+    if (this.mapping && this.shortkey) {
       let allTopics0 = await firstValueFrom(
-        this.apiService.allTopics(this.mappingShortkey)
+        this.apiService.allTopics(this.shortkey)
       );
       let user = await this.auth.user;
       let me = user?.username ?? 'anonymous';
@@ -265,14 +275,14 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   async reloadRevisions() {
-    if (this.mappingShortkey != null) {
+    if (this.shortkey) {
       this.revisions = await firstValueFrom(
-        this.persistency.getRevisions(this.mappingShortkey)
+        this.persistency.getRevisions(this.shortkey)
       );
     }
   }
 
-  run(op : ops.Operation) {
+  run(op: ops.Operation) {
     if (!this.mapping) return;
     this.mapping.run(op);
     op.afterRunCallback();
@@ -297,20 +307,19 @@ export class MappingViewComponent implements HasPendingChanges {
     this.updateMapping(this.mapping);
   }
 
-  updateMapping(mapping : Mapping) {
+  updateMapping(mapping: Mapping) {
     this.mapping = mapping.clone();
     if (this.allTopics != null) {
       this.allTopics.setConcepts(Object.keys(mapping.concepts));
     }
   }
 
-  async reviewRun(op : ReviewOperation) {
-    console.log('review run', op);
-    if (this.mappingShortkey == null) {
-      alert('Please save the mapping before review');
-    } else {
-      await op.run(this.apiService, this.mappingShortkey).toPromise()!;
+  async reviewRun(op: ReviewOperation) {
+    if (this.shortkey) {
+      await firstValueFrom(op.run(this.apiService, this.shortkey))!;
       await this.reloadReviews();
+    } else {
+      alert('Please save the mapping before review');
     }
   }
 
@@ -319,127 +328,129 @@ export class MappingViewComponent implements HasPendingChanges {
     console.log('ALL TOPICS', this.allTopics);
   }
 
-  openDialog(templateRef : TemplateRef<any>) {
+  openDialog(templateRef: TemplateRef<any>) {
     this.dialog.open(templateRef, {
       width: '700px',
     });
   }
 
   openDownloadDialog() {
+    if (!this.shortkey) return;
     let data = {
-      projectName: this.projectName,
-      mappingConfigs: [this.mappingShortkey],
-      includeDescendants: includeDescendants(this.mapping?.meta.includeDescendants ?? false),
-      mappings: {[this.mappingShortkey!]: {name: this.mappingName, meta: this.meta}},
+      projectName: this.info.projectName,
+      mappingConfigs: [this.shortkey],
+      includeDescendants: includeDescendants(
+        this.mapping?.meta.includeDescendants ?? false
+      ),
+      mappings: {
+        [this.shortkey]: {
+          name: this.info.mappingName,
+          meta: this.info.meta,
+        },
+      },
     };
-    this.dialog.open(DownloadDialogComponent, { data })
+    this.dialog.open(DownloadDialogComponent, { data });
   }
 
-  save(summary : string) {
-    if (this.importWarning != null) summary += "\n\n" + this.importWarning;
-    (this.mappingShortkey == null
-      ? this.persistency
-        .createMapping(this.projectName, this.mappingName)
-        .pipe(map((m) => m.mappingShortkey))
-      : of(this.mappingShortkey)
-    ).subscribe((mappingShortkey) => {
-      if (!this.mapping) return;
-      this.persistency
-        .saveRevision(mappingShortkey, this.mapping, summary)
-        .subscribe({
-          next: async (version) => {
-            if (this.saveReviewRequired) {
-              try {
-                await firstValueFrom(
-                  this.apiService.saveAllTopics(
-                    mappingShortkey,
-                    this.allTopics.toRaw()
-                  )
-                );
-                this.saveReviewRequired = false;
-              } catch (err) {
-                console.error('Could not save all review topics', err);
-                let msg = (err as any).error ?? "unknown reason";
-                alert('Could not save all review topics: ' + msg);
-              }
-            }
-            this.snackBar.open('Saved version ' + version, 'Ok', {
-              duration: 2000,
-            });
-            this.mapping!.undoStack = [];
-            this.mapping!.redoStack = [];
-            this.version = version;
-            this.reloadRevisions();
-            if (this.mappingShortkey == null) {
-              this.router.navigate(
-                mappingInfoLink({
-                  projectName: this.projectName,
-                  mappingName: this.mappingName,
-                  mappingShortkey,
-                  version: null,
-                  status: null,
-                  lastModification: null,
-                  meta: emptyMappingMeta(),
-                  latestDataMeta: null,
-                })
-              );
-            }
-          },
-          error: (err) => {
-            console.error('Could not save mapping', err);
-            this.snackBar.open(
-              'Could not save mapping: ' + err.message,
-              'Close'
-            );
-          },
-        });
-    });
+  async save(summary: string) {
+    if (!this.mapping) return;
+    if (this.importWarning != null) summary += '\n\n' + this.importWarning;
+    try {
+      let shortkey =
+        this.shortkey ??
+        (await firstValueFrom(
+          this.persistency.createMapping(
+            this.info.projectName,
+            this.info.mappingName
+          )
+        ));
+      this.latest = await firstValueFrom(
+        this.persistency.saveRevision(shortkey, this.mapping, summary)
+      );
+      if (this.saveReviewRequired) {
+        try {
+          await firstValueFrom(
+            this.apiService.saveAllTopics(shortkey, this.allTopics.toRaw())
+          );
+          this.saveReviewRequired = false;
+        } catch (err) {
+          console.error('Could not save all review topics', err);
+          let msg = (err as any).error ?? 'unknown reason';
+          alert('Could not save all review topics: ' + msg);
+        }
+      }
+      this.snackBar.open('Saved version ' + this.latest.version, 'Ok', {
+        duration: 2000,
+      });
+      this.mapping!.undoStack = [];
+      this.mapping!.redoStack = [];
+      this.reloadRevisions();
+      if (!this.info.mappingShortkey) this.info.mappingShortkey = shortkey;
+      if (!this.shortkey) {
+        this.router.navigate(mappingInfoLink(this.info));
+      }
+    } catch (err) {
+      console.error('Could not save mapping', err);
+      this.snackBar.open(
+        'Could not save mapping: ' + (err as any).message,
+        'Close'
+      );
+    }
   }
 
-  undoTooltip() : string | undefined {
+  undoTooltip(): string | undefined {
     if (this.mapping && this.mapping.undoStack.length > 0) {
       return `Undo (${this.mapping.undoStack[0][0]})`;
     }
     return;
   }
 
-  redoTooltip() : string | undefined {
+  redoTooltip(): string | undefined {
     if (this.mapping && this.mapping.redoStack.length > 0) {
       return `Redo (${this.mapping.redoStack[0][0]})`;
     }
     return;
   }
 
-  titleTooltip() : string {
+  titleTooltip(): string {
     let snippets: string[] = [];
-    if (this.meta?.system) {
-      snippets.push(`system: ${this.meta.system}`);
+    if (this.info?.mappingName) {
+      snippets.push(this.info?.mappingName);
     }
-    if (this.meta?.type) {
-      snippets.push(`type: ${this.meta.type}`);
+    if (this.info.meta?.system) {
+      snippets.push(`system: ${this.info.meta.system}`);
     }
-    snippets.push(`${this.mapping?.meta.includeDescendants ? 'include' : 'exclude'} descendant codes`);
+    if (this.info.meta?.type) {
+      snippets.push(`type: ${this.info.meta.type}`);
+    }
+    snippets.push(
+      `${
+        this.mapping?.meta.includeDescendants ? 'include' : 'exclude'
+      } descendant codes`
+    );
     let res = snippets.join(', ') + '.';
     res = res[0].toUpperCase() + res.slice(1);
     if (this.saveRequired) {
-      res += ` Mapping needs save.`
+      res += ` Mapping needs save.`;
     }
-    res += ` You are ${this.projectRole?.toLowerCase() ?? "not a member"} in this folder.`;
+    res += ` You are ${
+      this.projectRole?.toLowerCase() ?? 'not a member'
+    } in this folder.`;
     return res;
   }
 
-  shortMeta() : string {
+  shortMeta(): string {
     let snippets: string[] = [];
-    if (this.meta?.system) {
-      snippets.push(this.meta.system);
+    if (this.info.meta?.system) {
+      snippets.push(this.info.meta.system);
     }
-    if (this.meta?.type) {
-      snippets.push(this.meta.type);
+    if (this.info.meta?.type) {
+      snippets.push(this.info.meta.type);
     }
     return snippets.join('/');
   }
 
-  async setStartIndexing(indexing : Indexing) {
+  async setStartIndexing(indexing: Indexing) {
     if (!this.mapping) return;
     if (this.mapping.start === null) {
       let vocIds = Object.keys(this.mapping.vocabularies);
@@ -456,7 +467,7 @@ export class MappingViewComponent implements HasPendingChanges {
     }
   }
 
-  typesInfo(info : ServerInfo) : TypesInfo {
+  typesInfo(info: ServerInfo): TypesInfo {
     return {
       ignoreSemanticTypes: info.defaultIgnoreSemanticTypes,
       ignoreTermTypes: info.defaultIgnoreTermTypes,

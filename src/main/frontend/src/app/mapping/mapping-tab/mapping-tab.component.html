@@ -36,25 +36,29 @@
 
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Metadata</mat-panel-title>
+        <mat-panel-title>Abbreviation and metadata</mat-panel-title>
         <mat-panel-description>Descriptive information about the mapping</mat-panel-description>
       </mat-expansion-panel-header>
       <table>
         <tr>
+          <td>Abbreviation:</td>
+          <td>{{info.mappingName}}</td>
+        </tr>
+        <tr>
           <td>Type:</td>
-          <td>{{meta.type}}</td>
+          <td>{{info.meta.type}}</td>
         </tr>
         <tr>
           <td>System:</td>
-          <td>{{meta.system}}</td>
+          <td>{{info.meta.system}}</td>
         </tr>
         <tr>
           <td>Definition:</td>
-          <td>{{meta.definition}}</td>
+          <td>{{info.meta.definition}}</td>
         </tr>
         <tr>
           <td>Projects:</td>
-          <td>{{meta.projects.join(', ')}}</td>
+          <td>{{info.meta.projects.join(', ')}}</td>
         </tr>
       </table>
       <button mat-raised-button (click)="editMappingMeta()">Edit</button>
@@ -86,9 +90,9 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
       <span>Use the button on the right to export the codelist at that version.</span>
-      <span *ngIf="revisions.length == 0">(The mapping must be saved first.)</span>
-      <history *ngIf="info.mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [meta]="meta"
-        [info]="info" [mapping]="mapping" [revisions]="revisions" [version]="version"
+      <span *ngIf="!info || revisions.length == 0">(The mapping must be saved first.)</span>
+      <history *ngIf="info && info.mappingShortkey && mapping && !mapping.isEmpty()" [projectName]="projectName" [meta]="info.meta"
+        [info]="info" [mapping]="mapping" [revisions]="revisions" [latestVersion]="latest?.version ?? null"
         [projectRole]="projectRole" [userCanDownload]="userCanDownload">
       </history>
     </mat-expansion-panel>
