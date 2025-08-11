@@ -59,11 +59,16 @@ export interface Span {
   end: number;
 }
 
-export type Start = Indexing | CsvImport | null;
+export type Start = Indexing | CsvImport | EmptyStart | null;
 
 export enum StartType {
   Indexing,
   CsvImport,
+  Empty,
+}
+
+export interface EmptyStart {
+  type: StartType.Empty;
 }
 
 export interface Indexing {

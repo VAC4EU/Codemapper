@@ -43,6 +43,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarConfig, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSortModule } from '@angular/material/sort';
+import { MatStepperModule } from '@angular/material/stepper';
 import { AppRoutingModule } from '../app-routing.module';
 import { MappingViewComponent } from './mapping-view/mapping-view.component';
 import { ConceptsComponent } from './concepts/concepts.component';
@@ -87,6 +88,7 @@ import { LoginLinkComponent } from './login-link/login-link.component';
 import { FolderMappingsComponent } from './folder-mappings/folder-mappings.component';
 import { FolderUsersComponent } from './folder-users/folder-users.component';
 import { EditMetaComponent } from './edit-meta/edit-meta.component';
+import { StartMappingComponent } from './start-mapping/start-mapping.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -137,6 +139,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     FolderMappingsComponent,
     FolderUsersComponent,
     EditMetaComponent,
+    StartMappingComponent,
   ],
   imports: [
     HttpClientModule,
@@ -165,6 +168,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
     MatTooltipModule,
     MatSnackBarModule,
     MatSortModule,
+    MatStepperModule,
     MatExpansionModule,
     NgFor,
     NgIf,

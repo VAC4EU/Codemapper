@@ -38,19 +38,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
-import org.biosemantics.codemapper.persistency.RevisionInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi.ProjectInfo;
 import org.biosemantics.codemapper.persistency.PersistencyApi.Revision;
 import org.biosemantics.codemapper.persistency.PersistencyApi.UserRole;
+import org.biosemantics.codemapper.persistency.RevisionInfo;
 
 @Path("persistency")
 public class PersistencyResource {
@@ -274,7 +273,6 @@ public class PersistencyResource {
       throw new InternalServerErrorException(e);
     }
   }
-  
 
   @POST
   @Path("mapping/{mappingShortkey}/save-revision")

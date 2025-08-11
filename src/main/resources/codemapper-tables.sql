@@ -53,10 +53,6 @@ create table case_definitions (
   id int not null auto_increment,
   shortkey SHORTKEY NOT NULL, -- public identifier
   name char(255), -- variable name
-  system text,
-  type text,
-  definition text,
-  projects text[],
   old_name char(255) -- fixed old name
   project_id int not null references projects(id),
   state mediumtext,
@@ -117,10 +113,7 @@ as
     cd.shortkey mapping_shortkey,
     cd.old_name mapping_old_name,
     cd.status mapping_status,
-    cd.system mapping_system
-    cd.type mapping_type
-    cd.definition mapping_definition
-    cd.projects mapping_projects
+    cd.meta mapping_meta
   from projects p
   join case_definitions cd
   on p.id = cd.project_id
@@ -248,26 +241,11 @@ as
     cd.shortkey mapping_shortkey,
     cd.old_name mapping_old_name,
     cd.status mapping_status,
-    cd.system mapping_system
-    cd.type mapping_type
-    cd.definition mapping_definition
-    cd.projects mapping_projects
+    cd.meta mapping_meta
   from projects p
   join case_definitions cd
   on p.id = cd.project_id
   order by p.name, cd.name;
-
-ALTER TABLE case_definitions ADD COLUMN system text;
-ALTER TABLE case_definitions ADD COLUMN type text;
-ALTER TABLE case_definitions ADD COLUMN definition text;
-ALTER TABLE case_definitions ADD COLUMN projects text[];
-
-UPDATE case_definitions set system = meta['system']::text;
-UPDATE case_definitions set type = meta['type']::text;
-UPDATE case_definitions set definition = meta['definition']::text;
-UPDATE case_definitions set projects = ARRAY(
-    SELECT jsonb_array_elements_text(meta->'projects')
-);
 
 UPDATE case_definitions
 set meta = jsonb_set(meta, ARRAY['system'], to_jsonb(CASE 

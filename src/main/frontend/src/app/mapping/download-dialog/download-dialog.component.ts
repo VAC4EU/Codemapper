@@ -28,6 +28,7 @@ export class DownloadDialogComponent {
     @Inject(MAT_DIALOG_DATA)
     public data : {
       projectName : string;
+      version? : number;
       mappingConfigs : string[];
       mappings: { [key: string]: {name: string, meta: MappingMeta}};
       includeDescendants : IncludeDescendants;
@@ -41,7 +42,11 @@ export class DownloadDialogComponent {
       let config = this.data.mappingConfigs[0];
       let {name, meta} = this.data.mappings[config];
       if (meta.system && meta.type) {
-        return `${meta.system}_${name}_${meta.type}`;
+        let versionSuffix = "";
+        if (this.data.version != undefined) {
+          versionSuffix = `@v${this.data.version}`;
+        }
+        return `${meta.system}_${name}_${meta.type}${versionSuffix}`;
       }
     }
     let s = this.data.mappingConfigs.length == 1 ? '' : 's';

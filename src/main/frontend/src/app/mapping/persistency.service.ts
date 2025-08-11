@@ -89,15 +89,6 @@ export interface MappingInfo {
   meta: MappingMeta;
 }
 
-export interface RevisionInfo {
-  version: number;
-  author: string;
-  timestamp: string;
-  summary: string;
-}
-
-export type RevisionInfos = { [key: string]: RevisionInfo };
-
 export function emptyMappingInfo(): MappingInfo {
   return {
     mappingShortkey: null,
@@ -107,6 +98,15 @@ export function emptyMappingInfo(): MappingInfo {
     meta: emptyMappingMeta(),
   };
 }
+
+export interface RevisionInfo {
+  version: number;
+  author: string;
+  timestamp: string;
+  summary: string;
+}
+
+export type RevisionInfos = { [key: string]: RevisionInfo };
 
 export interface ProjectInfo {
   name: string;
@@ -188,12 +188,14 @@ export class PersistencyService {
     );
   }
 
-  createMapping(projectName: string, mappingName: string): Observable<string> {
+  async createMapping(projectName: string, mappingName: string, meta: MappingMeta): Promise<string> {
     let body = new URLSearchParams();
     body.append('projectName', projectName);
     body.append('mappingName', mappingName);
     let url = this.url + `/mapping`;
-    return this.http.post(url, body, {...urlEncodedOptions, responseType: 'text' as const});
+    let shortkey = await firstValueFrom(this.http.post(url, body, {...urlEncodedOptions, responseType: 'text' as const}));
+    await firstValueFrom(this.setMappingMeta(shortkey, meta));
+    return shortkey;
   }
 
   async deleteMappings(shortkeys: string[]) {

@@ -57,7 +57,15 @@ public class WriteCsvApi {
     "type"
   };
   static final String[] META_HEADERS = {
-    "system", "abbreviation", "type", "definition", "version", "umls_version", "descendant_codes", "coding_systems", "url"
+    "system",
+    "abbreviation",
+    "type",
+    "definition",
+    "version",
+    "umls_version",
+    "descendant_codes",
+    "coding_systems",
+    "url"
   };
   static final String[] CODING_SYSTEMS_HEADERS = {
     "umls_version", "coding_system", "coding_system_version"

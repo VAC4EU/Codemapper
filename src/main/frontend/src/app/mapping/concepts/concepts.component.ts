@@ -220,9 +220,9 @@ export class ConceptsComponent implements OnInit {
       });
   }
 
-  addIndexing(indexing : Indexing) {
+  async addIndexing(indexing : Indexing) {
     let ids = indexing.concepts.map(c => c.id);
-    this.api.concepts(ids, this.vocIds(), this.mapping.meta)
-      .subscribe(({ concepts, codes }) => this.run.emit(new ops.AddConcepts(concepts, codes)));
+    let { concepts, codes } = await this.api.concepts(ids, this.vocIds(), this.mapping.meta);
+    this.run.emit(new ops.AddConcepts(concepts, codes));
   }
 }

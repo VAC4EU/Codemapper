@@ -31,6 +31,8 @@ import {
   MappingMeta,
   DEFAULT_INCLUDE_DESCENDANTS,
   emptyMappingMeta,
+  Concepts,
+  Codes,
 } from '../data';
 import * as ops from '../mapping-ops';
 import { User } from '../auth.service';
@@ -46,6 +48,7 @@ import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
+import { StartMappingComponent } from '../start-mapping/start-mapping.component';
 
 @Component({
   selector: 'folder-mappings',
@@ -221,12 +224,10 @@ export class FolderMappingsComponent {
   }
 
   allDefaultStatus(mappings: MappingInfo[]): boolean {
-    return mappings.every(
-      (info) => {
-        let latest = this.latests[info.mappingShortkey!];
-        return latest.version != null && info.status == null;
-      }
-    );
+    return mappings.every((info) => {
+      let latest = this.latests[info.mappingShortkey!];
+      return latest.version != null && info.status == null;
+    });
   }
 
   importNew(projectName: string) {
@@ -327,7 +328,13 @@ export class FolderMappingsComponent {
       .subscribe(async (result) => {
         if (result) {
           try {
-            await EditMetaComponent.save(info, this.persistency, info.mappingShortkey!, result);
+            await EditMetaComponent.save(
+              info,
+              this.persistency,
+              info.mappingShortkey!,
+              result
+            );
+            this.allProperties = this.getAllTags();
           } catch (e) {
             let msg = `Could not save name or meta`;
             console.error(msg, e);
@@ -337,25 +344,25 @@ export class FolderMappingsComponent {
       });
   }
 
-  openCreateMappingDialog() {
-    this.dialog
-      .open(EditMetaComponent, {
-        data: {
-          title: "Create new mapping",
-          name: '',
-          meta: emptyMappingMeta() },
-      })
-      .afterClosed()
-      .subscribe(async (result) => {
-        if (result) {
-          this.newMapping(
-            this.folderName,
-            result.name,
-            result.meta,
-            this.serverInfo.umlsVersion
-          );
-        }
-      });
+  async openCreateMappingDialog() {
+    let result = await firstValueFrom(
+      this.dialog
+        .open(EditMetaComponent, {
+          data: {
+            title: 'Create new mapping',
+            name: '',
+            meta: emptyMappingMeta(),
+          },
+        })
+        .afterClosed()
+    );
+    if (!result) return;
+    let initial = {
+      mappingName: result.name,
+      folderName: this.folderName,
+      meta: result.meta,
+    };
+    this.router.navigate(['/mapping'], { state: { initial } });
   }
 
   async newMapping(
@@ -413,7 +420,9 @@ export class FolderMappingsComponent {
     return (
       this.userCanDownload &&
       this.selectedFilteredMappings.length != 0 &&
-      this.selectedFilteredMappings.every((i) => this.latests[i.mappingShortkey!])
+      this.selectedFilteredMappings.every(
+        (i) => this.latests[i.mappingShortkey!]
+      )
     );
   }
   async batchProcess(
@@ -427,7 +436,12 @@ export class FolderMappingsComponent {
         let { info, mapping } = await firstValueFrom(
           this.persistency.loadLatestRevisionMapping(shortkey, this.serverInfo)
         );
-        console.log('BATCH PROCESS', mappingInfos[index], info.version, mapping);
+        console.log(
+          'BATCH PROCESS',
+          mappingInfos[index],
+          info.version,
+          mapping
+        );
         mapping.cleanupRecacheCheck();
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);

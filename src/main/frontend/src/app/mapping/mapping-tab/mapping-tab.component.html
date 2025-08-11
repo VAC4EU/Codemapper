@@ -36,7 +36,7 @@
 
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Abbreviation and metadata</mat-panel-title>
+        <mat-panel-title>Metadata</mat-panel-title>
         <mat-panel-description>Descriptive information about the mapping</mat-panel-description>
       </mat-expansion-panel-header>
       <table>
@@ -113,6 +113,11 @@
           The mapping was started by importing a mapping from the following CSV data:
         </p>
         <pre class="csv-import">{{mapping.start.csvContent}}</pre>
+      </div>
+      <div *ngIf="isEmptyStart(mapping.start)">
+        <p>
+          The mapping was initially empty.
+        </p>
       </div>
     </mat-expansion-panel>
   </mat-accordion>

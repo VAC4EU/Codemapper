@@ -25,17 +25,22 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  Indexing,
   Vocabularies,
   Mapping,
   ServerInfo,
   EMPTY_SERVER_INFO,
   MappingMeta,
   emptyMappingMeta,
+  StartType,
+  Start,
+  Codes,
+  Concepts,
+  MappingFormat,
+  DataMeta,
 } from '../data';
 import { AllTopics, ReviewData } from '../review';
 import * as ops from '../mapping-ops';
-import { ApiService, TypesInfo } from '../api.service';
+import { ApiService } from '../api.service';
 import {
   emptyMappingInfo,
   MappingInfo,
@@ -54,6 +59,7 @@ import {
   DownloadDialogComponent,
   includeDescendants,
 } from '../download-dialog/download-dialog.component';
+import { StartData } from '../start-mapping/start-mapping.component';
 
 export enum Tabs {
   Start = 0,
@@ -70,28 +76,38 @@ function parseNameShortkey(name: string): string | null {
   return name.substring(ix == -1 ? 0 : ix + 1);
 }
 
+export interface Initial {
+  mappingName: string;
+  folderName: string;
+  meta: MappingMeta;
+}
+
 @Component({
   selector: 'app-mapping-view',
   templateUrl: './mapping-view.component.html',
   styleUrls: ['./mapping-view.component.scss'],
 })
 export class MappingViewComponent implements HasPendingChanges {
-  shortkey: string | null = null;
+  initial: Initial | null = null; // non-null iff starting
+  mapping: Mapping | null = null; // null iff starting
+
+  shortkey: string | null = null; // non-null if saved
   info: MappingInfo = emptyMappingInfo();
   latest: RevisionInfo | null = null;
   revisions: RevisionInfo[] = [];
-  mapping: Mapping | null = null;
-  vocabularies!: Vocabularies;
   allTopics: AllTopics = new AllTopics();
   reviewData: ReviewData = new ReviewData();
 
+  vocabularies: Vocabularies = {};
   serverInfo: ServerInfo = EMPTY_SERVER_INFO;
   selectedIndex: number = 1;
   saveReviewRequired: boolean = false;
   saveRequired: boolean = false;
   error: string | null = null;
   projectRole: ProjectRole | null = null;
-  importWarning: string | null = null;
+  importWarning: string | undefined;
+
+  startMode: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -124,22 +140,21 @@ export class MappingViewComponent implements HasPendingChanges {
 
     let params = await firstValueFrom(this.route.params);
     let nameParam = params['name'];
+    let initial =
+      this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
 
-    if (!nameParam) {
-      let initial =
-        this.router.lastSuccessfulNavigation?.extras.state?.['initial'];
-      if (initial?.mapping instanceof Mapping) {
-        await this.setInitialMapping(initial);
-        if (this.projectRole != ProjectRole.Owner) {
-          this.snackBar.open(
-            'You are not owner of the project, you will not be able to save this new mapping',
-            'Ok'
-          );
-        }
-      } else {
-        this.snackBar.open('No mapping', 'Ok');
-      }
-    } else {
+    if (initial) {
+      await this.setInitialMapping(initial);
+      this.setTitle();
+      this.projectRole = await firstValueFrom(
+        this.persistency.getProjectRole(this.info.projectName)
+      );
+      if (this.projectRole != ProjectRole.Owner)
+        this.snackBar.open(
+          'You are not owner of the project, you will not be able to save this new mapping',
+          'Ok'
+        );
+    } else if (nameParam) {
       this.shortkey = parseNameShortkey(nameParam);
       if (this.shortkey == null) {
         this.snackBar.open('Invalid mapping name', 'Ok');
@@ -152,7 +167,7 @@ export class MappingViewComponent implements HasPendingChanges {
         if (slugifyMappingInfo(this.info) != nameParam) {
           this.location.go(mappingInfoLink(this.info).join('/'));
         }
-        this.setTitle(this.info.projectName, this.info.mappingName);
+        this.setTitle();
         this.info.meta = await firstValueFrom(
           this.persistency.mappingMeta(this.shortkey)
         );
@@ -163,9 +178,9 @@ export class MappingViewComponent implements HasPendingChanges {
             { duration: undefined }
           );
         }
-        this.persistency
-          .getProjectRole(this.info.projectName)
-          .subscribe((role) => (this.projectRole = role));
+        this.projectRole = await firstValueFrom(
+          this.persistency.getProjectRole(this.info.projectName)
+        );
         let postOp: null | ops.Operation = null;
         try {
           ({ info: this.latest, mapping: this.mapping } = await firstValueFrom(
@@ -218,37 +233,71 @@ export class MappingViewComponent implements HasPendingChanges {
         console.error('Error while loading mapping info', err);
         this.snackBar.open('Could not load mapping', 'Ok');
       }
+      return;
+    } else {
+      this.snackBar.open('There is no mapping', 'Ok');
+      this.router.navigate(['/folders']);
     }
   }
 
-  setTitle(projectName: string, mappingName: string) {
-    this.title.setTitle(`CodeMapper: ${mappingName} (${projectName})`);
+  setTitle() {
+    let name = this.info.meta.definition ?? this.info.mappingName;
+    this.title.setTitle(`CodeMapper: ${name} (${this.info.projectName})`);
   }
 
-  async setInitialMapping(initial: any) {
-    console.log('Initial mapping', initial.mapping);
-    this.mapping = initial.mapping as Mapping;
-    this.latest = null;
+  async setInitialMapping(initial: Initial) {
+    this.saveRequired = true;
+    this.initial = initial;
     this.info = {
       mappingShortkey: null,
+      projectName: initial.folderName,
       mappingName: initial.mappingName,
-      projectName: initial.projectName,
-      meta: (initial.meta as MappingMeta) ?? emptyMappingMeta(),
+      status: null,
+      meta: initial.meta,
+    };
+  }
+
+  defaultVocabularies(): Vocabularies {
+    return Object.fromEntries(
+      this.serverInfo.defaultVocabularies.map((id) => [
+        id,
+        this.vocabularies[id],
+      ])
+    );
+  }
+
+  async setStart(data: StartData) {
+    if (!this.initial) return;
+    let dataMeta: DataMeta = {
+      formatVersion: MappingFormat.version,
+      umlsVersion: this.serverInfo.umlsVersion,
+      allowedTags: this.serverInfo.defaultAllowedTags,
+      ignoreTermTypes: this.serverInfo.defaultIgnoreTermTypes,
+      ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
+      includeDescendants: false,
+    };
+    this.info = {
+      mappingShortkey: null,
+      mappingName: this.initial.mappingName,
+      projectName: this.initial.folderName,
+      meta: this.initial.meta as MappingMeta,
       status: null,
     };
+    this.initial = null;
+    this.mapping = new Mapping(
+      dataMeta,
+      data.start,
+      data.vocabularies ?? this.defaultVocabularies(),
+      data.concepts ?? {},
+      data.codes ?? {}
+    );
+    this.latest = null;
     this.saveRequired = true;
     this.saveReviewRequired = true;
-    this.importWarning = initial.warning;
-    if (initial.allTopics) {
-      this.allTopics = initial.allTopics;
-    }
-    if (this.mapping.start == null) {
-      this.selectedIndex = 0;
-    }
+    this.importWarning = data.importWarning;
+    this.allTopics = data.allTopics ?? new AllTopics();
+    this.selectedIndex = 1;
     this.updateMapping(this.mapping);
-    this.projectRole = await firstValueFrom(
-      this.persistency.getProjectRole(this.info.projectName)
-    );
   }
 
   async loadLegacyMapping(mappingShortkey: string) {
@@ -358,11 +407,10 @@ export class MappingViewComponent implements HasPendingChanges {
     try {
       let shortkey =
         this.shortkey ??
-        (await firstValueFrom(
-          this.persistency.createMapping(
-            this.info.projectName,
-            this.info.mappingName
-          )
+        (await this.persistency.createMapping(
+          this.info.projectName,
+          this.info.mappingName,
+          this.info.meta
         ));
       this.latest = await firstValueFrom(
         this.persistency.saveRevision(shortkey, this.mapping, summary)
@@ -450,27 +498,8 @@ export class MappingViewComponent implements HasPendingChanges {
     return snippets.join('/');
   }
 
-  async setStartIndexing(indexing: Indexing) {
+  setEmptyStart() {
     if (!this.mapping) return;
-    if (this.mapping.start === null) {
-      let vocIds = Object.keys(this.mapping.vocabularies);
-      await this.apiService
-        .concepts(indexing.selected, vocIds, this.mapping.meta)
-        .subscribe(({ concepts, codes }) => {
-          let op = new ops.SetStartIndexing(
-            indexing,
-            concepts,
-            codes
-          ).withAfterRunCallback(() => (this.selectedIndex = 1));
-          this.run(op);
-        });
-    }
-  }
-
-  typesInfo(info: ServerInfo): TypesInfo {
-    return {
-      ignoreSemanticTypes: info.defaultIgnoreSemanticTypes,
-      ignoreTermTypes: info.defaultIgnoreTermTypes,
-    };
+    this.mapping.start = { type: StartType.Empty };
   }
 }

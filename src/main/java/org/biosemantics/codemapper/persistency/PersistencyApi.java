@@ -221,7 +221,7 @@ public class PersistencyApi {
       throw CodeMapperException.server("Cannot execute query to get revision", e);
     }
   }
-  
+
   @XmlRootElement
   public static class Revision {
     public int version;
@@ -229,7 +229,7 @@ public class PersistencyApi {
     public String timestamp;
     public String summary;
     public String mappingJson;
-    
+
     public MappingData parseMappingData() throws CodeMapperException {
       ObjectMapper mapper = new ObjectMapper();
       try {
@@ -297,7 +297,8 @@ public class PersistencyApi {
     }
   }
 
-  public RevisionInfo saveRevision(String shortkey, String username, String summary, String mappingJson)
+  public RevisionInfo saveRevision(
+      String shortkey, String username, String summary, String mappingJson)
       throws CodeMapperException {
     String query =
         "INSERT INTO case_definition_revisions (case_definition_id, user_id, mapping, summary) "
@@ -452,26 +453,13 @@ public class PersistencyApi {
   }
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
-    return getMappingInfo(shortkey, null);
-  }
-
-  public MappingInfo getMappingInfo(String shortkey, Integer version) throws CodeMapperException {
-    String query;
-    if (version == null)
-      query =
-          "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
-              + "FROM projects_mappings_shortkey pm "
-              + "WHERE mapping_shortkey = ?";
-    else
-      query =
-          "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
-              + "FROM projects_mappings_shortkey pm "
-              + "WHERE mapping_shortkey = ? "
-              + "AND r.version = ?";
+    String query =
+        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
+            + "FROM projects_mappings_shortkey pm "
+            + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      if (version != null) statement.setInt(2, version);
       ResultSet res = statement.executeQuery();
       if (!res.next()) {
         throw CodeMapperException.user("No mapping info for shortkey " + shortkey);
@@ -897,15 +885,17 @@ public class PersistencyApi {
     }
   }
 
-  public Map<String, RevisionInfo> getLatestFolderMappingRevisions(String project) throws CodeMapperException {
-    String query = ""
-        + "SELECT pcd.case_definition_shortkey, r.version, r.timestamp, u.username, r.summary "
-        + "FROM projects_case_definitions pcd "
-        + "INNER JOIN case_definition_latest_revision r "
-        + "ON pcd.case_definition_id = r.case_definition_id "
-        + "INNER JOIN users u "
-        + "ON u.id = r.user_id "
-        + "WHERE pcd.project_name = ?";
+  public Map<String, RevisionInfo> getLatestFolderMappingRevisions(String project)
+      throws CodeMapperException {
+    String query =
+        ""
+            + "SELECT pcd.case_definition_shortkey, r.version, r.timestamp, u.username, r.summary "
+            + "FROM projects_case_definitions pcd "
+            + "INNER JOIN case_definition_latest_revision r "
+            + "ON pcd.case_definition_id = r.case_definition_id "
+            + "INNER JOIN users u "
+            + "ON u.id = r.user_id "
+            + "WHERE pcd.project_name = ?";
     try {
       Connection connection = connectionPool.getConnection();
       PreparedStatement statement = connection.prepareStatement(query);
@@ -921,8 +911,9 @@ public class PersistencyApi {
         infos.put(shortkey, new RevisionInfo(version, author, timestamp, summary));
       }
       return infos;
-    }  catch (SQLException e) {
-      throw CodeMapperException.server("Cannot execute query to get latest folder mapping revisions", e);
+    } catch (SQLException e) {
+      throw CodeMapperException.server(
+          "Cannot execute query to get latest folder mapping revisions", e);
     }
   }
 }

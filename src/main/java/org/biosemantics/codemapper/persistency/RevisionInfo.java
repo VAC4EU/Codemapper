@@ -31,8 +31,7 @@ public class RevisionInfo {
     super();
   }
 
-  public RevisionInfo(
-      int version, String author, String timestamp, String summary) {
+  public RevisionInfo(int version, String author, String timestamp, String summary) {
     this.version = version;
     this.author = author;
     this.timestamp = timestamp;

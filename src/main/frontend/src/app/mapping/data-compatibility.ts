@@ -58,9 +58,10 @@ export function importConcept(c : UmlsConcept) :
   return [concept, codes]
 }
 
-function isRelevant(concept : UmlsConcept, vocIds : VocabularyId[], info : TypesInfo) : boolean {
-  return concept.semanticTypes.some(t => info.ignoreSemanticTypes.indexOf(t) == -1) &&
+export function isRelevant(concept : UmlsConcept, vocIds : VocabularyId[], info : TypesInfo) : boolean {
+  let res = concept.semanticTypes.some(t => info.ignoreSemanticTypes.indexOf(t) == -1) &&
     concept.sourceConcepts.some(c => vocIds.indexOf(c.codingSystem) != -1);
+  return res;
 }
 
 export function importConcepts(umlsConcepts : UmlsConcept[], vocIds : string[], info : TypesInfo) : data.ConceptsCodes {

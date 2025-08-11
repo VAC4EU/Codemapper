@@ -13,6 +13,7 @@ import {
   StartType,
   ServerInfo,
   Vocabularies,
+  EmptyStart,
 } from '../data';
 import { ApiService } from '../api.service';
 import * as ops from '../mapping-ops';
@@ -40,10 +41,10 @@ export class MappingTabComponent {
   @Input({ required: true }) vocabularies!: Vocabularies;
   @Input({ required: true }) latest: RevisionInfo | null = null;
   @Input({ required: true }) revisions: RevisionInfo[] = [];
+  @Input({ required: true }) projectRole: ProjectRole | null = null;
   @Input() userCanDownload: boolean = false;
   @Input() userCanEdit: boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
-  @Input({ required: true }) projectRole: ProjectRole | null = null;
 
   constructor(
     private api: ApiService,
@@ -58,6 +59,10 @@ export class MappingTabComponent {
 
   isCsvImport(start: Start): start is CsvImport {
     return start != null && start.type == StartType.CsvImport;
+  }
+
+  isEmptyStart(start: Start): start is EmptyStart {
+    return start != null && start.type == StartType.Empty;
   }
 
   toggleIncludeDescendants() {

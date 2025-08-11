@@ -336,7 +336,7 @@ public class CodeMapperResource {
     List<Mapping> mappings = new LinkedList<>();
     for (MappingConfig config : mappingConfigs) {
       Mapping mapping = new Mapping();
-      mapping.info = persistencyApi.getMappingInfo(config.shortkey, config.version);
+      mapping.info = persistencyApi.getMappingInfo(config.shortkey);
       if (config.version == null) {
         mapping.revision = persistencyApi.getLatestRevision(config.shortkey);
       } else {

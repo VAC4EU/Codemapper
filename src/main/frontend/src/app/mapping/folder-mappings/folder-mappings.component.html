@@ -57,19 +57,13 @@
 
     <mat-card>
         <mat-card-header>
-            New mapping
+            &nbsp;
         </mat-card-header>
         <mat-card-actions>
             <span matTooltip="Create a new mapping (only for owners)">
                 <button class="tool-create" (click)="openCreateMappingDialog()" [disabled]="!userCanCreate"
                     mat-raised-button>
-                    Create
-                </button>
-            </span>
-            <span matTooltip="Import a mapping from a CSV file (only for owners)">
-                <button class="tool-import-codelist" (click)="importNew(folderName)" [disabled]="!userCanCreate"
-                    mat-raised-button>
-                    Import codelist
+                    New mapping
                 </button>
             </span>
         </mat-card-actions>

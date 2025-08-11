@@ -54,6 +54,7 @@ export class HistoryComponent {
     let config = `${this.info.mappingShortkey}@${version}`;
     let data = {
       projectName: this.projectName,
+      version,
       mappingConfigs: [config],
       includeDescendants: IncludeDescendants.PerMapping,
       mappings: { [config]: {name: this.info.mappingName, meta: this.meta}},

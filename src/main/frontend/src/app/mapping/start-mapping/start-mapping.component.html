@@ -1,0 +1,30 @@
+    <h3>Start mapping with:</h3>
+    <mat-button-toggle-group [(ngModel)]="mode" name="fontStyle" aria-label="Font Style">
+        <mat-button-toggle value="edf">Event definition form</mat-button-toggle>
+        <mat-button-toggle value="codelist">Existing codelist</mat-button-toggle>
+        <mat-button-toggle value="empty">Empty mapping</mat-button-toggle>
+    </mat-button-toggle-group>
+    <container-element class="content" [ngSwitch]="mode">
+        <div *ngSwitchCase="'edf'">
+          <p>Start the mapping from the concepts in an event definition form
+            (EDF). Enter an EDF on the left and click "Search concepts". This
+            will identify medical concepts in the EDF and list them on the
+            right. Select the appropriate concepts in the list and click "Start
+            with selected concepts" to start mapping, or click "Edit text" to
+            modify the EDF.</p>
+            <indexer *ngIf="serverInfo" [locked]="false" [vocIds]="serverInfo.defaultVocabularies" [typesInfo]="typesInfo(serverInfo)"
+               (confirmedIndexing)="setStartIndexing($event)" confirmLabel="Start with selected concepts"></indexer>
+        </div>
+        <div *ngSwitchCase="'codelist'">
+          <p>Start the mapping from an existing codelist. Click on "Select file"
+          and select a codelist on your computer. Then click "Import codelist".
+          The mapping will contain all concepts that are associated with the
+          codes in the codelist. Codes that are associated with the concepts but
+          which <em>not</em> part of the imported codelist are disabled.</p>
+            <import-csv-dialog [ignoreTermTypes]="serverInfo.defaultIgnoreTermTypes" (mapping)="setImportedMapping($event)"></import-csv-dialog>
+        </div>
+        <div *ngSwitchCase="'empty'">
+            <p>Start with an empty mapping</p>
+            <button mat-raised-button color="primary" (click)="setStartEmpty()">Ok</button>
+        </div>
+    </container-element>

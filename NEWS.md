@@ -9,6 +9,12 @@
 
 <section class="center-content">
 
+August 13, 2025
+---
+
+- unify creation of mappings from EDF, codelist, or empty
+- display mapping definitions
+
 August 3, 2025
 ---
 
