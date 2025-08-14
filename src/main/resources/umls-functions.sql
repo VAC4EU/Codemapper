@@ -53,3 +53,18 @@ left join mrconso c1 on d.path[array_upper(d.path, 1)] = c1.aui
 where c0.code != c1.code;
 end
 $$;
+
+drop function if exists related_children;
+create function related_children (sab varchar, code varchar, lat varchar)
+returns table (sab varchar, code varchar, str varchar)
+as $$
+  select distinct m2.sab, m2.code, m2.str
+  from mrconso m1
+  inner join mrhier h on h.paui = m1.aui
+  inner join mrconso m2 on m2.cui = h.cui
+  where m1.sab = related_children.sab
+  and m1.code = related_children.code
+  and m2.lat = related_children.lat
+  and m2.suppress != 'Y'
+  order by m2.sab, m2.code
+$$ language sql;

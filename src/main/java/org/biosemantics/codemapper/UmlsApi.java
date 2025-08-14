@@ -49,6 +49,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.MappingData.Concept;
+import org.biosemantics.codemapper.MappingData.MappingMeta;
 import org.biosemantics.codemapper.MappingData.Vocabulary;
 import org.biosemantics.codemapper.rest.NonUmlsTargets;
 import org.biosemantics.codemapper.rest.ServerInfo;
@@ -1014,10 +1015,16 @@ public class UmlsApi {
         }
         vocabularies.put(vocId, voc);
       }
-
+      MappingMeta meta =
+          new MappingMeta(
+              1,
+              serverInfo.getUmlsVersion(),
+              serverInfo.getDefaultAllowedTags().toArray(new String[] {}),
+              new String[] {},
+              serverInfo.getDefaultIgnoreSemanticTypes().toArray(new String[] {}),
+              false);
       // Create mapping data from concepts
-      MappingData mapping =
-          MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, serverInfo.getUmlsVersion());
+      MappingData mapping = MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, meta);
 
       // disable codes
       for (String vocId : mapping.codes.keySet()) {

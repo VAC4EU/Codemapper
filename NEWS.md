@@ -9,6 +9,20 @@
 
 <section class="center-content">
 
+August 13, 2025
+---
+
+- unify creation of mappings from EDF, codelist, or empty
+- display mapping definitions
+
+August 3, 2025
+---
+
+- display, edit and filter by mapping metadata in project view
+- configure inclusion of descendant codes per mapping
+- metadata download
+- start batch processing of mappings
+
 May 31, 2025
 ---
 

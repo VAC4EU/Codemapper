@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +56,6 @@ import org.biosemantics.codemapper.descendants.DescendantsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
-import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
 import org.biosemantics.codemapper.rest.WriteCsvApi.Mapping;
 
 @Path("code-mapper")
@@ -259,17 +257,17 @@ public class CodeMapperResource {
   public Response getCodeListsCSV(
       @Context HttpServletRequest request,
       @Context User user,
+      @QueryParam("filename") final String filename0,
       @QueryParam("project") final String projectName,
       @QueryParam("mappings") final List<String> rawMappingConfigs,
-      @QueryParam("includeDescendants") final boolean includeDescendants,
-      @QueryParam("format") final String format) {
+      @QueryParam("content") final String content) {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       logger.debug(String.format("Download code lists as CSV %s", projectName));
       OutputStream output = new ByteArrayOutputStream();
       List<MappingConfig> mappingConfigs = new LinkedList<>();
       for (String rawMappingConfig : rawMappingConfigs) {
-        String[] parts = rawMappingConfig.split("@");
+        String[] parts = rawMappingConfig.split("@", 2);
         MappingConfig config = new MappingConfig();
         config.shortkey = rawMappingConfig;
         if (parts.length == 2) {
@@ -277,37 +275,41 @@ public class CodeMapperResource {
             config.version = Integer.parseInt(parts[1]);
             config.shortkey = parts[0];
           } catch (NumberFormatException e) {
+            throw CodeMapperException.user("could not parse mapping config: " + rawMappingConfig);
           }
         }
+        System.out.println("CONFIG " + config.shortkey + " - " + config.version);
         mappingConfigs.add(config);
       }
-      List<Mapping> mappings = getMappings(projectName, mappingConfigs, includeDescendants);
+      Collection<Mapping> mappings = getMappings(projectName, mappingConfigs);
+      String suffix = "";
       try {
-        boolean compatibilityFormat;
-        switch (format) {
-          case "csv":
-            compatibilityFormat = false;
-            break;
-          case "csv_compat":
-            compatibilityFormat = true;
-            break;
+        switch (content) {
+          case "codelist":
+            {
+              addDescendants(mappings);
+              new WriteCsvApi().writeProjectCSV(output, projectName, mappings, true);
+              break;
+            }
+          case "metadata":
+            {
+              suffix = " - meta";
+              new WriteCsvApi().writeMetaCSV(output, projectName, mappings);
+              break;
+            }
+          case "coding_systems":
+            {
+              suffix = " - coding systems";
+              new WriteCsvApi().writeCodingSystems(output, mappings);
+              break;
+            }
           default:
-            throw CodeMapperException.user("unexpected format: " + format);
+            throw CodeMapperException.user("unexpected content: " + content);
         }
-        new WriteCsvApi().writeProjectCSV(output, projectName, mappings, compatibilityFormat);
       } catch (IOException e) {
-        throw CodeMapperException.server("could not write code lists CSV", e);
+        throw CodeMapperException.server("could not write codelist CSV", e);
       }
-      String filename;
-      if (mappings.size() == 1) {
-        filename =
-            String.format(
-                "%s.%s", mappings.get(0).info.withoutDefinition(), WriteCsvApi.FILE_EXTENSION);
-      } else {
-        filename =
-            String.format(
-                "%s (%d mappings).%s", projectName, mappings.size(), WriteCsvApi.FILE_EXTENSION);
-      }
+      String filename = String.format("%s%s.%s", filename0, suffix, WriteCsvApi.FILE_EXTENSION);
       String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
       return Response.ok()
           .header("Content-Disposition", contentDisposition)
@@ -328,55 +330,55 @@ public class CodeMapperResource {
         .replaceAll("^-|-$", "");
   }
 
-  List<Mapping> getMappings(
-      String projectName, List<MappingConfig> mappingConfigs, boolean includeDescendants)
+  Collection<Mapping> getMappings(String projectName, Collection<MappingConfig> mappingConfigs)
       throws CodeMapperException {
     PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
-    DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
-    DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
     List<Mapping> mappings = new LinkedList<>();
-    for (MappingInfo info : persistencyApi.getMappingInfos(projectName)) {
-      Optional<MappingConfig> config =
-          mappingConfigs.stream().filter(c -> c.shortkey.equals(info.mappingShortkey)).findFirst();
-      if (config.isPresent()) {
-        Mapping mapping = new Mapping();
-        mapping.info = info;
-        if (config.get().version == null) {
-          mapping.revision = persistencyApi.getLatestRevision(info.mappingShortkey);
-        } else {
-          mapping.revision = persistencyApi.getRevision(info.mappingShortkey, config.get().version);
-        }
-        if (mapping.revision == null) {
-          String msg =
-              "Please save mapping \""
-                  + mapping.info.mappingName
-                  + "\" to enable the download (the mapping has no revisions yet).";
-          logger.warn(msg);
-          throw CodeMapperException.user(msg);
-        }
-        try {
-          mapping.data = mapping.revision.parseMappingData();
-        } catch (CodeMapperException e) {
-          String msg = "Could not parse mapping \"" + mapping.info.mappingName + "\": " + e;
-          logger.warn(msg, e);
-          throw e;
-        }
-        mapping.includeDescendants = includeDescendants;
-        if (includeDescendants) {
-          Map<String, Collection<String>> codes = mapping.data.getCodesByVoc();
-          Map<String, CodingSystem> codingSystems =
-              api.getCodingSystems().stream()
-                  .collect(Collectors.toMap(CodingSystem::getAbbreviation, v -> v));
-          mapping.descendants =
-              descendantsCacheApi.getDescendantsAndCache(codes, codingSystems, descendantsApi, api);
-        } else {
-          mapping.descendants = Collections.emptyMap();
-        }
-        mappings.add(mapping);
+    for (MappingConfig config : mappingConfigs) {
+      Mapping mapping = new Mapping();
+      mapping.info = persistencyApi.getMappingInfo(config.shortkey);
+      if (config.version == null) {
+        mapping.revision = persistencyApi.getLatestRevision(config.shortkey);
+      } else {
+        mapping.revision = persistencyApi.getRevision(config.shortkey, config.version);
       }
+      if (mapping.revision == null) {
+        String msg =
+            "Invalid version for mapping \""
+                + mapping.info.mappingName
+                + "\" (the mapping may not have a version yet).";
+        logger.warn(msg);
+        throw CodeMapperException.user(msg);
+      }
+      try {
+        mapping.data = mapping.revision.parseMappingData();
+      } catch (CodeMapperException e) {
+        String msg = "Could not parse mapping \"" + mapping.info.mappingName + "\": " + e;
+        logger.warn(msg, e);
+        throw e;
+      }
+      mapping.includeDescendants = mapping.data.getMeta().isIncludeDescendants();
+      mappings.add(mapping);
     }
     mappings.sort(Comparator.comparing(m -> m.info.mappingName));
     return mappings;
+  }
+
+  void addDescendants(Collection<Mapping> mappings) throws CodeMapperException {
+    DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
+    DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
+    for (Mapping mapping : mappings) {
+      if (mapping.includeDescendants) {
+        Map<String, Collection<String>> codes = mapping.data.getCodesByVoc();
+        Map<String, CodingSystem> codingSystems =
+            api.getCodingSystems().stream()
+                .collect(Collectors.toMap(CodingSystem::getAbbreviation, v -> v));
+        mapping.descendants =
+            descendantsCacheApi.getDescendantsAndCache(codes, codingSystems, descendantsApi, api);
+      } else {
+        mapping.descendants = Collections.emptyMap();
+      }
+    }
   }
 
   @GET

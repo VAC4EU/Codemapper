@@ -1,57 +1,20 @@
-<h1 matDialogTitle>Import codelist</h1>
-<mat-dialog-content>
-  <p>
-    <mat-form-field>
-      <mat-label>Format</mat-label>
-      <mat-select #format required value="csv_compat">
-          <mat-option value="csv_compat">CSV compatibility</mat-option>
-      </mat-select>
-    </mat-form-field>
-  </p>
-  <p>
-    <mat-form-field appearance="fill">
-      <mat-label>Mapping name</mat-label>
-      <input class="mapping-name" type="text" [(ngModel)]="mappingName" matInput>
-    </mat-form-field>
-  </p>
-  <p>
-    <!-- not display:none for puppeteer -->
-    <input
-      class="mapping-file"
-      #csvFileInput
-      type="file"
-      style="height:0;width:0;overflow:hidden;visibility:hidden;"
-      (change)="handleCsvFileInput($event)"
-      accept="text/csv">
-    <button
-      (click)="csvFileInput.click()"
-      mat-raised-button>
-      Select file
-    </button>
-  </p>
-  <p>The codelist must be a CSV file with the following columns:</p>
-  <ul>
-    <li><code>coding_system</code></li>
-    <li><code>concept</code></li>
-    <li><code>code</code></li>
-    <li><code>code_name</code></li>
-    <li><code>tags</code></li>
-  </ul>
-  <p>Review comments can be included using columns <code>review1_author</code>,
-    <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
-    with increasing numbers for multiple rounds of review.</p>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button
-    (click)="unsetCsvImportFile()"
-    mat-button
-    matDialogClose>Cancel</button>
+<p>
+  <!-- not display:none for puppeteer -->
+  <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
+    (change)="handleCsvFileInput($event)" accept="text/csv">
+  <button (click)="csvFileInput.click()" mat-raised-button>
+    Select file
+  </button>
+  <p *ngIf="csvImportFile">{{csvImportFile.name}}</p>
+<p>
   <span matTooltip="Requires mapping name and CSV file">
-    <button
-      class="mapping-import"
-      [disabled]="csvImportFile == null || !mappingName"
-      (click)="importCsv(mappingName, csvImportFile!, format.value)"
-      color="primary"
-      mat-raised-button>Import</button>
+    <button class="mapping-import" [disabled]="csvImportFile == null" (click)="importCsv(csvImportFile!, 'csv_compat')"
+      color="primary" mat-raised-button>Import codelist</button>
   </span>
-</mat-dialog-actions>
+</p>
+<p>The codelist must be a CSV file with the following columns: <code>coding_system</code>, <code>concept</code>,
+  <code>code</code>, <code>code_name</code>, <code>tags</code>. Review comments can be included using columns
+  <code>review1_author</code>,
+  <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
+  with consecutive numbers for multiple rounds of review.
+</p>

@@ -1,24 +1,46 @@
-<h1 mat-dialog-title>Download codelist ({{numMappings}} mapping{{numMappings == 1 ? '' : 's'}})</h1>
-
-<div class="inputs" mat-dialog-content>
-    <mat-form-field>
-        <mat-label>Format</mat-label>
-        <mat-select #format required value="csv_compat">
-            <mat-option value="csv">CSV</mat-option>
-            <mat-option value="csv_compat">CSV compatibility</mat-option>
-        </mat-select>
-        <mat-hint *ngIf="format.value == 'csv_compat'">Compatibility: for existing workflows, without meta data</mat-hint>
-    </mat-form-field>
-
-    <p>
-    <mat-checkbox #includeDescendants checked matTooltip="For each code, include also all codes that are more specific">
-        Include descendant codes
-    </mat-checkbox></p>
+<div class="title">
+    <h1 mat-dialog-title>
+        Download {{numMappings}} mapping{{numMappings == 1 ? '' : 's'}}
+    </h1>
+    <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
 </div>
-<div mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Cancel</button>
+<div *ngIf="numMappings > 25" class="inputs" mat-dialog-content>
+    The download is currently limited to 25 mappings at once. Working on it! Thanks for your patience.
+</div>
 
-    <button mat-raised-button enabled="enabled"
-        (click)="download(includeDescendants.checked, format.value)" matDialogClose
-        color="primary"><mat-icon>download</mat-icon>Download</button>
+<div *ngIf="numMappings <= 25" class="inputs" mat-dialog-content>
+    <mat-form-field>
+        <mat-label>Name</mat-label>
+        <input #filename matInput [value]="defaultFilename()">
+    </mat-form-field>
+    <p>
+        <button mat-raised-button enabled="enabled" (click)="download('codelist', filename.value)"
+            color="primary"><mat-icon>download</mat-icon>Codelist</button>
+        <br />
+        The codelist generated from the selected mappings.
+        <span *ngIf="data.includeDescendants == IncludeDescendants.PerMapping">
+            Descendant codes are included according to the configuration of each mapping.
+        </span>
+        <span *ngIf="data.includeDescendants != IncludeDescendants.PerMapping">
+            Descendant codes are
+            <span *ngIf="data.includeDescendants == IncludeDescendants.No">not</span>
+            included (according to the mapping configuration).
+        </span>
+    </p>
+    
+    <p>
+        <button mat-raised-button enabled="enabled" (click)="download('metadata', filename.value)"
+            color="primary"><mat-icon>download</mat-icon>Mappings metadata</button>
+        <br />
+        Versions, configurations, coding systems, and links of the selected mappings.
+    </p>
+    <!--
+    <p>
+        <button mat-raised-button enabled="enabled" (click)="download('coding_systems', filename.value)"
+            color="primary"><mat-icon>download</mat-icon>Coding systems metadata</button>
+        <br />
+        The versions of the coding systems used in the selected mapping.
+    </p>
+    -->
+    <p>All downloads are CSV files.</p>
 </div>

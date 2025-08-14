@@ -18,6 +18,10 @@
 
 package org.biosemantics.codemapper.persistency;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +41,7 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlRootElement;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.Comment;
+import org.biosemantics.codemapper.MappingData;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
@@ -189,7 +194,7 @@ public class PersistencyApi {
     }
   }
 
-  public MappingRevision getRevision(String shortkey, Integer version) throws CodeMapperException {
+  public Revision getRevision(String shortkey, Integer version) throws CodeMapperException {
     String query =
         "SELECT r.mapping, r.timestamp, r.summary, u.username as user "
             + "FROM case_definitions cd "
@@ -205,22 +210,38 @@ public class PersistencyApi {
       statement.setString(1, shortkey);
       statement.setInt(2, version);
       ResultSet result = statement.executeQuery();
-      if (result.next()) {
-        String mapping = result.getString("mapping");
-        String timestamp = result.getString("timestamp");
-        String summary = result.getString("summary");
-        String user = result.getString("user");
-        return new MappingRevision(version, user, timestamp, summary, mapping);
-      } else {
-        return null;
-      }
+      if (!result.next()) return null;
+      Revision res = new Revision();
+      res.mappingJson = result.getString("mapping");
+      res.timestamp = result.getString("timestamp");
+      res.summary = result.getString("summary");
+      res.author = result.getString("user");
+      return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get revision", e);
     }
   }
 
+  @XmlRootElement
+  public static class Revision {
+    public int version;
+    public String author;
+    public String timestamp;
+    public String summary;
+    public String mappingJson;
+
+    public MappingData parseMappingData() throws CodeMapperException {
+      ObjectMapper mapper = new ObjectMapper();
+      try {
+        return mapper.readValue(mappingJson, MappingData.class);
+      } catch (JsonProcessingException e) {
+        throw CodeMapperException.server("could no parse mapping", e);
+      }
+    }
+  }
+
   /** Return the latest revision of a mapping, if it has one, or null otherwise. */
-  public MappingRevision getLatestRevision(String shortkey) throws CodeMapperException {
+  public Revision getLatestRevision(String shortkey) throws CodeMapperException {
     String query =
         "SELECT r.version, r.mapping, r.timestamp, r.summary, u.username as user "
             + "FROM case_definitions cd "
@@ -234,22 +255,20 @@ public class PersistencyApi {
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
       ResultSet result = statement.executeQuery();
-      if (result.next()) {
-        int version = result.getInt("version");
-        String mapping = result.getString("mapping");
-        String summary = result.getString("summary");
-        String timestamp = result.getString("timestamp");
-        String user = result.getString("user");
-        return new MappingRevision(version, user, timestamp, summary, mapping);
-      } else {
-        return null;
-      }
+      if (!result.next()) return null;
+      Revision res = new Revision();
+      res.version = result.getInt("version");
+      res.mappingJson = result.getString("mapping");
+      res.summary = result.getString("summary");
+      res.timestamp = result.getString("timestamp");
+      res.author = result.getString("user");
+      return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get latest revision", e);
     }
   }
 
-  public List<MappingRevision> getRevisions(String shortkey) throws CodeMapperException {
+  public List<RevisionInfo> getRevisions(String shortkey) throws CodeMapperException {
     String query =
         "SELECT r.version, u.username AS user, r.timestamp, r.summary "
             + "FROM case_definition_revisions r "
@@ -264,13 +283,13 @@ public class PersistencyApi {
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
       ResultSet result = statement.executeQuery();
-      List<MappingRevision> res = new LinkedList<>();
+      List<RevisionInfo> res = new LinkedList<>();
       while (result.next()) {
         int version = result.getInt("version");
         String user = result.getString("user");
         String timestamp = result.getString("timestamp");
         String summary = result.getString("summary");
-        res.add(new MappingRevision(version, user, timestamp, summary, null));
+        res.add(new RevisionInfo(version, user, timestamp, summary));
       }
       return res;
     } catch (SQLException e) {
@@ -278,14 +297,15 @@ public class PersistencyApi {
     }
   }
 
-  public int saveRevision(String shortkey, String username, String summary, String mappingJson)
+  public RevisionInfo saveRevision(
+      String shortkey, String username, String summary, String mappingJson)
       throws CodeMapperException {
     String query =
         "INSERT INTO case_definition_revisions (case_definition_id, user_id, mapping, summary) "
             + "SELECT cd.id, u.id, ?::jsonb, ? "
             + "FROM case_definitions cd, users u "
             + "WHERE u.username = ? AND cd.shortkey = ? "
-            + "RETURNING version";
+            + "RETURNING version, timestamp";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
@@ -294,11 +314,12 @@ public class PersistencyApi {
       statement.setString(ix++, username);
       statement.setString(ix++, shortkey);
       ResultSet result = statement.executeQuery();
-      if (result.next()) {
-        return result.getInt("version");
-      } else {
+      if (!result.next()) {
         throw CodeMapperException.server("Save revision did not return an id");
       }
+      int version = result.getInt("version");
+      String timestamp = result.getString("timestamp");
+      return new RevisionInfo(version, username, timestamp, summary);
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to save revision", e);
     }
@@ -358,13 +379,19 @@ public class PersistencyApi {
   }
 
   @XmlRootElement
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class DataMeta {
+    public Boolean includeDescendants;
+    // ...
+  }
+
+  @XmlRootElement
   public static class MappingInfo {
-    public String mappingName;
     public String mappingShortkey;
+    public String mappingName;
     public String projectName;
-    public String version;
     public String status;
-    public String lastModification;
+    public MappingMeta meta;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -406,6 +433,14 @@ public class PersistencyApi {
     }
   }
 
+  @XmlRootElement
+  public static class MappingMeta {
+    public String system;
+    public String type;
+    public String definition;
+    public Collection<String> projects;
+  }
+
   public static class ParsedMappingName {
     public String abbreviation;
     public String system;
@@ -419,24 +454,33 @@ public class PersistencyApi {
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
-        "SELECT mapping_name, project_name, mapping_status "
-            + "FROM projects_mappings_shortkey "
+        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
+            + "FROM projects_mappings_shortkey pm "
             + "WHERE mapping_shortkey = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
       ResultSet res = statement.executeQuery();
       if (!res.next()) {
-        throw CodeMapperException.user("Invalid mapping shortkey " + shortkey);
+        throw CodeMapperException.user("No mapping info for shortkey " + shortkey);
       }
+      ObjectMapper mapper = new ObjectMapper();
       MappingInfo mapping = new MappingInfo();
       mapping.mappingShortkey = shortkey;
       mapping.mappingName = res.getString(1);
       mapping.projectName = res.getString(2);
       mapping.status = res.getString(3);
+      mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
       return mapping;
     } catch (SQLException e) {
+      e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query for mapping info", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json for mapping info", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json for mapping info", e);
     }
   }
 
@@ -445,7 +489,8 @@ public class PersistencyApi {
     String query =
         "SELECT mapping_shortkey, mapping_name, project_name "
             + "FROM projects_mappings_shortkey "
-            + "WHERE project_name = ? AND mapping_old_name = ?";
+            + "WHERE project_name = ? "
+            + "AND mapping_old_name = ?";
     try (Connection connection = connectionPool.getConnection();
         PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, projectName);
@@ -539,14 +584,12 @@ public class PersistencyApi {
     }
   }
 
-  public List<MappingInfo> getMappingInfos(String project) throws CodeMapperException {
+  public List<MappingInfo> getLatestMappingInfos(String project) throws CodeMapperException {
     String query =
-        "SELECT cd.shortkey, cd.name, r.version, cd.status, r.timestamp "
+        "SELECT cd.shortkey, cd.name, cd.status, cd.meta::TEXT "
             + "FROM projects p "
             + "INNER JOIN case_definitions cd "
             + "ON cd.project_id = p.id "
-            + "LEFT JOIN case_definition_latest_revision r "
-            + "ON r.case_definition_id = cd.id "
             + "WHERE p.name = ? "
             + "AND (cd.status is null OR cd.status != 'DELETED')";
 
@@ -555,20 +598,71 @@ public class PersistencyApi {
       statement.setString(1, project);
       ResultSet set = statement.executeQuery();
       List<MappingInfo> mappings = new LinkedList<>();
+      ObjectMapper mapper = new ObjectMapper();
       while (set.next()) {
         MappingInfo mapping = new MappingInfo();
+        mapping.projectName = project;
         mapping.mappingShortkey = set.getString(1);
         mapping.mappingName = set.getString(2);
-        mapping.version = set.getString(3);
-        mapping.status = set.getString(4);
-        mapping.lastModification = set.getString(5);
-        mapping.projectName = project;
+        mapping.status = set.getString(3);
+        mapping.meta = mapper.readValue(set.getString(4), MappingMeta.class);
         mappings.add(mapping);
       }
       return mappings;
     } catch (SQLException e) {
       e.printStackTrace();
-      throw CodeMapperException.server("Cannot execute query to get case definition names", e);
+      throw CodeMapperException.server("Cannot execute query to get case definition infos", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json to get case definition infos", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to get case definition infos", e);
+    }
+  }
+
+  public MappingMeta getMappingMeta(String shortkey) throws CodeMapperException {
+    String query = "SELECT meta::TEXT FROM case_definitions WHERE shortkey = ?";
+
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, shortkey);
+      ResultSet set = statement.executeQuery();
+      if (!set.next()) {
+        throw CodeMapperException.user("unknown mapping shortkey: " + shortkey);
+      }
+      String metaJson = set.getString(1);
+      ObjectMapper mapper = new ObjectMapper();
+      return mapper.readValue(metaJson, MappingMeta.class);
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to get case definition meta", e);
+    } catch (JsonMappingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot map json to get case definition meta", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to get case definition meta", e);
+    }
+  }
+
+  public void setMappingMeta(String shortkey, MappingMeta meta) throws CodeMapperException {
+    String query = "UPDATE case_definitions SET meta = ?::jsonb where shortkey = ?";
+    ObjectMapper mapper = new ObjectMapper();
+    try (Connection connection = connectionPool.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, mapper.writeValueAsString(meta));
+      statement.setString(2, shortkey);
+      int num = statement.executeUpdate();
+      if (num != 1) {
+        throw CodeMapperException.server("Updated not exactly one mapping meta");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot execute query to set case definition meta", e);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server("Cannot process json to set case definition meta", e);
     }
   }
 
@@ -584,7 +678,7 @@ public class PersistencyApi {
     }
   }
 
-  public MappingInfo createMapping(String projectName, String mappingName, String status)
+  public String createMapping(String projectName, String mappingName, String status)
       throws CodeMapperException {
     String query =
         "INSERT INTO case_definitions (project_id, name, status) "
@@ -601,11 +695,7 @@ public class PersistencyApi {
       if (!set.next()) {
         throw CodeMapperException.server("no shortkey when creating a mapping");
       }
-      MappingInfo mapping = new MappingInfo();
-      mapping.mappingName = mappingName;
-      mapping.projectName = projectName;
-      mapping.mappingShortkey = set.getString(1);
-      return mapping;
+      return set.getString(1);
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to create mapping", e);
@@ -792,6 +882,38 @@ public class PersistencyApi {
       statement.execute();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to set mapping status", e);
+    }
+  }
+
+  public Map<String, RevisionInfo> getLatestFolderMappingRevisions(String project)
+      throws CodeMapperException {
+    String query =
+        ""
+            + "SELECT pcd.case_definition_shortkey, r.version, r.timestamp, u.username, r.summary "
+            + "FROM projects_case_definitions pcd "
+            + "INNER JOIN case_definition_latest_revision r "
+            + "ON pcd.case_definition_id = r.case_definition_id "
+            + "INNER JOIN users u "
+            + "ON u.id = r.user_id "
+            + "WHERE pcd.project_name = ?";
+    try {
+      Connection connection = connectionPool.getConnection();
+      PreparedStatement statement = connection.prepareStatement(query);
+      statement.setString(1, project);
+      ResultSet results = statement.executeQuery();
+      Map<String, RevisionInfo> infos = new HashMap<>();
+      while (results.next()) {
+        String shortkey = results.getString(1);
+        int version = results.getInt(2);
+        String timestamp = results.getString(3);
+        String author = results.getString(4);
+        String summary = results.getString(5);
+        infos.put(shortkey, new RevisionInfo(version, author, timestamp, summary));
+      }
+      return infos;
+    } catch (SQLException e) {
+      throw CodeMapperException.server(
+          "Cannot execute query to get latest folder mapping revisions", e);
     }
   }
 }

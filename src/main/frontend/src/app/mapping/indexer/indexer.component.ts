@@ -16,8 +16,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, Output, EventEmitter, Component, ViewChild, SimpleChanges, OnChanges } from '@angular/core';
-import { Concept, Concepts, ConceptId, StartType, Span, Indexing, cuiOfId, VocabularyId } from '../data';
+import {
+  Input,
+  Output,
+  EventEmitter,
+  Component,
+  ViewChild,
+  SimpleChanges,
+  OnChanges,
+} from '@angular/core';
+import {
+  Concept,
+  Concepts,
+  ConceptId,
+  StartType,
+  Span,
+  Indexing,
+  cuiOfId,
+  VocabularyId,
+} from '../data';
 import { ApiService, EMPTY_TYPES_INFO, TypesInfo } from '../api.service';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -30,74 +47,93 @@ enum State {
 @Component({
   selector: 'indexer',
   templateUrl: './indexer.component.html',
-  styleUrls: ['./indexer.component.scss']
+  styleUrls: ['./indexer.component.scss'],
 })
 export class IndexerComponent implements OnChanges {
-  @Input({ required: true }) vocIds! : VocabularyId[];
-  @Input() typesInfo : TypesInfo = EMPTY_TYPES_INFO;
-  @Input() initialIndexing : Indexing | null = null;
-  @Input() locked : boolean = false;
-  @Input() confirmLabel : string = "";
-  @Output() confirmedIndexing = new EventEmitter<Indexing>;
+  @Input({ required: true }) vocIds!: VocabularyId[];
+  @Input() typesInfo: TypesInfo = EMPTY_TYPES_INFO;
+  @Input() initialIndexing: Indexing | null = null;
+  @Input() locked: boolean = false;
+  @Input() confirmLabel: string = '';
+  @Output() confirmedIndexing = new EventEmitter<Indexing>();
 
-  text : string = ""; // ngModel of the textarea
-  indexedText : string | null = null; // text when last call to index()
-  spans : Span[] = [];
-  selected : Concept[] = [];
-  concepts : { [key : ConceptId] : Concept } = {};
-  @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
+  text: string = ''; // ngModel of the textarea
+  indexedText: string | null = null; // text when last call to index()
+  spans: Span[] = [];
+  selected: Concept[] = [];
+  concepts: { [key: ConceptId]: Concept } = {};
+  @ViewChild(ConceptsTableComponent) table!: ConceptsTableComponent;
 
-  state : State = State.Editing;
-  rendering : SafeHtml | null = null;
+  state: State = State.Editing;
+  rendering: SafeHtml | null = null;
 
   readonly State = State;
 
-  constructor(
-    private api : ApiService,
-    private sanitizer : DomSanitizer,
-  ) { }
+  constructor(private api: ApiService, private sanitizer: DomSanitizer) {}
 
-  ngOnChanges(changes : SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges) {
     if (this.initialIndexing != null) {
       this.state = State.Indexed;
       this.text = this.initialIndexing.text;
       this.spans = this.initialIndexing.spans;
-      this.concepts = Object.fromEntries(this.initialIndexing.concepts.map(c => [c.id, c]));
-      this.selected = this.initialIndexing.concepts
-        .filter(c => this.initialIndexing!.selected.includes(c.id));
+      this.concepts = Object.fromEntries(
+        this.initialIndexing.concepts.map((c) => [c.id, c])
+      );
+      this.selected = this.initialIndexing.concepts.filter((c) =>
+        this.initialIndexing!.selected.includes(c.id)
+      );
       this.setRendering(this.text, this.spans, this.concepts, this.selected);
       setTimeout(() => this.table.setSelected(this.selected), 0);
     }
   }
 
-  setSelected(concepts : Concept[]) {
+  setSelected(concepts: Concept[]) {
     this.selected = concepts;
-    let ids = concepts.map(c => c.id);
-    let elts = document.getElementsByClassName("indexedConcept");
+    let ids = concepts.map((c) => c.id);
+    let elts = document.getElementsByClassName('indexedConcept');
     for (let i = 0; i < elts.length; i++) {
       let elt = elts[i];
-      if (ids.some(id => elt.classList.contains(id))) {
-        elt.classList.add("enabled");
+      if (ids.some((id) => elt.classList.contains(id))) {
+        elt.classList.add('enabled');
       } else {
-        elt.classList.remove("enabled");
+        elt.classList.remove('enabled');
       }
     }
   }
 
-  index(text : string) {
-    this.api.peregrineIndex(text, this.vocIds, this.typesInfo)
-      .subscribe(([spans, concepts]) => {
-        this.indexedText = text;
-        this.state = State.Indexed;
-        this.spans = spans;
-        this.concepts = concepts;
-        this.setRendering(this.text, this.spans, this.concepts, Object.values(this.concepts));
-        setTimeout(() => this.table.selectAll(), 0);
-      });
+  async index(text: string) {
+    let spans = await this.api.peregrineIndex(text);
+    let { concepts } = await this.api.concepts(
+      spans.map((s) => cuiOfId(s.id)),
+      this.vocIds,
+      this.typesInfo
+    );
+    console.log("INDEX CONCEPTS", concepts);
+    this.indexedText = text;
+    this.state = State.Indexed;
+    this.spans = spans;
+    this.concepts = concepts;
+    this.setRendering(
+      this.text,
+      this.spans,
+      this.concepts,
+      Object.values(this.concepts)
+    );
+    setTimeout(() => this.table.selectAll(), 0);
   }
 
-  setRendering(text : string, spans : Span[], concepts : Concepts, selected : Concept[]) {
-    let rendering = this.highlight(text, spans, Object.values(concepts), selected);
+  setRendering(
+    text: string,
+    spans: Span[],
+    concepts: Concepts,
+    selected: Concept[]
+  ) {
+    let rendering = this.highlight(
+      text,
+      spans,
+      Object.values(concepts),
+      selected
+    );
     this.rendering = this.sanitizer.bypassSecurityTrustHtml(rendering);
   }
 
@@ -107,56 +143,72 @@ export class IndexerComponent implements OnChanges {
     this.state = State.Editing;
   }
 
-  getIndexing() : Indexing {
+  getIndexing(): Indexing {
     if (this.indexedText != null) {
       return {
         type: StartType.Indexing,
         text: this.indexedText,
         spans: this.spans,
         concepts: Object.values(this.concepts),
-        selected: this.selected.map(c => c.id),
+        selected: this.selected.map((c) => c.id),
       };
     } else {
-      throw new Error("Not indexed, cannot get indexing");
+      throw new Error('Not indexed, cannot get indexing');
     }
   }
 
-  highlight(text : string, spans0 : Span[], concepts : Concept[], selected : Concept[]) {
-    let group = (array : Span[], by : (span : Span) => number) : { [key : number] : Span[] } => {
-      var res : { [key : number] : Span[] } = {};
+  highlight(
+    text: string,
+    spans0: Span[],
+    concepts: Concept[],
+    selected: Concept[]
+  ) {
+    let group = (
+      array: Span[],
+      by: (span: Span) => number
+    ): { [key: number]: Span[] } => {
+      var res: { [key: number]: Span[] } = {};
       for (let elt of array) {
         var key = by(elt);
         res[key] ??= [];
         res[key].push(elt);
       }
       return res;
-    }
-    let selectedCuis = selected.map(c => c.id);
-    var conceptsByCui = Object.fromEntries(concepts.map(c => [c.id, c]));
-    let spans = spans0.filter(s => conceptsByCui[cuiOfId(s.id)] !== undefined);
-    var spansByStart : { [key : number] : Span[] } = group(spans, s => s.start);
-    var result = "";
-    var ends : number[] = [];
+    };
+    let selectedCuis = selected.map((c) => c.id);
+    var conceptsByCui = Object.fromEntries(concepts.map((c) => [c.id, c]));
+    let spans = spans0.filter(
+      (s) => conceptsByCui[cuiOfId(s.id)] !== undefined
+    );
+    var spansByStart: { [key: number]: Span[] } = group(spans, (s) => s.start);
+    var result = '';
+    var ends: number[] = [];
     var here = 0;
     for (let c of text) {
       var hereStartSpans = spansByStart[here] || [];
-      var hereStartSpansByEnd : { [key : number] : Span[] } =
-        group(hereStartSpans, s => s.end);;
+      var hereStartSpansByEnd: { [key: number]: Span[] } = group(
+        hereStartSpans,
+        (s) => s.end
+      );
       for (let [end, hereSpans] of Object.entries(hereStartSpansByEnd)) {
-        var cuis = hereSpans.map(s => cuiOfId(s.id));
-        var concepts = cuis.map(cui => conceptsByCui[cui]).filter(c => c !== undefined);
+        var cuis = hereSpans.map((s) => cuiOfId(s.id));
+        var concepts = cuis
+          .map((cui) => conceptsByCui[cui])
+          .filter((c) => c !== undefined);
         var title = concepts
-          .map(c => conceptsByCui[c.id]?.name)
-          .filter(s => s !== undefined)
-          .join(", ");
-        let cuiClasses = concepts.map(c => c.id).join(" ")
-        let enabled = cuis.some(cui => selectedCuis.includes(cui)) ? "enabled " : "";
+          .map((c) => conceptsByCui[c.id]?.name)
+          .filter((s) => s !== undefined)
+          .join(', ');
+        let cuiClasses = concepts.map((c) => c.id).join(' ');
+        let enabled = cuis.some((cui) => selectedCuis.includes(cui))
+          ? 'enabled '
+          : '';
         result += `<span class="indexedConcept ${enabled}${cuiClasses}" title="${title}" >`;
         ends.push(+end);
       }
       if (c == '\n' || c == '\r') {
         if (ends.length == 0) {
-          result += "<br/>";
+          result += '<br/>';
         } else {
           result += ' ';
         }
@@ -165,15 +217,15 @@ export class IndexerComponent implements OnChanges {
       }
       ends.sort();
       while (ends.length > 0 && ends[0] == here) {
-        result += "</span>";
+        result += '</span>';
         ends.shift();
       }
       here += 1;
     }
     while (ends.length > 0) {
-      result += "</span>";
+      result += '</span>';
       ends.shift();
     }
-    return "<div class='highlight'>" + result + "</div>";
+    return "<div class='highlight'>" + result + '</div>';
   }
 }

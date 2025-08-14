@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, TemplateRef } from '@angular/core';
+import { Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { Mapping, Revision } from '../data';
+import { Mapping, MappingMeta } from '../data';
 import { ApiService } from '../api.service';
-import { ProjectRole } from '../persistency.service';
+import { MappingInfo, ProjectRole, RevisionInfo } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
-import { DownloadDialogComponent } from '../download-dialog/download-dialog.component';
+import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
 
 @Component({
   selector: 'history',
@@ -31,10 +31,11 @@ import { DownloadDialogComponent } from '../download-dialog/download-dialog.comp
 })
 export class HistoryComponent {
   @Input({ required: true }) projectName! : string;
-  @Input({ required: true }) mappingShortkey! : string;
   @Input({ required: true }) mapping! : Mapping;
-  @Input({ required: true }) revisions! : Revision[];
-  @Input({ required: true }) version! : number;
+  @Input({ required: true }) info! : MappingInfo;
+  @Input({ required: true }) meta! : MappingMeta;
+  @Input({ required: true }) revisions! : RevisionInfo[];
+  @Input({ required: true }) latestVersion! : number | null;
   @Input({ required: true }) projectRole : ProjectRole | null = null;
   @Input() userCanDownload : boolean = false;
 
@@ -50,14 +51,18 @@ export class HistoryComponent {
   }
 
   openDownloadDialog(version : number) {
+    let config = `${this.info.mappingShortkey}@${version}`;
     let data = {
       projectName: this.projectName,
-      mappingConfigs: [`${this.mappingShortkey}@${version}`],
+      version,
+      mappingConfigs: [config],
+      includeDescendants: IncludeDescendants.PerMapping,
+      mappings: { [config]: {name: this.info.mappingName, meta: this.meta}},
     };
     this.dialog.open(DownloadDialogComponent, { data })
   }
 
   selectedMappingConfig() {
-    return `${this.mappingShortkey}@v${this.downloadVersion}`;
+    return `${this.info.mappingShortkey}@v${this.downloadVersion}`;
   }
 }

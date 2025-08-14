@@ -15,6 +15,9 @@ export/non-umls.csv:
 VOCS = ICD10DA MEDCODEID RCD2 ICDO3
 EXPORTS = $(addprefix export/, $(addsuffix .csv, $(VOCS)))
 
+# export/non-umls.csv: $(EXPORTS)
+# 	cat $^ > $@
+# 	cat $^|gsed 's/,exact term\|,ICD10AM without M\|,code reference//' > $@
 
 .SECONDEXPANSION:
 $(EXPORTS): export/%.csv: $$*/$$*.csv export/ids.txt

@@ -1,16 +1,62 @@
-
+@use '@angular/material' as mat;
 
 .table-container {
-    width: 100%;
-    height: calc(100vh - 22em);
-    overflow: auto;
-  }
-  
-  table {
-    width: 100%;
-  }
+  width: 100%;
+  height: calc(100vh - 22em);
+  overflow: auto;
+}
 
-  .row-link:hover {
-    background-color: rgba(0, 0, 0, .05);
-    cursor: pointer;
-  }
+table {
+  width: 100%;
+}
+
+.row-link:hover {
+  background-color: rgba(0, 0, 0, .05);
+  cursor: pointer;
+}
+
+::ng-deep .tagsMenu {
+  padding: 0.5em;
+}
+
+::ng-deep .cdk-overlay-pane .tagsMenu{
+    min-width: 50em;
+}
+
+
+.column-filter-indicator {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button.mat-button {
+  height: 40px;
+}
+
+.filters {
+}
+
+.filterOnName {
+  width: 8em;
+}
+
+::ng-deep .filterOnName {
+  @include mat.form-field-density(-4);
+}
+
+.filter-properties-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-properties-title > h3 {
+  margin-top: 0;
+}

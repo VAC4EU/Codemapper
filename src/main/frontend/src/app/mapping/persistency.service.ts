@@ -19,18 +19,27 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
-import { JSONObject, Mapping, Revision, ServerInfo } from './data';
+import {
+  JSONObject,
+  Mapping,
+  ServerInfo,
+  MappingMeta,
+  emptyMappingMeta,
+} from './data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, firstValueFrom, map } from 'rxjs';
 import { User } from './auth.service';
 
 export enum ProjectRole {
-  Owner = "Owner",
-  Editor = "Editor",
-  Reviewer = "Reviewer"
+  Owner = 'Owner',
+  Editor = 'Editor',
+  Reviewer = 'Reviewer',
 }
 
-export function roleAtLeast(have : ProjectRole | null, need : ProjectRole) : boolean {
+export function roleAtLeast(
+  have: ProjectRole | null,
+  need: ProjectRole
+): boolean {
   if (have == null) {
     return false;
   } else {
@@ -40,49 +49,71 @@ export function roleAtLeast(have : ProjectRole | null, need : ProjectRole) : boo
       case ProjectRole.Editor:
         return have == ProjectRole.Owner || have == ProjectRole.Editor;
       case ProjectRole.Reviewer:
-        return have == ProjectRole.Owner || have == ProjectRole.Editor || have == ProjectRole.Reviewer;
+        return (
+          have == ProjectRole.Owner ||
+          have == ProjectRole.Editor ||
+          have == ProjectRole.Reviewer
+        );
     }
   }
 }
 
-export function userCanEdit(role : ProjectRole | null) : boolean {
-  return roleAtLeast(role, ProjectRole.Editor)
+export function userCanEdit(role: ProjectRole | null): boolean {
+  return roleAtLeast(role, ProjectRole.Editor);
 }
 
-export function userCanDownload(role : ProjectRole | null) : boolean {
-  return roleAtLeast(role, ProjectRole.Reviewer)
+export function userCanDownload(role: ProjectRole | null): boolean {
+  return roleAtLeast(role, ProjectRole.Reviewer);
 }
 
-export function userCanCreate(role : ProjectRole | null) : boolean {
-  return roleAtLeast(role, ProjectRole.Owner)
+export function userCanCreate(role: ProjectRole | null): boolean {
+  return roleAtLeast(role, ProjectRole.Owner);
 }
 
-export function userCanRename(role : ProjectRole | null) : boolean {
-  return roleAtLeast(role, ProjectRole.Owner)
+export function userCanRename(role: ProjectRole | null): boolean {
+  return roleAtLeast(role, ProjectRole.Owner);
 }
 
-export type ProjectsRoles = { [key : string] : ProjectRole[] }
+export type ProjectsRoles = { [key: string]: ProjectRole[] };
 
 export type UserRole = {
-  user : User,
-  role : ProjectRole
-}
+  user: User;
+  role: ProjectRole;
+};
 
 export interface MappingInfo {
-  projectName : string;
-  mappingName : string;
-  mappingShortkey : string;
-  version : string | null;
+  mappingShortkey: string | null; // null if not saved
+  projectName: string;
+  mappingName: string;
   status: string | null;
-  lastModification : string | null;
+  meta: MappingMeta;
 }
+
+export function emptyMappingInfo(): MappingInfo {
+  return {
+    mappingShortkey: null,
+    projectName: '',
+    mappingName: '',
+    status: null,
+    meta: emptyMappingMeta(),
+  };
+}
+
+export interface RevisionInfo {
+  version: number;
+  author: string;
+  timestamp: string;
+  summary: string;
+}
+
+export type RevisionInfos = { [key: string]: RevisionInfo };
 
 export interface ProjectInfo {
-  name : string,
-  role : ProjectRole,
+  name: string;
+  role: ProjectRole;
 }
 
-function slugify(str : string) {
+function slugify(str: string) {
   return str
     .toLowerCase()
     .replace(/^\s+|\s+$/g, '')
@@ -91,45 +122,80 @@ function slugify(str : string) {
     .replace(/-+/g, '-');
 }
 
-export function slugifyMappingInfo(info : MappingInfo) : string {
-  return `${slugify(info.projectName)}-${slugify(info.mappingName)}-${info.mappingShortkey}`
+export function slugifyMappingInfo(info: MappingInfo): string {
+  return `${slugify(info.projectName)}-${slugify(info.mappingName)}-${
+    info.mappingShortkey
+  }`;
 }
 
-export function mappingInfoLink(info : MappingInfo) : string[] {
-  return ["/mapping", slugifyMappingInfo(info)]
+export function mappingInfoLink(info: MappingInfo): string[] {
+  return ['/mapping', slugifyMappingInfo(info)];
+}
+
+export interface RevisionRaw {
+  version: number;
+  author: string;
+  timestamp: string;
+  summary: string;
+  mappingJson: string;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PersistencyService {
+  private url: string = environment.apiUrl + '/persistency';
 
-  private url : string = environment.apiUrl + '/persistency'
+  constructor(private http: HttpClient) {}
 
-  constructor(private http : HttpClient) { }
-
-  projectMappingInfos(project : string) {
-    return this.http.get<MappingInfo[]>(this.url + `/projects/${project}/mappings`)
-      .pipe(map(names => {
-        names.sort((a, b) => a.mappingName.toLowerCase().localeCompare(b.mappingName.toLowerCase()));
-        return names;
-      }));
+  projectMappingInfos(project: string) {
+    return this.http
+      .get<MappingInfo[]>(this.url + `/projects/${project}/mappings`)
+      .pipe(
+        map((names) => {
+          names.sort((a, b) =>
+            a.mappingName
+              .toLowerCase()
+              .localeCompare(b.mappingName.toLowerCase())
+          );
+          return names;
+        })
+      );
   }
 
-  mappingInfo(shortkey : string) {
+  projectLatestMappings(project: string): Observable<RevisionInfos> {
+    return this.http.get<RevisionInfos>(
+      this.url + `/projects/${project}/latest-mapping-revisions`
+    );
+  }
+
+  mappingInfo(shortkey: string) {
     return this.http.get<MappingInfo>(this.url + `/mapping/${shortkey}/info`);
   }
 
-  mappingInfoByOldName(projectName : string, mappingName : string) {
-    return this.http.get<MappingInfo>(this.url + `/projects/${projectName}/mapping/${mappingName}/info-old-name`);
+  mappingMeta(shortkey: string) {
+    return this.http.get<MappingMeta>(this.url + `/mapping/${shortkey}/meta`);
   }
 
-  createMapping(projectName : string, mappingName : string) : Observable<MappingInfo> {
+  setMappingMeta(shortkey: string | null, meta: MappingMeta) {
+    let url = `${this.url}/mapping/${shortkey}/meta`;
+    return this.http.post<MappingMeta>(url, meta);
+  }
+
+  mappingInfoByOldName(projectName: string, mappingName: string) {
+    return this.http.get<MappingInfo>(
+      this.url + `/projects/${projectName}/mapping/${mappingName}/info-old-name`
+    );
+  }
+
+  async createMapping(projectName: string, mappingName: string, meta: MappingMeta): Promise<string> {
     let body = new URLSearchParams();
-    body.append("projectName", projectName);
-    body.append("mappingName", mappingName);
+    body.append('projectName', projectName);
+    body.append('mappingName', mappingName);
     let url = this.url + `/mapping`;
-    return this.http.post<MappingInfo>(url, body, urlEncodedOptions);
+    let shortkey = await firstValueFrom(this.http.post(url, body, {...urlEncodedOptions, responseType: 'text' as const}));
+    await firstValueFrom(this.setMappingMeta(shortkey, meta));
+    return shortkey;
   }
 
   async deleteMappings(shortkeys: string[]) {
@@ -137,7 +203,7 @@ export class PersistencyService {
       let url = this.url + `/mapping/${shortkey}`;
       try {
         await firstValueFrom(this.http.delete<MappingInfo>(url));
-      } catch(e) {
+      } catch (e) {
         let msg = `Could not delete mapping ${shortkey}`;
         console.error(msg, e);
         throw new Error(msg);
@@ -145,99 +211,126 @@ export class PersistencyService {
     }
   }
 
-  loadLegacyMapping(shortkey : string, serverInfo : ServerInfo) : Observable<Mapping> {
-    return this.http.get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
-      .pipe(map((json) => Mapping.importV1(json, serverInfo)));
+  loadLegacyMapping(
+    shortkey: string,
+    serverInfo: ServerInfo
+  ): Observable<Mapping> {
+    return this.http
+      .get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
+      .pipe(map((json) => Mapping.importLegacyJSON(json, serverInfo)));
   }
 
-  loadLatestRevisionMapping(shortkey : string, serverInfo : ServerInfo) : Observable<{ version : number, mapping : Mapping }> {
-    return this.http.get<Revision>(this.url + `/mapping/${shortkey}/latest-revision`)
-      .pipe(map(rev => {
-        let mapping = Mapping.importJSON(JSON.parse(rev.mapping), serverInfo);
-        return { version: rev.version, mapping };
-      }))
+  loadLatestRevisionMapping(
+    shortkey: string,
+    serverInfo: ServerInfo
+  ): Observable<{ info: RevisionInfo; mapping: Mapping }> {
+    return this.http
+      .get<RevisionRaw>(this.url + `/mapping/${shortkey}/latest-revision`)
+      .pipe(
+        map((rev) => {
+          let mapping = Mapping.importJSON(
+            JSON.parse(rev.mappingJson),
+            serverInfo
+          );
+          return {
+            info: {
+              version: rev.version,
+              author: rev.author,
+              timestamp: rev.timestamp,
+              summary: rev.summary,
+            },
+            mapping,
+          };
+        })
+      );
   }
 
   getProjectsRoles() {
-    return this.http.get<ProjectsRoles>(this.url + "/user/project-permissions")
+    return this.http.get<ProjectsRoles>(this.url + '/user/project-permissions');
   }
 
-  getProjectRole(projectName : string) {
-    return this.http.get<ProjectRole | null>(this.url + "/user/project-permission/" + projectName)
+  getProjectRole(projectName: string) {
+    return this.http.get<ProjectRole | null>(
+      this.url + '/user/project-permission/' + projectName
+    );
   }
 
-  getProjectUsers(projectName : string) {
-    return this.http.get<UserRole[]>(this.url + `/project/${projectName}/users`)
+  getProjectUsers(projectName: string) {
+    return this.http.get<UserRole[]>(
+      this.url + `/project/${projectName}/users`
+    );
   }
 
-  getRevisions(shortkey : string) {
-    return this.http.get<Revision[]>(this.url + `/mapping/${shortkey}/revisions`);
+  getRevisions(shortkey: string) {
+    return this.http.get<RevisionInfo[]>(
+      this.url + `/mapping/${shortkey}/revisions`
+    );
   }
 
-  saveRevision(shortkey : string, mapping : Mapping, summary : string) {
+  saveRevision(shortkey: string, mapping: Mapping, summary: string) {
     let body = new URLSearchParams();
     let mappingJson = JSON.stringify(mapping, Mapping.jsonifyReplacer);
-    body.append("mapping", mappingJson);
-    body.append("summary", summary);
+    body.append('mapping', mappingJson);
+    body.append('summary', summary);
     let url = this.url + `/mapping/${shortkey}/save-revision`;
-    return this.http.post<number>(url, body, urlEncodedOptions);
+    return this.http.post<RevisionInfo>(url, body, urlEncodedOptions);
   }
 
-  mappingSetName(shortkey : string, newName : string) {
+  mappingSetName(shortkey: string, newName: string) {
     let body = new URLSearchParams();
-    body.append("name", newName);
+    body.append('name', newName);
     let url = this.url + `/mapping/${shortkey}/name`;
     return this.http.post<number>(url, body, urlEncodedOptions);
   }
-  projectUsers(projectName : string) {
+  projectUsers(projectName: string) {
     let url = this.url + `/projects/${projectName}/user-roles`;
-    return this.http.get<UserRole[]>(url)
+    return this.http.get<UserRole[]>(url);
   }
 
-  createProject(name : string) : Observable<void> {
+  createProject(name: string): Observable<void> {
     let url = this.url + `/project`;
     let body = new URLSearchParams();
-    body.append("name", name);
+    body.append('name', name);
     return this.http.post<void>(url, body, urlEncodedOptions);
   }
 
   getProjects() {
-    return this.http.get<ProjectInfo[]>(this.url + "/projects")
+    return this.http.get<ProjectInfo[]>(this.url + '/projects');
   }
 
   allUsers() {
     return this.http.get<User[]>(this.url + '/users');
   }
 
-  setUserRole(projectName : string, username : string, role : ProjectRole | null) {
+  setUserRole(projectName: string, username: string, role: ProjectRole | null) {
     let url = this.url + '/project/' + projectName + '/user-role';
     let body = new URLSearchParams();
-    body.append("username", username);
+    body.append('username', username);
     if (role) {
-      body.append("role", role);
+      body.append('role', role);
     }
     return this.http.post<void>(url, body, urlEncodedOptions);
   }
-  createUser(username : string, password : string, email : string) {
+  createUser(username: string, password: string, email: string) {
     let url = this.url + '/user';
     let body = new URLSearchParams();
-    body.set("username", username);
-    body.set("password", password);
-    body.set("email", email);
-    return this.http.post<void>(url, body, urlEncodedOptions)
+    body.set('username', username);
+    body.set('password', password);
+    body.set('email', email);
+    return this.http.post<void>(url, body, urlEncodedOptions);
   }
-  changePassword(username : string, password : string) {
+  changePassword(username: string, password: string) {
     let url = this.url + '/user/password';
     let body = new URLSearchParams();
-    body.set("username", username);
-    body.set("password", password);
-    return this.http.post<void>(url, body, urlEncodedOptions)
+    body.set('username', username);
+    body.set('password', password);
+    return this.http.post<void>(url, body, urlEncodedOptions);
   }
-  setAdmin(username : string, isAdmin : boolean) {
+  setAdmin(username: string, isAdmin: boolean) {
     let url = this.url + '/user/admin';
     let body = new URLSearchParams();
-    body.set("username", username);
-    body.set("isAdmin", "" + isAdmin);
-    return this.http.post<void>(url, body, urlEncodedOptions)
+    body.set('username', username);
+    body.set('isAdmin', '' + isAdmin);
+    return this.http.post<void>(url, body, urlEncodedOptions);
   }
 }
