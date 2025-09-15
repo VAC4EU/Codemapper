@@ -46,7 +46,7 @@
   </mat-tab>
 
   <mat-tab label="Concepts" [disabled]="mapping.start == null">
-    <concepts *ngIf="!mapping.isEmpty()" [mapping]="mapping" [info]="info" [allTopics]="allTopics" [vocabularies]="vocabularies"
+    <concepts *ngIf="!mapping.isEmpty()" [mapping]="mapping" [serverInfo]="serverInfo" [info]="info" [allTopics]="allTopics" [vocabularies]="vocabularies"
               [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
 

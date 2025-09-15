@@ -35,8 +35,6 @@ import {
   JSONObject,
 } from './data';
 
-export const CUSTOM_CUI = 'C0000000';
-
 export class OpError extends Error {}
 
 function expect(ok: boolean, message: string = '', ...rest: any) {
@@ -69,7 +67,11 @@ export abstract class Operation {
   public abstract describe(): string;
   saveRequired: boolean = false;
   saveReviewRequired: boolean = false;
+  noUndo: boolean = true;
   afterRunCallback: () => void = () => {};
+  constructor(noUndo?: boolean) {
+    this.noUndo = noUndo ?? false;
+  }
   public withAfterRunCallback(callback: () => void) {
     this.afterRunCallback = callback;
     return this;
@@ -195,7 +197,7 @@ export class SetStartIndexing extends Operation {
 
 export class ResetStart extends Operation {
   constructor() {
-    super();
+    super(true);
   }
   override describe(): string {
     return `Reset start`;
@@ -498,40 +500,26 @@ export class Remap extends Operation {
     private conceptsCodes: ConceptsCodes,
     private vocabularies: Vocabularies
   ) {
-    super();
+    super(true);
     this.saveRequired = true;
   }
   override describe(): string {
     return 'Remap concept codes';
   }
   override run(mapping: Mapping): Operation | undefined {
-    let customCodes = mapping.getCustomCodes();
-    let customVocabularies = mapping.getCustomVocabularies();
-    let disabled = mapping.getCodesDisabled();
-    let tags = mapping.getTags();
-    let customConcept = mapping.concepts[CUSTOM_CUI];
-    let lost = mapping.getLost(
+    mapping.remap(
+      this.umlsVersion,
       this.conceptsCodes.concepts,
-      this.conceptsCodes.codes
+      this.conceptsCodes.codes,
+      this.vocabularies
     );
-    console.log('Lost in remap', lost);
-    mapping.meta.umlsVersion = this.umlsVersion;
-    mapping.concepts = this.conceptsCodes.concepts;
-    mapping.codes = this.conceptsCodes.codes;
-    mapping.vocabularies = this.vocabularies;
-    Object.assign(mapping.vocabularies, customVocabularies);
-    if (customConcept) mapping.concepts[customConcept.id] = customConcept;
-    mapping.setCustomCodes(customCodes);
-    mapping.setCodesDisabled(disabled);
-    mapping.setLost(lost);
-    mapping.setTags(tags);
     return;
   }
 }
 
 export class ImportMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super();
+    super(true);
     this.saveRequired = true;
     this.saveReviewRequired = true;
   }
@@ -551,15 +539,15 @@ export class ImportMapping extends Operation {
   }
 }
 
-export class MergeMapping extends Operation {
+export class AddMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super(false);
+    super(true);
   }
   override describe(): string {
-    return 'Merge mapping';
+    return 'Add mapping';
   }
   override run(mapping: Mapping): Operation | undefined {
-    mapping.merge(this.mapping);
+    mapping.addMapping(this.mapping);
     return;
   }
 }

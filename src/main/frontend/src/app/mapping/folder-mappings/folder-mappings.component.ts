@@ -446,7 +446,7 @@ export class FolderMappingsComponent {
         mapping.cleanupRecacheCheck();
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);
-          mapping.run(op);
+          mapping.run(op, false);
           op.afterRunCallback();
         }
         let newVersion = await firstValueFrom(

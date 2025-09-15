@@ -108,7 +108,7 @@
     <p *ngIf="csvImportFile">{{csvImportFile.name}}</p>
     <p>
       <span matTooltip="Requires mapping name and CSV file">
-        <button class="mapping-import" [disabled]="csvImportFile == null"
+        <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
           (click)="importCsv(csvImportFile!, 'csv_compat')" color="primary" mat-raised-button>Import codelist</button>
       </span>
     </p>

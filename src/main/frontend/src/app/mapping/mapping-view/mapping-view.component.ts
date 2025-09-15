@@ -329,7 +329,7 @@ export class MappingViewComponent implements HasPendingChanges {
 
   run(op: ops.Operation) {
     if (!this.mapping) return;
-    this.mapping.run(op);
+    this.mapping.run(op, this.saveRequired);
     op.afterRunCallback();
     this.updateMapping(this.mapping);
     if (op.saveRequired) {

@@ -18,6 +18,8 @@
 
 import { Operation } from './mapping-ops';
 
+export const CUSTOM_CUI = 'C0000000';
+
 export type VocabularyId = string;
 export type ConceptId = string; // CUI
 export type CodeId = string; // The actual code
@@ -41,13 +43,13 @@ export interface ConceptsCodes {
   codes: Codes;
 }
 
-export type CustomConcepts = {
+export type ConceptCodes = {
   [key: ConceptId]: { [key: VocabularyId]: CodeId[] };
 };
 
 export interface CustomCodes {
   codes: Codes;
-  concepts: CustomConcepts;
+  conceptCodes: ConceptCodes;
 }
 
 export class RemapError {}
@@ -110,7 +112,7 @@ export interface DataMeta {
 
 export const DEFAULT_INCLUDE_DESCENDANTS = false;
 
-export const EMPTY_MAPPING_INFO : DataMeta = {
+export const EMPTY_DATA_META: DataMeta = {
   formatVersion: MappingFormat.version,
   umlsVersion: null,
   allowedTags: [],
@@ -158,51 +160,110 @@ export class Mapping {
   ) {
     this.cleanupRecacheCheck();
   }
-  merge(mapping: MappingData) {
+  toObject() {
+    return {
+      meta: this.meta,
+      start: this.start,
+      vocabularies: this.vocabularies,
+      concepts: this.concepts,
+      codes: this.codes,
+    };
+  }
+  addMapping(mapping: MappingData) {
     if (mapping.meta.umlsVersion != this.meta.umlsVersion) {
-      let msg = "the UMLS version does not match (remap first?)"
-      console.error(msg, mapping.meta.umlsVersion, this.meta.umlsVersion)
-      throw new Error(msg)
+      let msg = 'the UMLS version does not match';
+      console.error(msg, mapping.meta.umlsVersion, this.meta.umlsVersion);
+      throw new Error(msg);
     }
     for (let [vocId, voc] of Object.entries(mapping.vocabularies)) {
-      let voc1 = this.vocabularies[vocId]
+      let voc1 = this.vocabularies[vocId];
       if (voc1 === undefined) {
-        throw new Error(`the vocabularies must already exist, but ${vocId} does not`)
+        throw new Error(
+          `the vocabularies must already exist, but ${vocId} does not`
+        );
       }
       if (voc1.version != voc.version) {
-        throw new Error(`the vocabulary versions do not match, you may need to remap the mapping first`)
+        throw new Error(`the vocabulary versions do not match`);
       }
     }
     for (let vocId of Object.keys(mapping.codes)) {
       for (let [id, code] of Object.entries(mapping.codes[vocId])) {
         let code0 = this.codes[vocId][id];
+        if (code0 === undefined && !code.custom) {
+          throw new Error(
+            `code ${vocId}/${id} is not in the original mapping and not a custom code`
+          );
+        }
+      }
+    }
+    for (let vocId of Object.keys(mapping.codes)) {
+      for (let [id, code] of Object.entries(mapping.codes[vocId])) {
+        code.tag = normalizeTag(code.tag, this.meta.allowedTags);
+        let code0 = this.codes[vocId][id];
         if (code0 === undefined) {
+          // custom code, checked above
           this.codes[vocId][id] = code;
         } else {
-          code0.enabled = code.enabled; // specifically, enable codes that were disabled in the original mapping 
-          if (!code0.tag) {
-            code0.tag = code.tag
-          } else if (code0.tag && code.tag && code0.tag != code.tag) {
-            code0.tag = `multiple:${code0.tag}+${code.tag}`
+          if (!code.enabled) {
+            continue;
+          } else {
+            code0.enabled = true;
+          }
+          if (code.tag) {
+            if (!code0.tag) {
+              code0.tag = code.tag;
+            } else if (code0.tag && code.tag && code0.tag != code.tag) {
+              code0.tag = formatMultipleTags([code0.tag, code.tag]);
+            }
           }
           if (code.custom != code0.custom && code.term != code0.term) {
-            console.warn("unexpected difference in code during merge", vocId, code, code0)
+            console.warn(
+              'unexpected difference in code during merge',
+              vocId,
+              code,
+              code0
+            );
           }
         }
       }
     }
     for (let [cui, concept] of Object.entries(mapping.concepts)) {
-      let concept0 = this.concepts[cui]
+      let concept0 = this.concepts[cui];
       if (concept0 === undefined) {
-        this.concepts[cui] = concept
+        this.concepts[cui] = concept;
       } else {
         for (let vocId of Object.keys(concept.codes)) {
           for (let id of concept.codes[vocId]) {
-            concept0.codes[vocId].add(id)
+            concept0.codes[vocId].add(id);
           }
         }
       }
     }
+  }
+  remap(
+    umlsVersion: string,
+    concepts: Concepts,
+    codes: Codes,
+    vocabularies: Vocabularies
+  ) {
+    let customCodes = this.getCustomCodes();
+    let customVocabularies = this.getCustomVocabularies();
+    let disabled = this.getCodesDisabled();
+    let tags = this.getTags();
+    let customConcept = this.concepts[CUSTOM_CUI];
+    let lost = this.getLost(concepts, codes);
+    console.log('Lost in remap', lost);
+    this.meta.umlsVersion = umlsVersion;
+    this.concepts = concepts;
+    this.codes = codes;
+    this.vocabularies = vocabularies;
+    Object.assign(this.vocabularies, customVocabularies);
+    if (customConcept) this.concepts[customConcept.id] = customConcept;
+    this.setCustomCodes(customCodes);
+    this.setCodesDisabled(disabled);
+    this.setLost(lost);
+    this.setTags(tags);
+    this.cleanupRecacheCheck();
   }
   numVocabularies(): number {
     return Object.keys(this.vocabularies).length;
@@ -244,24 +305,24 @@ export class Mapping {
     res.redoStack = this.redoStack;
     return res;
   }
-  public getCustomCodes(): CustomCodes {
-    let res: CustomCodes = { codes: {}, concepts: {} };
+  getCustomCodes(): CustomCodes {
+    let res: CustomCodes = { codes: {}, conceptCodes: {} };
     for (let [vocId, codes] of Object.entries(this.codes)) {
       for (let [codeId, code] of Object.entries(codes)) {
         if (code.custom) {
           res.codes[vocId] ??= {};
           res.codes[vocId][codeId] = code;
           for (let conceptId of this.getConceptsByCode(vocId, codeId)) {
-            res.concepts[conceptId] ??= {};
-            res.concepts[conceptId][vocId] ??= [];
-            res.concepts[conceptId][vocId].push(codeId);
+            res.conceptCodes[conceptId] ??= {};
+            res.conceptCodes[conceptId][vocId] ??= [];
+            res.conceptCodes[conceptId][vocId].push(codeId);
           }
         }
       }
     }
     return res;
   }
-  public setCustomCodes(custom: CustomCodes) {
+  setCustomCodes(custom: CustomCodes) {
     for (let vocId of Object.keys(custom.codes)) {
       for (let code of Object.values(custom.codes[vocId])) {
         this.codes[vocId] ??= {};
@@ -273,26 +334,26 @@ export class Mapping {
         this.codes[vocId][code.id] = code;
       }
     }
-    for (let conceptId of Object.keys(custom.concepts)) {
+    for (let conceptId of Object.keys(custom.conceptCodes)) {
       if (this.concepts[conceptId] === undefined) {
         throw new Error(`Custom code with unavailable concept ${conceptId}`);
       }
-      for (let vocId of Object.keys(custom.concepts[conceptId])) {
-        for (let codeId of custom.concepts[conceptId][vocId]) {
+      for (let vocId of Object.keys(custom.conceptCodes[conceptId])) {
+        for (let codeId of custom.conceptCodes[conceptId][vocId]) {
           this.concepts[conceptId].codes[vocId] ??= new Set();
           this.concepts[conceptId].codes[vocId].add(codeId);
         }
       }
     }
   }
-  public getCustomVocabularies(): Vocabularies {
+  getCustomVocabularies(): Vocabularies {
     let res: Vocabularies = {};
     for (let [vocId, voc] of Object.entries(this.vocabularies)) {
       if (voc.custom) {
         res[vocId] = voc;
       }
     }
-    return res
+    return res;
   }
   public getTags(): Tags {
     let tags: Tags = {};
@@ -317,7 +378,7 @@ export class Mapping {
       }
     }
   }
-  public getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
+  getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
     let res: { [key: VocabularyId]: Set<CodeId> } = {};
     for (let vocId of Object.keys(this.codes)) {
       res[vocId] ??= new Set();
@@ -329,7 +390,7 @@ export class Mapping {
     }
     return res;
   }
-  public setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
+  setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
     for (let vocId of Object.keys(disabled)) {
       for (let codeId of disabled[vocId]) {
         if (this.codes[vocId]?.[codeId]) {
@@ -392,19 +453,28 @@ export class Mapping {
       }
     }
   }
-  public runIntern(op: Operation) {
+  runIntern(op: Operation) {
     let inv = op.run(this);
     this.cleanupRecacheCheck();
     return inv;
   }
-  public run(op: Operation) {
+  public run(op: Operation, saveRequired: boolean) {
     console.log('Run', op);
-    let inv = this.runIntern(op);
-    this.redoStack = [];
-    if (inv !== undefined) {
-      this.undoStack.push([op.describe(), inv]);
-    } else {
-      console.log('no inverse operation');
+    try {
+      if (op.noUndo && (this.undoStack.length > 0 || saveRequired)) {
+        alert('save your mapping first, this operation cannot be undone');
+        return;
+      }
+      let inv = this.runIntern(op);
+      this.redoStack = [];
+      if (inv !== undefined) {
+        this.undoStack.push([op.describe(), inv]);
+      } else {
+        console.log('no inverse operation');
+      }
+    } catch (err) {
+      console.error('could not run operation', op, err);
+      alert(`could not run operation: ${(err as Error).message}`);
     }
   }
   public undo() {
@@ -588,7 +658,7 @@ export class Mapping {
     console.log('Import mapping', json0, res);
     return res;
   }
-  
+
   static importLegacyJSON(v0: JSONValue, serverInfo: ServerInfo): Mapping {
     let v = v0 as JSONObject;
     let vocabularies: { [key: VocabularyId]: Vocabulary } = {};
@@ -725,7 +795,22 @@ function formatTag(
   let tags1 = Array.from(tags0);
   if (tags1.length == 0) return null;
   else if (tags1.length == 1) return tags1[0];
-  else return `multiple:${tags1.join('+')}`;
+  else return formatMultipleTags(tags1);
+}
+
+function formatMultipleTags(tags: string[]): string {
+  return 'multiple:' + tags.join('+');
+}
+
+function normalizeTag(tag: string | null, tags: string[]) {
+  if (tag && !tags.includes(tag)) {
+    let tag0 = tags.find((tag0) => tag0.toLowerCase() == tag!.toLowerCase());
+    if (tag0 !== undefined) {
+      console.log(`normalize tag ${tag} to ${tag0}`);
+      return tag0;
+    }
+  }
+  return tag;
 }
 
 export class Vocabulary {

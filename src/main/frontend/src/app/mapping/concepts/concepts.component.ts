@@ -49,6 +49,7 @@ import {
   CodeId,
   Tag,
   MappingMeta,
+  ServerInfo,
 } from '../data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, CsvFilter, TypesInfo } from '../api.service';
@@ -66,6 +67,7 @@ export class ConceptsComponent implements OnInit {
   @Input({ required: true }) mapping!: Mapping;
   @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
+  @Input({ required: true }) serverInfo!: ServerInfo;
   @Input() allTopics: AllTopics = new AllTopics();
   @Input() userCanEdit: boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
@@ -305,6 +307,10 @@ export class ConceptsComponent implements OnInit {
       alert("You cannot undo this operation, please save your mapping before");
       return;
     }
+    if (this.mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
+      alert("Mapping needs to be remapped first");
+      return;
+    }
     try {
       let filter: CsvFilter | null = null;
       if (this.info.meta.system && this.info.meta.type) {
@@ -327,7 +333,7 @@ export class ConceptsComponent implements OnInit {
         }
       }
       this.csvImportFile = null;
-      this.run.emit(new ops.MergeMapping(imported.mapping))
+      this.run.emit(new ops.AddMapping(imported.mapping))
     } catch (err) {
       console.error('Could not import codelist', err);
       let msg =
