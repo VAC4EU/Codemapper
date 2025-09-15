@@ -27,35 +27,65 @@ import {
   MappingData,
   CodeId,
   VocabularyId,
+  Tag,
 } from './data';
 
-function makeMapping(): Mapping {
+function mkVoc(
+  id: string,
+  version: string,
+  custom: boolean = false
+): Vocabulary {
+  return { id, version, custom, name: '' };
+}
+
+function mkConcept(id: string, codes: { [key: string]: Set<string> }): Concept {
+  return { id, codes, name: '', definition: '' };
+}
+
+function mkCode(
+  id: string,
+  options: {
+    custom?: boolean;
+    enabled?: boolean;
+    tag?: Tag;
+  } = {}
+): Code {
+  return {
+    id,
+    term: '',
+    custom: options.custom ?? false,
+    enabled: options.enabled ?? true,
+    tag: options.tag ?? null,
+  };
+}
+
+function mkMapping(): Mapping {
   return new Mapping(
     { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
     null,
     {
-      V1: new Vocabulary('V1', '', '1', false),
-      V2: new Vocabulary('V2', '', '1', false),
-      W: new Vocabulary('W', '', '1', true),
+      V1: mkVoc('V1', '1', false),
+      V2: mkVoc('V2', '1', false),
+      W: mkVoc('W', '1', true),
     },
     {
-      C1: new Concept('C1', '', '', {
+      C1: mkConcept('C1', {
         V1: new Set(['x0', 'x1']),
       }),
-      C2: new Concept('C2', '', '', {
+      C2: mkConcept('C2', {
         V1: new Set(['x2', 'x3']),
         W: new Set(['w1']),
       }),
     },
     {
       V1: {
-        x0: new Code('x0', '', false, true, null),
-        x1: new Code('x1', '', false, true, null),
-        x2: new Code('x2', '', false, true, 'broader'),
-        x3: new Code('x3', '', false, false, null),
+        x0: mkCode('x0'),
+        x1: mkCode('x1'),
+        x2: mkCode('x2', { tag: 'broader' }),
+        x3: mkCode('x3', { enabled: false }),
       },
       W: {
-        w1: new Code('w1', '', true, true, null),
+        w1: mkCode('w1', { custom: true }),
       },
     }
   );
@@ -65,26 +95,26 @@ function makeMappingData(): MappingData {
   return {
     meta: { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
     vocabularies: {
-      V1: new Vocabulary('V1', '', '1', false),
-      W: new Vocabulary('W', '', '1', true),
+      V1: mkVoc('V1', '1'),
+      W: mkVoc('W', '1', true),
     },
     concepts: {
-      C1: new Concept('C1', '', '', {
+      C1: mkConcept('C1', {
         V1: new Set(['x1']),
       }),
-      C2: new Concept('C2', '', '', {
+      C2: mkConcept('C2', {
         V1: new Set(['x2', 'x3']),
         W: new Set(['w2']),
       }),
     },
     codes: {
       V1: {
-        x1: new Code('x1', '', false, true, 'narrower'),
-        x2: new Code('x2', '', false, true, 'narrower'),
-        x3: new Code('x3', '', false, true, null),
+        x1: mkCode('x1', { tag: 'narrower' }),
+        x2: mkCode('x2', { tag: 'narrower' }),
+        x3: mkCode('x3'),
       },
       W: {
-        w2: new Code('w2', '', true, true, null),
+        w2: mkCode('w2', { custom: true }),
       },
     },
     umlsVersion: '',
@@ -93,36 +123,36 @@ function makeMappingData(): MappingData {
 
 describe('adding mappings', () => {
   it('should work', () => {
-    let mapping = makeMapping();
+    let mapping = mkMapping();
     mapping.addMapping(makeMappingData());
     expect(mapping.toObject()).toEqual(
       new Mapping(
         { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
         null,
         {
-          V1: new Vocabulary('V1', '', '1', false),
-          V2: new Vocabulary('V2', '', '1', false),
-          W: new Vocabulary('W', '', '1', true),
+          V1: mkVoc('V1', '1'),
+          V2: mkVoc('V2', '1'),
+          W: mkVoc('W', '1', true),
         },
         {
-          C1: new Concept('C1', '', '', {
+          C1: mkConcept('C1', {
             V1: new Set(['x0', 'x1']),
           }),
-          C2: new Concept('C2', '', '', {
+          C2: mkConcept('C2', {
             V1: new Set(['x2', 'x3']),
             W: new Set(['w1', 'w2']),
           }),
         },
         {
           V1: {
-            x0: new Code('x0', '', false, true, null),
-            x1: new Code('x1', '', false, true, 'narrower'),
-            x2: new Code('x2', '', false, true, 'multiple:broader+narrower'),
-            x3: new Code('x3', '', false, true, null),
+            x0: mkCode('x0'),
+            x1: mkCode('x1', { tag: 'narrower' }),
+            x2: mkCode('x2', { tag: 'multiple:broader+narrower' }),
+            x3: mkCode('x3'),
           },
           W: {
-            w1: new Code('w1', '', true, true, null),
-            w2: new Code('w2', '', true, true, null),
+            w1: mkCode('w1', { custom: true }),
+            w2: mkCode('w2', { custom: true }),
           },
         }
       ).toObject()
@@ -133,7 +163,7 @@ describe('adding mappings', () => {
     {
       let mappingData = makeMappingData();
       mappingData.meta.umlsVersion = '1999AA';
-      let mapping = makeMapping();
+      let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
         'the UMLS version does not match'
       );
@@ -142,8 +172,8 @@ describe('adding mappings', () => {
   it('should fail on unknown vocabulary', () => {
     {
       let mappingData = makeMappingData();
-      mappingData.vocabularies['V3'] = new Vocabulary('V3', '', '1', false);
-      let mapping = makeMapping();
+      mappingData.vocabularies['V3'] = mkVoc('V3', '1');
+      let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
         'the vocabularies must already exist, but V3 does not'
       );
@@ -153,8 +183,8 @@ describe('adding mappings', () => {
   it('should fail on different vocabulary version', () => {
     {
       let mappingData = makeMappingData();
-      mappingData.vocabularies['V1'] = new Vocabulary('V1', '', '2', false);
-      let mapping = makeMapping();
+      mappingData.vocabularies['V1'] = mkVoc('V1', '2');
+      let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
         'the vocabulary versions do not match'
       );
@@ -164,9 +194,9 @@ describe('adding mappings', () => {
   it('should fail on unknown, non-custom code', () => {
     {
       let mappingData = makeMappingData();
-      mappingData.codes['V1']['x4'] = new Code('x4', '', false, true);
+      mappingData.codes['V1']['x4'] = mkCode('x4');
       mappingData.concepts['C1'].codes['V1'].add('x4');
-      let mapping = makeMapping();
+      let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
         'code V1/x4 is not in the original mapping and not a custom code'
       );
@@ -197,16 +227,13 @@ let nonCustomConcepts = (concepts0: Concepts, codes0: Codes): Concepts =>
           ])
           .filter(([vocId, ids]) => ids)
       );
-      return [
-        cui,
-        new Concept(concept.id, concept.name, concept.definition, codes1),
-      ];
+      return [cui, { ...concept, codes: codes1 }];
     })
   );
 
 describe('remap mapping', () => {
   it('can be no-op', () => {
-    let mapping = makeMapping();
+    let mapping = mkMapping();
     console.log(mapping.toObject());
     let codes = nonCustomCodes(mapping.codes);
     let concepts = nonCustomConcepts(mapping.concepts, mapping.codes);
@@ -214,17 +241,16 @@ describe('remap mapping', () => {
     expect(mapping.toObject()).toEqual(mapping.toObject());
   });
   it('can keep removed codes as custom', () => {
-    let mapping = makeMapping();
+    let mapping = mkMapping();
     console.log(mapping.toObject());
     let codes = nonCustomCodes(mapping.codes);
     delete codes['V1']['x1'];
     let concepts = nonCustomConcepts(mapping.concepts, mapping.codes);
     concepts = Object.fromEntries(
-      Object.entries(concepts)
-      .map(([cui, concept]) => {
+      Object.entries(concepts).map(([cui, concept]) => {
         let codes = concept.codes;
-        codes['V1'].delete('x1')
-        return [cui, new Concept(concept.id, concept.name, concept.definition, codes)];
+        codes['V1'].delete('x1');
+        return [cui, { ...concept, codes }];
       })
     );
     mapping.remap('2025AB', concepts, codes, mapping.vocabularies);
@@ -235,68 +261,68 @@ describe('remap mapping', () => {
 describe('mappings get lost', () => {
   it('should detect lost portions', () => {
     let concepts: Concepts = {
-      C1: new Concept('C1', '', '', {
+      C1: mkConcept('C1', {
         V1: new Set(['x1', 'x2', 'x3']),
         V2: new Set(['y1', 'y2']),
       }),
-      C2: new Concept('C2', '', '', {
+      C2: mkConcept('C2', {
         V1: new Set(['x1']),
         V3: new Set(['z1']),
       }),
-      C3: new Concept('C3', '', '', {
+      C3: mkConcept('C3', {
         V1: new Set(['x2']),
       }),
     };
     let codes: Codes = {
       V1: {
-        x1: new Code('x1', '', false, true, null),
-        x2: new Code('x2', '', false, true, null),
-        x3: new Code('x3', '', false, true, null),
+        x1: mkCode('x1'),
+        x2: mkCode('x2'),
+        x3: mkCode('x3'),
       },
       V2: {
-        y1: new Code('y1', '', false, true, null),
-        y2: new Code('y2', '', false, true, null),
+        y1: mkCode('y1'),
+        y2: mkCode('y2'),
       },
       V3: {
-        z1: new Code('z1', '', false, true, null),
+        z1: mkCode('z1'),
       },
     };
     let mapping = new Mapping(EMPTY_DATA_META, null, {}, concepts, codes);
     let remapConcepts: Concepts = {
-      C1: new Concept('C1', '', '', {
+      C1: mkConcept('C1', {
         V1: new Set(['x1']),
         V2: new Set(['y1', 'y2']),
       }),
-      C3: new Concept('C3', '', '', {
+      C3: mkConcept('C3', {
         V1: new Set(['x2']),
       }),
     };
     let remapCodes: Codes = {
       V1: {
-        x1: new Code('x1', '', false, true, null),
-        x2: new Code('x2', '', false, true, null),
+        x1: mkCode('x1'),
+        x2: mkCode('x2'),
       },
       V2: {
-        y1: new Code('y1', '', false, true, null),
-        y2: new Code('y2', '', false, true, null),
+        y1: mkCode('y1'),
+        y2: mkCode('y2'),
       },
     };
     let lost = mapping.getLost(remapConcepts, remapCodes);
     let lostConcepts: Concepts = {
-      C1: new Concept('C1', '', '', {
+      C1: mkConcept('C1', {
         V1: new Set(['x2', 'x3']),
       }),
-      C2: new Concept('C2', '', '', {
+      C2: mkConcept('C2', {
         V1: new Set(['x1']),
         V3: new Set(['z1']),
       }),
     };
     let lostCodes: Codes = {
       V1: {
-        x3: new Code('x3', '', true, true, null),
+        x3: mkCode('x3', { custom: true }),
       },
       V3: {
-        z1: new Code('z1', '', true, true, null),
+        z1: mkCode('z1', { custom: true }),
       },
     };
     expect(lost.concepts).toEqual(lostConcepts);

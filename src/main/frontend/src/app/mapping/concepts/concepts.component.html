@@ -80,7 +80,7 @@
   </mat-card>
 </div>
 
-<concepts-table #table [showCodeTagIndication]="true" [concepts]="mapping.concepts" [filter]="conceptsFilter"
+<concepts-table #table [showCodeTagIndication]="true" [conceptTags]="mapping.conceptTags" [concepts]="mapping.concepts" [filter]="conceptsFilter"
   [codes]="mapping.codes" [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit"
   (reviewRun)="reviewRun.emit($event)" (selected)="setSelectedConcepts($event)">
 </concepts-table>

@@ -33,6 +33,7 @@ import {
   Indexing,
   emptyIndexing,
   JSONObject,
+  codesEqualExceptTag,
 } from './data';
 
 export class OpError extends Error {}
@@ -65,12 +66,14 @@ export abstract class Operation {
   // and it can be undone, and raise Error if the operation could not be applied
   public abstract run(mapping: Mapping): Operation | undefined;
   public abstract describe(): string;
-  saveRequired: boolean = false;
-  saveReviewRequired: boolean = false;
-  noUndo: boolean = true;
+  saveRequired: boolean;
+  saveReviewRequired: boolean;
+  noUndo: boolean;
   afterRunCallback: () => void = () => {};
-  constructor(noUndo?: boolean) {
-    this.noUndo = noUndo ?? false;
+  constructor(options: {noUndo?: boolean, saveRequired?: boolean, saveReviewRequired?: boolean} = {}) {
+    this.noUndo = options.noUndo ?? false;
+    this.saveRequired = options.saveRequired ?? false;
+    this.saveReviewRequired = options.saveReviewRequired ?? false;
   }
   public withAfterRunCallback(callback: () => void) {
     this.afterRunCallback = callback;
@@ -142,7 +145,7 @@ export class AddConcept extends Operation {
         if (original === undefined) {
           mapping.codes[vocId][codeId] = code;
         } else {
-          expect(code.sameAs(original));
+          expect(codesEqualExceptTag(code, original));
         }
       }
     }
@@ -181,8 +184,7 @@ export class SetStartIndexing extends Operation {
     readonly concepts: Concepts,
     readonly codes: Codes
   ) {
-    super();
-    this.saveRequired = true;
+    super({saveRequired: true});
   }
   override describe(): string {
     return `Set start to ${this.indexing.selected.join(', ')}`;
@@ -197,7 +199,7 @@ export class SetStartIndexing extends Operation {
 
 export class ResetStart extends Operation {
   constructor() {
-    super(true);
+    super({noUndo: true});
   }
   override describe(): string {
     return `Reset start`;
@@ -500,8 +502,7 @@ export class Remap extends Operation {
     private conceptsCodes: ConceptsCodes,
     private vocabularies: Vocabularies
   ) {
-    super(true);
-    this.saveRequired = true;
+    super({saveRequired: true, noUndo: true});
   }
   override describe(): string {
     return 'Remap concept codes';
@@ -519,9 +520,7 @@ export class Remap extends Operation {
 
 export class ImportMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super(true);
-    this.saveRequired = true;
-    this.saveReviewRequired = true;
+    super({noUndo: true, saveRequired: true, saveReviewRequired: true});
   }
   override describe(): string {
     return 'Import initial mapping';
@@ -541,7 +540,7 @@ export class ImportMapping extends Operation {
 
 export class AddMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super(true);
+    super({noUndo: true, saveRequired: true});
   }
   override describe(): string {
     return 'Add mapping';

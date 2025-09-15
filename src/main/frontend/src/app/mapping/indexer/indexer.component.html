@@ -28,6 +28,7 @@
       <concepts-table
         [disabled]="initialIndexing != null"
         [concepts]="concepts"
+        [conceptTags]="{}"
         (selected)="setSelected($event)"
         [hideTagColumn]="true"
         [userCanEdit]="false">

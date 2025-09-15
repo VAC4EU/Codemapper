@@ -26,7 +26,7 @@ import { Code } from '../data';
   styleUrls: ['./code.component.scss']
 })
 export class CodeComponent {
-  @Input() code : Code = Code.empty(false);
+  @Input({required: true}) code! : Code;
   @Input() showTagIndication : boolean = false;
   @Input() showTerm : boolean = true;
   tooltipContent() : string {

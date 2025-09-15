@@ -22,7 +22,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
-import { Concept, VocabularyId, ConceptId, CodeId, Code } from '../data';
+import { Concept, VocabularyId, ConceptId, CodeId, Code, Tag } from '../data';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 
@@ -38,7 +38,8 @@ function sortConcepts(c1 : Concept, c2 : Concept) : number {
   styleUrls: ['./concepts-table.component.scss']
 })
 export class ConceptsTableComponent {
-  @Input() concepts : { [key : ConceptId] : Concept } = {};
+  @Input({required: true}) concepts : { [key : ConceptId] : Concept } = {};
+  @Input({required: true}) conceptTags: { [key: ConceptId]: Tag | null } = {};
   @Input() allTopics : AllTopics | null = null;
   @Input() codes : { [key : VocabularyId] : { [key : CodeId] : Code } } = {};
   @Input() vocabularies : VocabularyId[] = [];
