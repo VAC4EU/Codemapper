@@ -949,7 +949,7 @@ public class UmlsApi {
         String tag = row[tagIx];
         if (eventAbbreviationIx != 1
             && systemIx != 1
-            && typeIx != 1
+            && typeIx != -1
             && eventAbbreviation != null
             && type != null
             && system != null) {
