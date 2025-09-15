@@ -55,7 +55,7 @@ import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, CsvFilter, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';
 import { CodeTags } from '../mapping-ops';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { MappingInfo } from '../persistency.service';
 
 @Component({
@@ -111,7 +111,7 @@ export class ConceptsComponent implements OnInit {
         distinctUntilChanged(),
         switchMap((query: string | null) => {
           if (query == null || query == '') {
-            return [];
+            return of([]);
           }
           let parts = query.split(':');
           let voc, query1;

@@ -9,20 +9,20 @@ HTTP 200
 jsonpath "$.username" == {{USERNAME}}
 
 # UMLS version
-GET {{URL}}/rest/code-mapper/version-info
+GET {{URL}}/rest/code-mapper/server-info
 HTTP 200
 [Asserts]
-jsonpath "$.umlsVersion" == "2024AA"
+jsonpath "$.umlsVersion" == "2025AA"
 
 # Non-UMLS vocabularies included
 GET {{URL}}/rest/code-mapper/coding-systems
 HTTP 200
 [Asserts]
 jsonpath "$[*]" count > 100
-jsonpath "$[*].abbreviation" includes "TEST"
+jsonpath "$[*].abbreviation" contains "TEST"
 
 # Non-UMLS codes included
-GET {{URL}}/rest/code-mapper/autocomplete-code?str=3&codingSystem=TEST
+GET {{URL}}/rest/code-mapper/autocomplete-code?str=333&codingSystem=TEST
 HTTP 200
 [Asserts]
 jsonpath "$" count == 2
@@ -31,10 +31,10 @@ jsonpath "$[0].sourceConcepts[0].codingSystem" == "TEST"
 jsonpath "$[0].sourceConcepts[1].codingSystem" == "TEST"
 jsonpath "$[0].sourceConcepts[2].codingSystem" == "TEST"
 jsonpath "$[1].sourceConcepts[0].codingSystem" == "TEST"
-jsonpath "$[0].sourceConcepts[0].id" matches "^3"
-jsonpath "$[0].sourceConcepts[1].id" matches "^3"
-jsonpath "$[0].sourceConcepts[2].id" matches "^3"
-jsonpath "$[1].sourceConcepts[0].id" matches "^3"
+jsonpath "$[0].sourceConcepts[0].id" matches "^333"
+jsonpath "$[0].sourceConcepts[1].id" matches "^333"
+jsonpath "$[0].sourceConcepts[2].id" matches "^333"
+jsonpath "$[1].sourceConcepts[0].id" matches "^333"
 
 # Non-UMLS umls concepts
 POST {{URL}}/rest/code-mapper/umls-concepts
