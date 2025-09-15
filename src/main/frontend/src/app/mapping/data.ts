@@ -158,6 +158,52 @@ export class Mapping {
   ) {
     this.cleanupRecacheCheck();
   }
+  merge(mapping: MappingData) {
+    if (mapping.meta.umlsVersion != this.meta.umlsVersion) {
+      let msg = "the UMLS version does not match (remap first?)"
+      console.error(msg, mapping.meta.umlsVersion, this.meta.umlsVersion)
+      throw new Error(msg)
+    }
+    for (let [vocId, voc] of Object.entries(mapping.vocabularies)) {
+      let voc1 = this.vocabularies[vocId]
+      if (voc1 === undefined) {
+        throw new Error(`the vocabularies must already exist, but ${vocId} does not`)
+      }
+      if (voc1.version != voc.version) {
+        throw new Error(`the vocabulary versions do not match, you may need to remap the mapping first`)
+      }
+    }
+    for (let vocId of Object.keys(mapping.codes)) {
+      for (let [id, code] of Object.entries(mapping.codes[vocId])) {
+        let code0 = this.codes[vocId][id];
+        if (code0 === undefined) {
+          this.codes[vocId][id] = code;
+        } else {
+          code0.enabled = code.enabled; // specifically, enable codes that were disabled in the original mapping 
+          if (!code0.tag) {
+            code0.tag = code.tag
+          } else if (code0.tag && code.tag && code0.tag != code.tag) {
+            code0.tag = `multiple:${code0.tag}+${code.tag}`
+          }
+          if (code.custom != code0.custom && code.term != code0.term) {
+            console.warn("unexpected difference in code during merge", vocId, code, code0)
+          }
+        }
+      }
+    }
+    for (let [cui, concept] of Object.entries(mapping.concepts)) {
+      let concept0 = this.concepts[cui]
+      if (concept0 === undefined) {
+        this.concepts[cui] = concept
+      } else {
+        for (let vocId of Object.keys(concept.codes)) {
+          for (let id of concept.codes[vocId]) {
+            concept0.codes[vocId].add(id)
+          }
+        }
+      }
+    }
+  }
   numVocabularies(): number {
     return Object.keys(this.vocabularies).length;
   }
@@ -238,6 +284,15 @@ export class Mapping {
         }
       }
     }
+  }
+  public getCustomVocabularies(): Vocabularies {
+    let res: Vocabularies = {};
+    for (let [vocId, voc] of Object.entries(this.vocabularies)) {
+      if (voc.custom) {
+        res[vocId] = voc;
+      }
+    }
+    return res
   }
   public getTags(): Tags {
     let tags: Tags = {};

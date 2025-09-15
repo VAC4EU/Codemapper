@@ -130,7 +130,8 @@ export class FolderMappingsComponent {
       let filter = this.filterOnName.toLowerCase().trim();
       return (
         info.mappingName.toLowerCase().includes(filter) ||
-        (info.meta?.definition ?? '').toLowerCase().includes(filter)
+        (info.meta?.definition ?? '').toLowerCase().includes(filter) ||
+        (info.meta.system + '_' + info.mappingName + '_' + info.meta.type).toLowerCase().includes(filter)
       );
     };
     this.dataSource.sortingDataAccessor = (mapping0: any, property: string) => {

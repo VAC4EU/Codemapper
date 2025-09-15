@@ -506,6 +506,7 @@ export class Remap extends Operation {
   }
   override run(mapping: Mapping): Operation | undefined {
     let customCodes = mapping.getCustomCodes();
+    let customVocabularies = mapping.getCustomVocabularies();
     let disabled = mapping.getCodesDisabled();
     let tags = mapping.getTags();
     let customConcept = mapping.concepts[CUSTOM_CUI];
@@ -518,6 +519,7 @@ export class Remap extends Operation {
     mapping.concepts = this.conceptsCodes.concepts;
     mapping.codes = this.conceptsCodes.codes;
     mapping.vocabularies = this.vocabularies;
+    Object.assign(mapping.vocabularies, customVocabularies);
     if (customConcept) mapping.concepts[customConcept.id] = customConcept;
     mapping.setCustomCodes(customCodes);
     mapping.setCodesDisabled(disabled);
@@ -545,6 +547,19 @@ export class ImportMapping extends Operation {
     mapping.concepts = this.mapping.concepts;
     mapping.codes = this.mapping.codes;
     mapping.meta = this.mapping.meta;
+    return;
+  }
+}
+
+export class MergeMapping extends Operation {
+  constructor(private mapping: MappingData) {
+    super(false);
+  }
+  override describe(): string {
+    return 'Merge mapping';
+  }
+  override run(mapping: Mapping): Operation | undefined {
+    mapping.merge(this.mapping);
     return;
   }
 }

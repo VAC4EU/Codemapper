@@ -53,6 +53,12 @@ export const EMPTY_TYPES_INFO: TypesInfo = {
   ignoreSemanticTypes: [],
 };
 
+export interface CsvFilter {
+  type: string;
+  eventAbbreviation: string;
+  system: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -185,6 +191,7 @@ export class ApiService {
     let vocs: Vocabularies = {},
       lostVocs = [];
     for (let vocId of vocIds) {
+      if (mapping.vocabularies[vocId].custom) continue;
       let voc = vocabularies[vocId];
       if (voc === undefined) {
         lostVocs.push(vocId);
@@ -307,7 +314,8 @@ export class ApiService {
     csvContent: string,
     commentColumns: string[],
     format: string,
-    ignoreTermTypes: string[]
+    ignoreTermTypes: string[],
+    filter: CsvFilter | null
   ): Observable<ImportResult> {
     let url = `${this.baseUrl}/import-csv`;
     let body = new URLSearchParams();
@@ -319,6 +327,11 @@ export class ApiService {
     for (let ignoreTermType of ignoreTermTypes) {
       body.append('ignoreTermTypes', ignoreTermType);
     }
+    if (filter) {
+      body.append('filterSystem', filter.system);
+      body.append('filterEventAbbreviation', filter.eventAbbreviation);
+      body.append('filterType', filter.type);
+    }
     return this.http.post<ImportResult>(url, body, urlEncodedOptions);
   }
 
@@ -326,7 +339,8 @@ export class ApiService {
     csv: File,
     commentColumns: string[],
     format: string,
-    ignoreTermTypes: string[]
+    ignoreTermTypes: string[],
+    filter: CsvFilter | null
   ): Observable<ImportedMapping> {
     let api = this;
     return new Observable((subscriber) => {
@@ -339,7 +353,8 @@ export class ApiService {
               csvContent,
               commentColumns,
               format,
-              ignoreTermTypes
+              ignoreTermTypes,
+              filter
             )
             .subscribe((res) => {
               if (res.success && res.imported) {

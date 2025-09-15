@@ -16,71 +16,99 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, TemplateRef, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
-import { debounceTime, catchError, distinctUntilChanged, switchMap, map } from 'rxjs/operators';
+import {
+  Component,
+  TemplateRef,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import {
+  debounceTime,
+  catchError,
+  distinctUntilChanged,
+  switchMap,
+  map,
+} from 'rxjs/operators';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { FormControl } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
-import { Mapping, Concept, Concepts, Codes, Indexing, VocabularyId, Vocabularies, filterConcepts, CodeId, Tag } from '../data';
+import {
+  Mapping,
+  Concept,
+  Concepts,
+  Codes,
+  Indexing,
+  VocabularyId,
+  Vocabularies,
+  filterConcepts,
+  CodeId,
+  Tag,
+  MappingMeta,
+} from '../data';
 import { AllTopics, ReviewOperation } from '../review';
-import { ApiService, TypesInfo } from '../api.service';
+import { ApiService, CsvFilter, TypesInfo } from '../api.service';
 import * as ops from '../mapping-ops';
 import { CodeTags } from '../mapping-ops';
+import { firstValueFrom } from 'rxjs';
+import { MappingInfo } from '../persistency.service';
 
 @Component({
   selector: 'concepts',
   templateUrl: './concepts.component.html',
-  styleUrls: ['./concepts.component.scss']
+  styleUrls: ['./concepts.component.scss'],
 })
 export class ConceptsComponent implements OnInit {
-  @Input() mapping! : Mapping;
-  @Input() vocabularies! : Vocabularies;
-  @Input() allTopics : AllTopics = new AllTopics();
-  @Input() userCanEdit : boolean = false;
+  @Input({ required: true }) mapping!: Mapping;
+  @Input({ required: true }) info!: MappingInfo;
+  @Input({ required: true }) vocabularies!: Vocabularies;
+  @Input() allTopics: AllTopics = new AllTopics();
+  @Input() userCanEdit: boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
-  @ViewChild(ConceptsTableComponent) table! : ConceptsTableComponent;
+  @ViewChild(ConceptsTableComponent) table!: ConceptsTableComponent;
 
-  selectedConcepts : Concept[] = [];
+  selectedConcepts: Concept[] = [];
   codeSearchQueryControl = new FormControl('');
-  codeConcepts : Concept[] = [];
-  dialogRef : MatDialogRef<any, any> | null = null;
-  conceptsFilter : string = "";
+  codeConcepts: Concept[] = [];
+  dialogRef: MatDialogRef<any, any> | null = null;
+  conceptsFilter: string = '';
 
-  constructor(
-    private dialog : MatDialog,
-    private api : ApiService,
-  ) { }
+  constructor(private dialog: MatDialog, private api: ApiService) {}
 
-  get numConcepts() : number {
+  get numConcepts(): number {
     return Object.keys(this.mapping.concepts).length;
   }
 
-  openDialog(templateRef : TemplateRef<any>) {
+  openDialog(templateRef: TemplateRef<any>) {
     this.dialogRef = this.dialog.open(templateRef, {
-      width: '700px'
+      width: '700px',
     });
   }
 
-  setSelectedConcepts(selected : Concept[]) {
-    setTimeout( // avoid ExpressionChangedAfterItHasBeenCheckedError
-      () => this.selectedConcepts = selected, 0);
+  setSelectedConcepts(selected: Concept[]) {
+    setTimeout(
+      // avoid ExpressionChangedAfterItHasBeenCheckedError
+      () => (this.selectedConcepts = selected),
+      0
+    );
   }
 
-  hasSelectedConcepts() : boolean {
+  hasSelectedConcepts(): boolean {
     return this.selectedConcepts.length > 0;
   }
 
   ngOnInit() {
-    this.codeSearchQueryControl
-      .valueChanges
+    this.codeSearchQueryControl.valueChanges
       .pipe(
         debounceTime(250),
         distinctUntilChanged(),
-        switchMap((query : string | null) => {
-          if (query == null || query == "") {
+        switchMap((query: string | null) => {
+          if (query == null || query == '') {
             return [];
           }
           let parts = query.split(':');
@@ -89,76 +117,91 @@ export class ConceptsComponent implements OnInit {
             voc = parts[0];
             query1 = parts.slice(1).join(':');
           } else {
-            voc = "";
+            voc = '';
             query1 = query;
           }
-          return this.api.autocompleteCode(voc, query1)
-            .pipe(map(cs => cs.filter(c => !this.mapping.concepts[c.id])))
-            .pipe(catchError(err => {
-              console.error("Could not autocomplete code", err);
-              return []
-            }));
-        }))
-      .subscribe(codeConcepts => this.codeConcepts = codeConcepts);
+          return this.api
+            .autocompleteCode(voc, query1)
+            .pipe(map((cs) => cs.filter((c) => !this.mapping.concepts[c.id])))
+            .pipe(
+              catchError((err) => {
+                console.error('Could not autocomplete code', err);
+                return [];
+              })
+            );
+        })
+      )
+      .subscribe((codeConcepts) => (this.codeConcepts = codeConcepts));
   }
 
-  vocIds() : VocabularyId[] {
+  vocIds(): VocabularyId[] {
     return Object.keys(this.mapping.vocabularies);
   }
 
-  selectAutocompleteCode(concept0 : Concept, query : string) {
-    this.api.concept(concept0.id, this.vocIds())
+  selectAutocompleteCode(concept0: Concept, query: string) {
+    this.api
+      .concept(concept0.id, this.vocIds())
       .subscribe(([concept, codes]) =>
         this.confirmAddConceptsDialog(
           { [concept.id]: concept },
           codes,
-          `Concept selected from code query ${query}`))
+          `Concept selected from code query ${query}`
+        )
+      );
   }
 
   showComments() {
-    console.log("show comments");
+    console.log('show comments');
   }
 
-  delete(concepts : Concept[]) {
+  delete(concepts: Concept[]) {
     for (const concept of concepts) {
       this.run.emit(new ops.RemoveConcept(concept.id));
     }
   }
 
-  addConcepts(selected : Concept[], codes : Codes) {
-    let concepts : Concepts = {};
+  addConcepts(selected: Concept[], codes: Codes) {
+    let concepts: Concepts = {};
     for (let concept of selected) {
       concepts[concept.id] = concept;
     }
-    this.run.emit(new ops.AddConcepts(concepts, codes)
-      .withAfterRunCallback(() => {
+    this.run.emit(
+      new ops.AddConcepts(concepts, codes).withAfterRunCallback(() => {
         this.table.setSelected(selected);
         this.codeConcepts = [];
-        this.codeSearchQueryControl.setValue("");
-      }))
-  }
-
-  confirmAddConceptsDialog(concepts : Concepts, codes : Codes, title : string) {
-    let currentCuis = Object.keys(this.mapping.concepts);
-    return this.dialog.open(ConceptsDialogComponent, {
-      data: {
-        title,
-        action: "Add selected concepts",
-        concepts: filterConcepts(concepts, currentCuis),
-        codes,
-        vocabularies: this.vocIds()
-      }
-    })
-      .afterClosed()
-      .subscribe(selected => {
-        if (selected) this.addConcepts(selected, codes);
+        this.codeSearchQueryControl.setValue('');
       })
+    );
   }
 
-  searchAddConcepts(query : string, info : TypesInfo) {
-    this.api.searchUts(query, this.vocIds(), info)
+  confirmAddConceptsDialog(concepts: Concepts, codes: Codes, title: string) {
+    let currentCuis = Object.keys(this.mapping.concepts);
+    return this.dialog
+      .open(ConceptsDialogComponent, {
+        data: {
+          title,
+          action: 'Add selected concepts',
+          concepts: filterConcepts(concepts, currentCuis),
+          codes,
+          vocabularies: this.vocIds(),
+        },
+      })
+      .afterClosed()
+      .subscribe((selected) => {
+        if (selected) this.addConcepts(selected, codes);
+      });
+  }
+
+  searchAddConcepts(query: string, info: TypesInfo) {
+    this.api
+      .searchUts(query, this.vocIds(), info)
       .subscribe(({ concepts, codes }) =>
-        this.confirmAddConceptsDialog(concepts, codes, `Concepts matching query "${query}"`))
+        this.confirmAddConceptsDialog(
+          concepts,
+          codes,
+          `Concepts matching query "${query}"`
+        )
+      );
   }
   //
   // searchAddCodes(query : string, voc: VocabularyId) {
@@ -170,19 +213,31 @@ export class ConceptsComponent implements OnInit {
   //   }
   // }
 
-  broaderConcepts(concept : Concept, vocIds : VocabularyId[]) {
-    this.api.broaderConcepts(concept.id, this.vocIds(), this.mapping.meta)
+  broaderConcepts(concept: Concept, vocIds: VocabularyId[]) {
+    this.api
+      .broaderConcepts(concept.id, this.vocIds(), this.mapping.meta)
       .subscribe(({ concepts, codes }) =>
-        this.confirmAddConceptsDialog(concepts, codes, `Concepts broader than ${concept.name}`))
+        this.confirmAddConceptsDialog(
+          concepts,
+          codes,
+          `Concepts broader than ${concept.name}`
+        )
+      );
   }
 
-  narrowerConcepts(concept : Concept, vocIds : VocabularyId[]) {
-    this.api.narrowerConcepts(concept.id, this.vocIds(), this.mapping.meta)
+  narrowerConcepts(concept: Concept, vocIds: VocabularyId[]) {
+    this.api
+      .narrowerConcepts(concept.id, this.vocIds(), this.mapping.meta)
       .subscribe(({ concepts, codes }) =>
-        this.confirmAddConceptsDialog(concepts, codes, `Concepts narrower than ${concept.name}`))
+        this.confirmAddConceptsDialog(
+          concepts,
+          codes,
+          `Concepts narrower than ${concept.name}`
+        )
+      );
   }
 
-  showTagsDialog(concepts : Concept[]) {
+  showTagsDialog(concepts: Concept[]) {
     let tags = new Set();
     let codes: CodeTags = {};
     for (let concept of concepts) {
@@ -196,19 +251,22 @@ export class ConceptsComponent implements OnInit {
         }
       }
     }
-    let codesCount = Object.values(codes).map(o => Object.keys(o).length).reduce((x, y) => x + y, 0);
+    let codesCount = Object.values(codes)
+      .map((o) => Object.keys(o).length)
+      .reduce((x, y) => x + y, 0);
     let tag = tags.size == 1 ? tags.values().next().value : null;
     let config = {
       data: {
         tag: tag,
         heading: `${codesCount} codes in ${concepts.length} concepts`,
-        allowedTags: this.mapping.meta.allowedTags
+        allowedTags: this.mapping.meta.allowedTags,
       },
       width: '40em',
     };
     this.dialog
       .open(TagsDialogComponent, config)
-      .afterClosed().subscribe(tag => {
+      .afterClosed()
+      .subscribe((tag) => {
         if (tag !== undefined) {
           for (let vocId of Object.keys(codes)) {
             for (let codeId of Object.keys(codes[vocId])) {
@@ -220,9 +278,64 @@ export class ConceptsComponent implements OnInit {
       });
   }
 
-  async addIndexing(indexing : Indexing) {
-    let ids = indexing.concepts.map(c => c.id);
-    let { concepts, codes } = await this.api.concepts(ids, this.vocIds(), this.mapping.meta);
+  async addIndexing(indexing: Indexing) {
+    let ids = indexing.concepts.map((c) => c.id);
+    let { concepts, codes } = await this.api.concepts(
+      ids,
+      this.vocIds(),
+      this.mapping.meta
+    );
     this.run.emit(new ops.AddConcepts(concepts, codes));
+  }
+
+  csvImportFile: File | null = null;
+
+  handleCsvFileInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.csvImportFile = null;
+    if (input.files) {
+      if (input.files.length == 1) {
+        this.csvImportFile = input.files[0];
+      }
+    }
+  }
+
+  async importCsv(file: File, format: string) {
+    if (this.mapping.undoStack.length > 0) {
+      alert("You cannot undo this operation, please save your mapping before");
+      return;
+    }
+    try {
+      let filter: CsvFilter | null = null;
+      if (this.info.meta.system && this.info.meta.type) {
+        filter = {
+          system: this.info.meta.system,
+          eventAbbreviation: this.info.mappingName,
+          type: this.info.meta.type,
+        };
+      }
+      let imported = await firstValueFrom(
+        this.api.importCsv(file, [], format, [], filter)
+      );
+      console.log('IMPORTED', imported);
+      if (imported.warnings.length) {
+        let msg =
+          'There were problems with the import: ' +
+          imported.warnings.map((s) => `${s}. `).join('');
+        if (!confirm(msg + ' Continue?')) {
+          return;
+        }
+      }
+      this.csvImportFile = null;
+      this.run.emit(new ops.MergeMapping(imported.mapping))
+    } catch (err) {
+      console.error('Could not import codelist', err);
+      let msg =
+        typeof err == 'string'
+          ? err
+          : (err as any).error ??
+            'Could not import codelist: unknown error (see console)';
+      alert(msg);
+    }
   }
 }

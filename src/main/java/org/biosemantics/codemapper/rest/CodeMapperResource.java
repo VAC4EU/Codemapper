@@ -231,12 +231,21 @@ public class CodeMapperResource {
       @FormParam("commentColumns") List<String> commentColumns,
       @FormParam("format") String format,
       @FormParam("ignoreTermTypes") List<String> ignoreTermTypes,
+      @FormParam("filterSystem") String system,
+      @FormParam("filterEventAbbreviation") String eventAbbreviation,
+      @FormParam("filterType") String type,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
     try {
       if (format == null || format.isEmpty() || format.equals("csv_compat")) {
         ImportedMapping imported =
-            api.importCompatCSV(new StringReader(csvContent), commentColumns, ignoreTermTypes);
+            api.importCompatCSV(
+                new StringReader(csvContent),
+                commentColumns,
+                ignoreTermTypes,
+                system,
+                eventAbbreviation,
+                type);
         return new ImportResult(true, imported, null);
       } else {
         return new ImportResult(false, null, "unexpected format: " + format);

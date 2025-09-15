@@ -30,11 +30,7 @@ import {
   ServerInfo,
   EMPTY_SERVER_INFO,
   MappingMeta,
-  emptyMappingMeta,
   StartType,
-  Start,
-  Codes,
-  Concepts,
   MappingFormat,
   DataMeta,
 } from '../data';
