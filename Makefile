@@ -39,6 +39,7 @@ deploy-dev:
 
 test:
 	cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
+	cd src/main/frontend; ng test --watch=false
 
 FRONTEND=src/main/frontend
 
