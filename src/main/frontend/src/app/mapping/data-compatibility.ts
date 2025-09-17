@@ -28,7 +28,7 @@ export interface SourceConcept {
 }
 
 export function importCode(c : SourceConcept) : data.Code {
-  return new data.Code(c.id, c.preferredTerm, false, true, null)
+  return {id: c.id, term: c.preferredTerm, custom: false, enabled: true, tag: null}
 }
 
 export interface UmlsConcept {
@@ -40,7 +40,7 @@ export interface UmlsConcept {
 }
 
 export function importConcept0(c : UmlsConcept) : data.Concept {
-  return new data.Concept(c.cui, c.preferredName, c.definition, {});
+  return {id: c.cui, name: c.preferredName, definition: c.definition, codes: {}}
 }
 
 export function importConcept(c : UmlsConcept) :
@@ -86,5 +86,5 @@ export interface Vocabulary {
 }
 
 export function importVocabulary(voc : Vocabulary) : data.Vocabulary {
-  return new data.Vocabulary(voc.abbreviation, voc.name, voc.version, false);
+  return {id: voc.abbreviation, name: voc.name, version: voc.version, custom: false}
 }

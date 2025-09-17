@@ -30,11 +30,7 @@ import {
   ServerInfo,
   EMPTY_SERVER_INFO,
   MappingMeta,
-  emptyMappingMeta,
   StartType,
-  Start,
-  Codes,
-  Concepts,
   MappingFormat,
   DataMeta,
 } from '../data';
@@ -297,7 +293,7 @@ export class MappingViewComponent implements HasPendingChanges {
     this.importWarning = data.importWarning;
     this.allTopics = data.allTopics ?? new AllTopics();
     this.selectedIndex = 1;
-    this.updateMapping(this.mapping);
+    this.updateMapping();
   }
 
   async loadLegacyMapping(mappingShortkey: string) {
@@ -333,9 +329,9 @@ export class MappingViewComponent implements HasPendingChanges {
 
   run(op: ops.Operation) {
     if (!this.mapping) return;
-    this.mapping.run(op);
+    this.mapping.run(op, this.saveRequired);
     op.afterRunCallback();
-    this.updateMapping(this.mapping);
+    this.updateMapping();
     if (op.saveRequired) {
       this.saveRequired = true;
     }
@@ -347,19 +343,21 @@ export class MappingViewComponent implements HasPendingChanges {
   redo() {
     if (!this.mapping) return;
     this.mapping.redo();
-    this.updateMapping(this.mapping);
+    this.updateMapping();
   }
 
   undo() {
     if (!this.mapping) return;
     this.mapping.undo();
-    this.updateMapping(this.mapping);
+    this.updateMapping();
   }
 
-  updateMapping(mapping: Mapping) {
-    this.mapping = mapping.clone();
-    if (this.allTopics != null) {
-      this.allTopics.setConcepts(Object.keys(mapping.concepts));
+  updateMapping() {
+    if (this.mapping) {
+      this.mapping = this.mapping.clone();
+      if (this.allTopics != null) {
+        this.allTopics.setConcepts(Object.keys(this.mapping.concepts));
+      }
     }
   }
 

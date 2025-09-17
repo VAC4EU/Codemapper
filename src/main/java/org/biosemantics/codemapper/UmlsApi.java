@@ -810,7 +810,12 @@ public class UmlsApi {
   }
 
   public ImportedMapping importCompatCSV(
-      Reader csvContent, Collection<String> commentColumns, Collection<String> ignoreTermTypes)
+      Reader csvContent,
+      Collection<String> commentColumns,
+      Collection<String> ignoreTermTypes,
+      String system,
+      String eventAbbreviation,
+      String type)
       throws CodeMapperException {
     String importAuthor = "Codelist import";
     String deduplicationAuthor =
@@ -842,6 +847,9 @@ public class UmlsApi {
       int codeIx = header.indexOf("code");
       int codeNameIx = header.indexOf("code_name");
       int tagIx = header.indexOf("tags");
+      int systemIx = header.indexOf("system");
+      int eventAbbreviationIx = header.indexOf("event_abbreviation");
+      int typeIx = header.indexOf("type");
 
       if (conceptIx == -1) {
         throw CodeMapperException.user("Missing column \"concept\"");
@@ -902,7 +910,9 @@ public class UmlsApi {
       }
 
       int messageIx = 0, maxIx = 0;
-      for (int ix : Arrays.asList(conceptIx, vocIdIx, codeIx, codeNameIx)) {
+      for (int ix :
+          Arrays.asList(
+              conceptIx, vocIdIx, codeIx, codeNameIx, eventAbbreviationIx, systemIx, typeIx)) {
         maxIx = Math.max(maxIx, ix);
       }
       for (CommentColumns cc : commentColumnsList) {
@@ -937,6 +947,19 @@ public class UmlsApi {
         String codeId = row[codeIx];
         String codeName = row[codeNameIx];
         String tag = row[tagIx];
+        if (eventAbbreviationIx != 1
+            && systemIx != 1
+            && typeIx != -1
+            && eventAbbreviation != null
+            && type != null
+            && system != null) {
+          if (row[eventAbbreviationIx] != eventAbbreviation
+              || row[systemIx] != system
+              || row[typeIx] != type) {
+            logger.debug("Ignore code that does not match the mapping: " + String.join(",", row));
+            continue;
+          }
+        }
         if (vocId.isEmpty()) {
           String msg = String.format("row %d: missing coding system", rowIx);
           throw CodeMapperException.user(msg);

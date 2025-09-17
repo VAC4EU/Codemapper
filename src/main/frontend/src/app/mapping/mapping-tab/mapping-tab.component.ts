@@ -70,28 +70,21 @@ export class MappingTabComponent {
     this.run.emit(new ops.SetIncludeDescendants(value));
   }
 
-  remap() {
+  async remap() {
     if (this.serverInfo.umlsVersion != null) {
-      (async () => {
-        let { conceptsCodes, vocabularies, messages } =
-          await this.api.remapData(
-            this.mapping,
-            this.vocabularies,
-            this.mapping.meta
-          );
-        if (messages.length) {
-          this.snackBar.open(messages.join('\n\n'), 'Ok', {
-            panelClass: 'remap-snackbar',
-          });
-        }
-        this.run.emit(
-          new ops.Remap(
-            this.serverInfo.umlsVersion,
-            conceptsCodes,
-            vocabularies
-          )
-        );
-      })();
+      let { conceptsCodes, vocabularies, messages } = await this.api.remapData(
+        this.mapping,
+        this.vocabularies,
+        this.mapping.meta
+      );
+      if (messages.length) {
+        this.snackBar.open(messages.join('\n\n'), 'Ok', {
+          panelClass: 'remap-snackbar',
+        });
+      }
+      this.run.emit(
+        new ops.Remap(this.serverInfo.umlsVersion, conceptsCodes, vocabularies)
+      );
     } else {
       console.error('unknown UMLS version');
     }
@@ -109,7 +102,12 @@ export class MappingTabComponent {
             EditMetaComponent.set(this.info, result);
           } else {
             try {
-              await EditMetaComponent.save(this.info, this.persistency, this.shortkey, result);
+              await EditMetaComponent.save(
+                this.info,
+                this.persistency,
+                this.shortkey,
+                result
+              );
             } catch (e) {
               let msg = `Could not save name or meta`;
               console.error(msg, e);

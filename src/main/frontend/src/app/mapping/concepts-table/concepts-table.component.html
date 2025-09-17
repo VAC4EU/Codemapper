@@ -23,7 +23,7 @@
     <ng-container matColumnDef="concept" sticky>
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Concept</th>
       <td mat-cell *matCellDef="let concept" class="concept">
-        <mapping-concept [concept]="concept"></mapping-concept>
+        <mapping-concept tag="conceptTags[concept.id]" [concept]="concept"></mapping-concept>
       </td>
     </ng-container>
   

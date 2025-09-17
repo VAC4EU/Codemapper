@@ -147,7 +147,7 @@ export class CodesComponent {
     });
     dialogRef.afterClosed().subscribe(data => {
       if (data !== undefined) {
-        let code = new Code(data.id, data.term, true, true, null);
+        let code = {id: data.id, term: data.term, custom: true, enabled: true, tag: null};
         this.run.emit(new ops.AddCustomCode(this.vocabularyId, code, data.concept));
       }
     });
@@ -183,7 +183,7 @@ export class CodesComponent {
     });
     dialogRef.afterClosed().subscribe(data => {
       if (data !== undefined) {
-        let code = new Code(data.id, data.term, selected.custom, selected.enabled, selected.tag);
+        let code = {id: data.id, term: data.term, custom: selected.custom, enabled: selected.enabled, tag: selected.tag};
         this.run.emit(new ops.EditCustomCode(this.vocabularyId, selected.id, code, data.concept));
       }
     });

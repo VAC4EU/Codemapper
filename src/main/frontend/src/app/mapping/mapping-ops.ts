@@ -33,9 +33,8 @@ import {
   Indexing,
   emptyIndexing,
   JSONObject,
+  codesEqualExceptTag,
 } from './data';
-
-export const CUSTOM_CUI = 'C0000000';
 
 export class OpError extends Error {}
 
@@ -67,9 +66,15 @@ export abstract class Operation {
   // and it can be undone, and raise Error if the operation could not be applied
   public abstract run(mapping: Mapping): Operation | undefined;
   public abstract describe(): string;
-  saveRequired: boolean = false;
-  saveReviewRequired: boolean = false;
+  saveRequired: boolean;
+  saveReviewRequired: boolean;
+  noUndo: boolean;
   afterRunCallback: () => void = () => {};
+  constructor(options: {noUndo?: boolean, saveRequired?: boolean, saveReviewRequired?: boolean} = {}) {
+    this.noUndo = options.noUndo ?? false;
+    this.saveRequired = options.saveRequired ?? false;
+    this.saveReviewRequired = options.saveReviewRequired ?? false;
+  }
   public withAfterRunCallback(callback: () => void) {
     this.afterRunCallback = callback;
     return this;
@@ -140,7 +145,7 @@ export class AddConcept extends Operation {
         if (original === undefined) {
           mapping.codes[vocId][codeId] = code;
         } else {
-          expect(code.sameAs(original));
+          expect(codesEqualExceptTag(code, original));
         }
       }
     }
@@ -179,8 +184,7 @@ export class SetStartIndexing extends Operation {
     readonly concepts: Concepts,
     readonly codes: Codes
   ) {
-    super();
-    this.saveRequired = true;
+    super({saveRequired: true});
   }
   override describe(): string {
     return `Set start to ${this.indexing.selected.join(', ')}`;
@@ -195,7 +199,7 @@ export class SetStartIndexing extends Operation {
 
 export class ResetStart extends Operation {
   constructor() {
-    super();
+    super({noUndo: true});
   }
   override describe(): string {
     return `Reset start`;
@@ -498,40 +502,25 @@ export class Remap extends Operation {
     private conceptsCodes: ConceptsCodes,
     private vocabularies: Vocabularies
   ) {
-    super();
-    this.saveRequired = true;
+    super({saveRequired: true, noUndo: true});
   }
   override describe(): string {
     return 'Remap concept codes';
   }
   override run(mapping: Mapping): Operation | undefined {
-    let customCodes = mapping.getCustomCodes();
-    let disabled = mapping.getCodesDisabled();
-    let tags = mapping.getTags();
-    let customConcept = mapping.concepts[CUSTOM_CUI];
-    let lost = mapping.getLost(
+    mapping.remap(
+      this.umlsVersion,
       this.conceptsCodes.concepts,
-      this.conceptsCodes.codes
+      this.conceptsCodes.codes,
+      this.vocabularies
     );
-    console.log('Lost in remap', lost);
-    mapping.meta.umlsVersion = this.umlsVersion;
-    mapping.concepts = this.conceptsCodes.concepts;
-    mapping.codes = this.conceptsCodes.codes;
-    mapping.vocabularies = this.vocabularies;
-    if (customConcept) mapping.concepts[customConcept.id] = customConcept;
-    mapping.setCustomCodes(customCodes);
-    mapping.setCodesDisabled(disabled);
-    mapping.setLost(lost);
-    mapping.setTags(tags);
     return;
   }
 }
 
 export class ImportMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super();
-    this.saveRequired = true;
-    this.saveReviewRequired = true;
+    super({noUndo: true, saveRequired: true, saveReviewRequired: true});
   }
   override describe(): string {
     return 'Import initial mapping';
@@ -545,6 +534,19 @@ export class ImportMapping extends Operation {
     mapping.concepts = this.mapping.concepts;
     mapping.codes = this.mapping.codes;
     mapping.meta = this.mapping.meta;
+    return;
+  }
+}
+
+export class AddMapping extends Operation {
+  constructor(private mapping: MappingData) {
+    super({noUndo: true, saveRequired: true});
+  }
+  override describe(): string {
+    return 'Add mapping';
+  }
+  override run(mapping: Mapping): Operation | undefined {
+    mapping.addMapping(this.mapping);
     return;
   }
 }

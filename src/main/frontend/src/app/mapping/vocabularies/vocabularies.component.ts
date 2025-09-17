@@ -30,7 +30,7 @@ import { VocabulariesDialogComponent } from '../vocabularies-dialog/vocabularies
 import { VocabulariesTableComponent } from '../vocabularies-table/vocabularies-table.component';
 import { CustomVocabularyDialogComponent } from '../custom-vocabulary-dialog/custom-vocabulary-dialog.component';
 import { ApiService } from '../api.service';
-import { Mapping, Vocabulary } from '../data';
+import { compareVocabularies, Mapping, Vocabulary } from '../data';
 import * as ops from '../mapping-ops';
 
 @Component({
@@ -52,7 +52,7 @@ export class VocabulariesComponent {
       this.vocabularies = [];
     } else {
       this.vocabularies = Object.values(this.mapping.vocabularies);
-      this.vocabularies.sort(Vocabulary.compare);
+      this.vocabularies.sort(compareVocabularies);
     }
   }
 
@@ -71,7 +71,7 @@ export class VocabulariesComponent {
         })
       )
       .subscribe((vocs) => {
-        vocs.sort(Vocabulary.compare);
+        vocs.sort(compareVocabularies);
         return this.dialog
           .open(VocabulariesDialogComponent, { data: { vocabularies: vocs } })
           .afterClosed()
@@ -113,7 +113,7 @@ export class VocabulariesComponent {
       })
       .afterClosed()
       .subscribe((data) => {
-        let voc = new Vocabulary(data.id, data.name, null, true);
+        let voc = {id: data.id, name: data.name, version: null, custom: true}
         this.run.emit(new ops.AddVocabularies([voc], {}, {}));
       });
   }

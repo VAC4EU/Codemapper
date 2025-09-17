@@ -18,7 +18,7 @@
 
 import { Component, Input } from '@angular/core';
 
-import { Codes, Concept } from '../data';
+import { Codes, Concept, Tag } from '../data';
 
 @Component({
   selector: 'mapping-concept',
@@ -27,4 +27,5 @@ import { Codes, Concept } from '../data';
 })
 export class ConceptComponent {
   @Input({required: true}) concept! : Concept;
+  @Input({required: true}) tag!: Tag | null;
 }

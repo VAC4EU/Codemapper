@@ -16,8 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, EventEmitter, Inject, Input, Output } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ApiService, ImportedMapping } from '../api.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -52,7 +51,7 @@ export class ImportCsvDialogComponent {
   async importCsv(file: File, format: string) {
     try {
       let imported = await firstValueFrom(
-        this.api.importCsv(file, [], format, this.ignoreTermTypes)
+        this.api.importCsv(file, [], format, this.ignoreTermTypes, null)
       );
       if (imported.warnings.length) {
         let msg =

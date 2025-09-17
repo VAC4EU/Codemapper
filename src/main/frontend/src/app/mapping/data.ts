@@ -18,6 +18,8 @@
 
 import { Operation } from './mapping-ops';
 
+export const CUSTOM_CUI = 'C0000000';
+
 export type VocabularyId = string;
 export type ConceptId = string; // CUI
 export type CodeId = string; // The actual code
@@ -41,16 +43,14 @@ export interface ConceptsCodes {
   codes: Codes;
 }
 
-export type CustomConcepts = {
+export type ConceptCodes = {
   [key: ConceptId]: { [key: VocabularyId]: CodeId[] };
 };
 
 export interface CustomCodes {
   codes: Codes;
-  concepts: CustomConcepts;
+  conceptCodes: ConceptCodes;
 }
-
-export class RemapError {}
 
 export interface Span {
   id: string;
@@ -110,7 +110,7 @@ export interface DataMeta {
 
 export const DEFAULT_INCLUDE_DESCENDANTS = false;
 
-export const EMPTY_MAPPING_INFO : DataMeta = {
+export const EMPTY_DATA_META: DataMeta = {
   formatVersion: MappingFormat.version,
   umlsVersion: null,
   allowedTags: [],
@@ -149,6 +149,7 @@ export class Mapping {
     {};
   undoStack: [String, Operation][] = [];
   redoStack: [String, Operation][] = [];
+  conceptTags: { [key: VocabularyId]: Tag | null } = {};
   constructor(
     public meta: DataMeta,
     public start: Start,
@@ -156,6 +157,112 @@ export class Mapping {
     public concepts: Concepts,
     public codes: Codes
   ) {
+    this.cleanupRecacheCheck();
+  }
+  toObject() {
+    return {
+      meta: this.meta,
+      start: this.start,
+      vocabularies: this.vocabularies,
+      concepts: this.concepts,
+      codes: this.codes,
+    };
+  }
+  addMapping(mapping: MappingData) {
+    if (mapping.meta.umlsVersion != this.meta.umlsVersion) {
+      let msg = 'the UMLS version does not match';
+      console.error(msg, mapping.meta.umlsVersion, this.meta.umlsVersion);
+      throw new Error(msg);
+    }
+    for (let [vocId, voc] of Object.entries(mapping.vocabularies)) {
+      let voc1 = this.vocabularies[vocId];
+      if (voc1 === undefined) {
+        throw new Error(
+          `the vocabularies must already exist, but ${vocId} does not`
+        );
+      }
+      if (voc1.version != voc.version) {
+        throw new Error(`the vocabulary versions do not match`);
+      }
+    }
+    for (let vocId of Object.keys(mapping.codes)) {
+      for (let [id, code] of Object.entries(mapping.codes[vocId])) {
+        let code0 = this.codes[vocId][id];
+        if (code0 === undefined && !code.custom) {
+          throw new Error(
+            `code ${vocId}/${id} is not in the original mapping and not a custom code`
+          );
+        }
+      }
+    }
+    for (let vocId of Object.keys(mapping.codes)) {
+      for (let [id, code] of Object.entries(mapping.codes[vocId])) {
+        code.tag = normalizeTag(code.tag, this.meta.allowedTags);
+        let code0 = this.codes[vocId][id];
+        if (code0 === undefined) {
+          // custom code, checked above
+          this.codes[vocId][id] = code;
+        } else {
+          if (!code.enabled) {
+            continue;
+          } else {
+            code0.enabled = true;
+          }
+          if (code.tag) {
+            if (!code0.tag) {
+              code0.tag = code.tag;
+            } else if (code0.tag && code.tag && code0.tag != code.tag) {
+              code0.tag = formatMultipleTags([code0.tag, code.tag]);
+            }
+          }
+          if (code.custom != code0.custom && code.term != code0.term) {
+            console.warn(
+              'unexpected difference in code during merge',
+              vocId,
+              code,
+              code0
+            );
+          }
+        }
+      }
+    }
+    for (let [cui, concept] of Object.entries(mapping.concepts)) {
+      if (Object.keys(concept.codes).length == 0) continue;
+      let concept0 = this.concepts[cui];
+      if (concept0 === undefined) {
+        this.concepts[cui] = concept;
+      } else {
+        for (let vocId of Object.keys(concept.codes)) {
+          for (let id of concept.codes[vocId]) {
+            concept0.codes[vocId].add(id);
+          }
+        }
+      }
+    }
+  }
+  remap(
+    umlsVersion: string,
+    concepts: Concepts,
+    codes: Codes,
+    vocabularies: Vocabularies
+  ) {
+    let customCodes = this.getCustomCodes();
+    let customVocabularies = this.getCustomVocabularies();
+    let disabled = this.getCodesDisabled();
+    let tags = this.getTags();
+    let customConcept = this.concepts[CUSTOM_CUI];
+    let lost = this.getLost(concepts, codes);
+    console.log('Lost in remap', lost);
+    this.meta.umlsVersion = umlsVersion;
+    this.concepts = concepts;
+    this.codes = codes;
+    this.vocabularies = vocabularies;
+    Object.assign(this.vocabularies, customVocabularies);
+    if (customConcept) this.concepts[customConcept.id] = customConcept;
+    this.setCustomCodes(customCodes);
+    this.setCodesDisabled(disabled);
+    this.setLost(lost);
+    this.setTags(tags);
     this.cleanupRecacheCheck();
   }
   numVocabularies(): number {
@@ -190,32 +297,32 @@ export class Mapping {
     let res = new Mapping(
       this.meta,
       this.start,
-      this.vocabularies,
-      this.concepts,
-      this.codes
+      structuredClone(this.vocabularies),
+      structuredClone(this.concepts),
+      structuredClone(this.codes),
     );
     res.undoStack = this.undoStack;
     res.redoStack = this.redoStack;
     return res;
   }
-  public getCustomCodes(): CustomCodes {
-    let res: CustomCodes = { codes: {}, concepts: {} };
+  getCustomCodes(): CustomCodes {
+    let res: CustomCodes = { codes: {}, conceptCodes: {} };
     for (let [vocId, codes] of Object.entries(this.codes)) {
       for (let [codeId, code] of Object.entries(codes)) {
         if (code.custom) {
           res.codes[vocId] ??= {};
           res.codes[vocId][codeId] = code;
           for (let conceptId of this.getConceptsByCode(vocId, codeId)) {
-            res.concepts[conceptId] ??= {};
-            res.concepts[conceptId][vocId] ??= [];
-            res.concepts[conceptId][vocId].push(codeId);
+            res.conceptCodes[conceptId] ??= {};
+            res.conceptCodes[conceptId][vocId] ??= [];
+            res.conceptCodes[conceptId][vocId].push(codeId);
           }
         }
       }
     }
     return res;
   }
-  public setCustomCodes(custom: CustomCodes) {
+  setCustomCodes(custom: CustomCodes) {
     for (let vocId of Object.keys(custom.codes)) {
       for (let code of Object.values(custom.codes[vocId])) {
         this.codes[vocId] ??= {};
@@ -227,17 +334,26 @@ export class Mapping {
         this.codes[vocId][code.id] = code;
       }
     }
-    for (let conceptId of Object.keys(custom.concepts)) {
+    for (let conceptId of Object.keys(custom.conceptCodes)) {
       if (this.concepts[conceptId] === undefined) {
         throw new Error(`Custom code with unavailable concept ${conceptId}`);
       }
-      for (let vocId of Object.keys(custom.concepts[conceptId])) {
-        for (let codeId of custom.concepts[conceptId][vocId]) {
+      for (let vocId of Object.keys(custom.conceptCodes[conceptId])) {
+        for (let codeId of custom.conceptCodes[conceptId][vocId]) {
           this.concepts[conceptId].codes[vocId] ??= new Set();
           this.concepts[conceptId].codes[vocId].add(codeId);
         }
       }
     }
+  }
+  getCustomVocabularies(): Vocabularies {
+    let res: Vocabularies = {};
+    for (let [vocId, voc] of Object.entries(this.vocabularies)) {
+      if (voc.custom) {
+        res[vocId] = voc;
+      }
+    }
+    return res;
   }
   public getTags(): Tags {
     let tags: Tags = {};
@@ -262,7 +378,7 @@ export class Mapping {
       }
     }
   }
-  public getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
+  getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
     let res: { [key: VocabularyId]: Set<CodeId> } = {};
     for (let vocId of Object.keys(this.codes)) {
       res[vocId] ??= new Set();
@@ -274,7 +390,7 @@ export class Mapping {
     }
     return res;
   }
-  public setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
+  setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
     for (let vocId of Object.keys(disabled)) {
       for (let codeId of disabled[vocId]) {
         if (this.codes[vocId]?.[codeId]) {
@@ -290,7 +406,12 @@ export class Mapping {
     };
     for (let [cui, concept] of Object.entries(this.concepts)) {
       let hasLostCode = false;
-      let concept1 = new Concept(cui, concept.name, concept.definition, {});
+      let concept1: Concept = {
+        id: cui,
+        name: concept.name,
+        definition: concept.definition,
+        codes: {},
+      };
       for (let voc of Object.keys(concept.codes)) {
         for (let code of concept.codes[voc]) {
           if (!remapConcepts[cui]?.codes[voc]?.has(code)) {
@@ -300,13 +421,13 @@ export class Mapping {
             if (!remapCodes[voc]?.[code]) {
               lost.codes[voc] ??= {};
               let oldCode = this.codes[voc][code];
-              lost.codes[voc][code] = new Code(
-                code,
-                oldCode.term,
-                true,
-                oldCode.enabled,
-                oldCode.tag
-              );
+              lost.codes[voc][code] = {
+                id: code,
+                term: oldCode.term,
+                custom: true,
+                enabled: oldCode.enabled,
+                tag: oldCode.tag,
+              };
             }
           }
         }
@@ -337,19 +458,28 @@ export class Mapping {
       }
     }
   }
-  public runIntern(op: Operation) {
+  runIntern(op: Operation) {
     let inv = op.run(this);
     this.cleanupRecacheCheck();
     return inv;
   }
-  public run(op: Operation) {
+  public run(op: Operation, saveRequired: boolean) {
     console.log('Run', op);
-    let inv = this.runIntern(op);
-    this.redoStack = [];
-    if (inv !== undefined) {
-      this.undoStack.push([op.describe(), inv]);
-    } else {
-      console.log('no inverse operation');
+    try {
+      if (op.noUndo && (this.undoStack.length > 0 || saveRequired)) {
+        alert('save your mapping first, this operation cannot be undone');
+        return;
+      }
+      let inv = this.runIntern(op);
+      this.redoStack = [];
+      if (inv !== undefined) {
+        this.undoStack.push([op.describe(), inv]);
+      } else {
+        console.log('no inverse operation');
+      }
+    } catch (err) {
+      console.error('could not run operation', op, err);
+      alert(`could not run operation: ${(err as Error).message}`);
     }
   }
   public undo() {
@@ -378,6 +508,7 @@ export class Mapping {
   cleanupRecacheCheck() {
     // reset: conceptsByCode lookup
     this.conceptsByCode = {};
+    this.conceptTags = {};
     for (const vocId of Object.keys(this.vocabularies)) {
       this.codes[vocId] ??= {};
     }
@@ -389,7 +520,7 @@ export class Mapping {
           this.conceptsByCode[vocId][codeId].add(concept.id);
         }
       }
-      concept.codesTag = getCodesTag(concept, this.codes);
+      this.conceptTags[concept.id] = getCodesTag(concept, this.codes);
     }
     // cleanup: drop non-custom codes that are not referred to by any concepts
     for (const [vocId, codes] of Object.entries(this.codes)) {
@@ -448,8 +579,7 @@ export class Mapping {
       let name = vocJson['name'] as string;
       let version = vocJson['version'] as string | null;
       let custom = vocJson['custom'] as boolean;
-      let voc = new Vocabulary(id, name, version, custom);
-      vocabularies[voc.id] = voc;
+      vocabularies[id] = { id, name, version, custom };
     }
     let concepts: Concepts = {};
     let conceptTags: { [key: VocabularyId]: { [key: CodeId]: Set<string> } } =
@@ -475,8 +605,7 @@ export class Mapping {
           codes[vocId].add(codeId);
         }
       }
-      let concept = new Concept(id, name, definition, codes);
-      concepts[concept.id] = concept;
+      concepts[id] = { id, name, definition, codes };
     }
 
     let codes: Codes = {};
@@ -491,8 +620,7 @@ export class Mapping {
         let custom = codeJson['custom'] as boolean;
         let enabled = codeJson['enabled'] as boolean;
         let tag = formatTag(getTag(codeJson), conceptTags[vocId]?.[id]);
-        let code = new Code(id, term, custom, enabled, tag);
-        codes[vocId][code.id] = code;
+        codes[vocId][id] = { id, term, custom, enabled, tag };
       }
     }
 
@@ -533,18 +661,18 @@ export class Mapping {
     console.log('Import mapping', json0, res);
     return res;
   }
-  
+
   static importLegacyJSON(v0: JSONValue, serverInfo: ServerInfo): Mapping {
     let v = v0 as JSONObject;
     let vocabularies: { [key: VocabularyId]: Vocabulary } = {};
     for (const id0 of v['codingSystems'] as JSONArray) {
       let id = id0 as string;
-      vocabularies[id] = new Vocabulary(
+      vocabularies[id] = {
         id,
-        'unknown (imported mapping)',
-        'unknown (imported mapping)',
-        false
-      );
+        name: 'unknown (imported mapping)',
+        version: 'unknown (imported mapping)',
+        custom: false,
+      };
     }
     let concepts: { [key: ConceptId]: Concept } = {};
     let codes: { [key: VocabularyId]: { [key: CodeId]: Code } } = {};
@@ -554,24 +682,24 @@ export class Mapping {
     ] as JSONArray) {
       let conceptJson = concept0 as JSONObject;
       let tag = conceptJson['tag'] as string | null;
-      let concept = new Concept(
-        conceptJson['cui'] as string,
-        conceptJson['preferredName'] as string,
-        conceptJson['definition'] as string,
-        {}
-      );
+      let concept: Concept = {
+        id: conceptJson['cui'] as string,
+        name: conceptJson['preferredName'] as string,
+        definition: conceptJson['definition'] as string,
+        codes: {},
+      };
       concepts[concept.id] = concept;
       for (let sourceConcept0 of conceptJson['sourceConcepts'] as JSONArray) {
         let sourceConcept = sourceConcept0 as JSONObject;
         let vocabularyId = sourceConcept['codingSystem'] as string;
         let codeId = sourceConcept['id'] as string;
-        let code = new Code(
-          codeId,
-          sourceConcept['preferredTerm'] as string,
-          false,
-          sourceConcept['selected'] as boolean,
-          null
-        );
+        let code = {
+          id: codeId,
+          term: sourceConcept['preferredTerm'] as string,
+          custom: false,
+          enabled: sourceConcept['selected'] as boolean,
+          tag: null,
+        };
         concept.codes[vocabularyId] ??= new Set();
         concept.codes[vocabularyId].add(code.id);
         codes[vocabularyId] ??= {};
@@ -607,7 +735,14 @@ export class Mapping {
         let c = c0 as JSONObject;
         let id = c['cui'] as string;
         let name = c['preferredName'] as string;
-        return new Concept(id, name, '');
+        return {
+          id,
+          name,
+          definition: '',
+          enabled: true,
+          custom: false,
+          codes: {},
+        };
       }
     );
     let start: Start = {
@@ -670,29 +805,40 @@ function formatTag(
   let tags1 = Array.from(tags0);
   if (tags1.length == 0) return null;
   else if (tags1.length == 1) return tags1[0];
-  else return `multiple:${tags1.join('+')}`;
+  else return formatMultipleTags(tags1);
 }
 
-export class Vocabulary {
-  constructor(
-    readonly id: VocabularyId,
-    readonly name: string,
-    readonly version: string | null,
-    readonly custom: boolean
-  ) {}
-  static compare(v1: Vocabulary, v2: Vocabulary): number {
-    return v1.id.localeCompare(v2.id);
+function formatMultipleTags(tags: string[]): string {
+  return 'multiple:' + tags.join('+');
+}
+
+function normalizeTag(tag: string | null, tags: string[]) {
+  if (tag && !tags.includes(tag)) {
+    let tag0 = tags.find((tag0) => tag0.toLowerCase() == tag!.toLowerCase());
+    if (tag0 !== undefined) {
+      console.log(`normalize tag ${tag} to ${tag0}`);
+      return tag0;
+    }
   }
+  return tag;
 }
 
-export class Concept {
-  codesTag: Tag | null = null;
-  constructor(
-    readonly id: ConceptId,
-    readonly name: string,
-    readonly definition: string,
-    public codes: { [key: VocabularyId]: Set<CodeId> } = {}
-  ) {}
+export interface Vocabulary {
+  readonly id: VocabularyId;
+  readonly name: string;
+  readonly version: string | null;
+  readonly custom: boolean;
+}
+
+export function compareVocabularies(v1: Vocabulary, v2: Vocabulary): number {
+  return v1.id.localeCompare(v2.id);
+}
+
+export interface Concept {
+  readonly id: ConceptId;
+  readonly name: string;
+  readonly definition: string;
+  codes: { [key: VocabularyId]: Set<CodeId> };
 }
 
 function getCodesTag(concept: Concept, codes: Codes): Tag | null {
@@ -726,27 +872,20 @@ export function filterConcepts(
   return res;
 }
 
-export class Code {
-  constructor(
-    readonly id: CodeId,
-    readonly term: string,
-    readonly custom: boolean,
-    public enabled: boolean,
-    public tag: Tag | null = null
-  ) {}
-  static custom(id: CodeId, term: string): Code {
-    return new Code(id, term, true, true, null);
-  }
-  static empty(custom: boolean) {
-    return new Code('', '', custom, true, null);
-  }
-  public sameAs(other: Code): boolean {
-    return (
-      this.id == other.id &&
-      this.term == other.term &&
-      this.custom == other.custom
-    );
-  }
+export interface Code {
+  id: CodeId;
+  term: string;
+  custom: boolean;
+  enabled: boolean;
+  tag: Tag | null;
+}
+
+export function codesEqualExceptTag(code1: Code, code2: Code): boolean {
+  return (
+    code1.id == code2.id &&
+    code1.term == code2.term &&
+    code1.custom == code2.custom
+  );
 }
 
 export function tagsInCodes(codes: Code[]): Tag[] {
