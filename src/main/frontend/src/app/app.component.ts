@@ -16,7 +16,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, Injectable } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostListener,
+  Injectable,
+  Output,
+} from '@angular/core';
 import { LoadingService } from './loading.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NavigationEnd, Router } from '@angular/router';
@@ -24,22 +30,31 @@ import { NavigationEnd, Router } from '@angular/router';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AppComponent {
+  static instance: AppComponent | null = null;
   title = 'CodeMapper';
+  @Output() espapePressed = new EventEmitter<null>();
   constructor(
-    public loadingService : LoadingService,
-    router : Router,
-    snackbar : MatSnackBar,
+    public loadingService: LoadingService,
+    router: Router,
+    snackbar: MatSnackBar
   ) {
-    router.events.forEach(ev => {
+    if (AppComponent.instance != null) console.error("AppComponent instance already set");
+    AppComponent.instance = this;
+    router.events.forEach((ev) => {
       if (ev instanceof NavigationEnd) {
         snackbar.dismiss();
       }
-    })
+    });
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: KeyboardEvent) {
+    this.espapePressed.emit(null);
   }
 }

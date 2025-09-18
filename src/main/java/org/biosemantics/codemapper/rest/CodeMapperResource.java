@@ -270,6 +270,38 @@ public class CodeMapperResource {
       @QueryParam("project") final String projectName,
       @QueryParam("mappings") final List<String> rawMappingConfigs,
       @QueryParam("content") final String content) {
+    String result =
+        postCodeListsCSV(request, user, filename0, projectName, rawMappingConfigs, content);
+    String suffix = "";
+    switch (content) {
+      case "codelist":
+        break;
+      case "metadata":
+        suffix = " - meta";
+        break;
+      case "coding_systems":
+        suffix = " - coding systems";
+        break;
+    }
+    String filename = String.format("%s%s.%s", filename0, suffix, WriteCsvApi.FILE_EXTENSION);
+    String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
+    return Response.ok()
+        .header("Content-Disposition", contentDisposition)
+        .type(WriteCsvApi.MIME_TYPE)
+        .entity(result)
+        .build();
+  }
+
+  @POST
+  @Path("code-lists-csv")
+  @Produces({WriteCsvApi.MIME_TYPE})
+  public String postCodeListsCSV(
+      @Context HttpServletRequest request,
+      @Context User user,
+      @FormParam("filename") final String filename0,
+      @FormParam("project") final String projectName,
+      @FormParam("mappings") final List<String> rawMappingConfigs,
+      @FormParam("content") final String content) {
     try {
       AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
       logger.debug(String.format("Download code lists as CSV %s", projectName));
@@ -291,7 +323,6 @@ public class CodeMapperResource {
         mappingConfigs.add(config);
       }
       Collection<Mapping> mappings = getMappings(projectName, mappingConfigs);
-      String suffix = "";
       try {
         switch (content) {
           case "codelist":
@@ -302,13 +333,11 @@ public class CodeMapperResource {
             }
           case "metadata":
             {
-              suffix = " - meta";
               new WriteCsvApi().writeMetaCSV(output, projectName, mappings);
               break;
             }
           case "coding_systems":
             {
-              suffix = " - coding systems";
               new WriteCsvApi().writeCodingSystems(output, mappings);
               break;
             }
@@ -318,13 +347,7 @@ public class CodeMapperResource {
       } catch (IOException e) {
         throw CodeMapperException.server("could not write codelist CSV", e);
       }
-      String filename = String.format("%s%s.%s", filename0, suffix, WriteCsvApi.FILE_EXTENSION);
-      String contentDisposition = String.format("attachment; filename=\"%s\"", filename);
-      return Response.ok()
-          .header("Content-Disposition", contentDisposition)
-          .type(WriteCsvApi.MIME_TYPE)
-          .entity(output.toString())
-          .build();
+      return output.toString();
     } catch (CodeMapperException e) {
       System.out.println("ERROR " + e.getMessage());
       throw e.asWebApplicationException();

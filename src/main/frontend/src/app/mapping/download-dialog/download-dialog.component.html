@@ -4,11 +4,8 @@
     </h1>
     <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
 </div>
-<div *ngIf="numMappings > 25" class="inputs" mat-dialog-content>
-    The download is currently limited to 25 mappings at once. Working on it! Thanks for your patience.
-</div>
 
-<div *ngIf="numMappings <= 25" class="inputs" mat-dialog-content>
+<div class="inputs" mat-dialog-content>
     <mat-form-field>
         <mat-label>Name</mat-label>
         <input #filename matInput [value]="defaultFilename()">
@@ -26,8 +23,11 @@
             <span *ngIf="data.includeDescendants == IncludeDescendants.No">not</span>
             included (according to the mapping configuration).
         </span>
+        <br/>
+        The download may take some time, especially when descendant codes are included.
+        <br/>
+        Press the escape key to cancel the download.
     </p>
-    
     <p>
         <button mat-raised-button enabled="enabled" (click)="download('metadata', filename.value)"
             color="primary"><mat-icon>download</mat-icon>Mappings metadata</button>
