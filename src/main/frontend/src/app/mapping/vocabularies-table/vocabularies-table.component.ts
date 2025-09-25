@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Input, Component, SimpleChanges } from '@angular/core';
-import { Vocabulary } from '../data';
+import { Vocabulary } from '../mapping-data';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 

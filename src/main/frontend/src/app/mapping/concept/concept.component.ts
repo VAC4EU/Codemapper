@@ -18,7 +18,7 @@
 
 import { Component, Input } from '@angular/core';
 
-import { Codes, Concept, Tag } from '../data';
+import { Concept, Tag } from '../mapping-data';
 
 @Component({
   selector: 'mapping-concept',

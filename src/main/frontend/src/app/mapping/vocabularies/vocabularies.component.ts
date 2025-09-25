@@ -30,8 +30,9 @@ import { VocabulariesDialogComponent } from '../vocabularies-dialog/vocabularies
 import { VocabulariesTableComponent } from '../vocabularies-table/vocabularies-table.component';
 import { CustomVocabularyDialogComponent } from '../custom-vocabulary-dialog/custom-vocabulary-dialog.component';
 import { ApiService } from '../api.service';
-import { compareVocabularies, Mapping, Vocabulary } from '../data';
-import * as ops from '../mapping-ops';
+import { compareVocabularies, Vocabulary } from '../mapping-data';
+import { MappingState } from '../mapping-state';
+import * as ops from '../operations';
 
 @Component({
   selector: 'vocabularies',
@@ -39,7 +40,7 @@ import * as ops from '../mapping-ops';
   styleUrls: ['./vocabularies.component.scss'],
 })
 export class VocabulariesComponent {
-  @Input() mapping: Mapping | null = null;
+  @Input() state: MappingState | null = null;
   @Output() run = new EventEmitter<ops.Operation>();
   @Input() userCanEdit: boolean = false;
   @ViewChild('table') table!: VocabulariesTableComponent;
@@ -48,10 +49,10 @@ export class VocabulariesComponent {
   constructor(private dialog: MatDialog, private api: ApiService) {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if (this.mapping == null) {
+    if (this.state == null) {
       this.vocabularies = [];
     } else {
-      this.vocabularies = Object.values(this.mapping.vocabularies);
+      this.vocabularies = Object.values(this.state.mapping.vocabularies);
       this.vocabularies.sort(compareVocabularies);
     }
   }
@@ -77,12 +78,12 @@ export class VocabulariesComponent {
           .afterClosed()
           .subscribe(async (vocs) => {
             if (vocs == null) return;
-            let cuis = Object.keys(this.mapping!.concepts);
+            let cuis = Object.keys(this.state!.mapping.concepts);
             let vocIds = (vocs as Vocabulary[]).map((v) => v.id);
             let { concepts, codes } = await this.api.concepts(
               cuis,
               vocIds,
-              this.mapping!.meta
+              this.state!.mapping.meta
             );
             let conceptCodes = Object.fromEntries(
               Object.entries(concepts).map(([cui, concept]) => [

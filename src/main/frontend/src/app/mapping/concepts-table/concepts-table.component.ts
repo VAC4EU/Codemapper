@@ -22,7 +22,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
-import { Concept, VocabularyId, ConceptId, CodeId, Code, Tag } from '../data';
+import { Concept, VocabularyId, ConceptId, CodeId, Code, Tag } from '../mapping-data';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 

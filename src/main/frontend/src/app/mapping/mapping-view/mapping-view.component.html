@@ -6,23 +6,25 @@
         *ngIf="saveRequired">*</span><span *ngIf="info.meta.system || info.meta.type"> ({{shortMeta()}})</span></span>
   </span>
   <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
-  <ng-container *ngIf="mapping != null" onTheRight>
-    <button (click)="undo()" [disabled]="mapping.undoStack.length == 0" matTooltip="{{undoTooltip()}}" mat-icon-button>
-      <mat-icon>undo</mat-icon>
-    </button>
-    <button (click)="redo()" [disabled]="mapping.redoStack.length == 0" matTooltip="{{redoTooltip()}}" mat-icon-button>
-      <mat-icon>redo</mat-icon>
-    </button>
-    <span matTooltip="Save changes">
+  <ng-container *ngIf="state != null" onTheRight>
+    <span matTooltip="{{state.stacks.undoTooltip()}}">
+      <button (click)="undo()" [disabled]="!state.stacks.canUndo()" mat-icon-button>
+        <mat-icon>undo</mat-icon>
+      </button></span>
+    <span matTooltip="{{state.stacks.redoTooltip()}}">
+      <button (click)="redo()" [disabled]="!state.stacks.canRedo()" mat-icon-button>
+        <mat-icon>redo</mat-icon>
+      </button></span>
+    <span matTooltip="{{state.stacks.hasUndo() ? 'Save changes' : 'No changes'}}">
       <button class="tool-mapping-save" (click)="openDialog(saveDialog)"
-        [disabled]="(info == null || info.status != 'IMPORTED') && (mapping.start == null || (!saveRequired && mapping.undoStack.length == 0) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
+        [disabled]="(info == null || info.status != 'IMPORTED') && (state.mapping.start == null || (!saveRequired && !state.stacks.hasUndo()) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
         mat-icon-button>
         <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
       </button>
     </span>
     <span matTooltip="Export codelist of the current revision">
-      <button [disabled]="!userCanDownload || saveRequired || mapping.undoStack.length > 0"
-        (click)="openDownloadDialog()" mat-icon-button>
+      <button [disabled]="!userCanDownload || saveRequired || state.stacks.hasUndo()" (click)="openDownloadDialog()"
+        mat-icon-button>
         <mat-icon>download</mat-icon>
       </button>
     </span>
@@ -30,33 +32,35 @@
 </menu-banner>
 
 <div *ngIf="initial" class="center-content spaced">
-  <start-mapping (start)="setStart($event)" [vocIds]="serverInfo.defaultVocabularies" [serverInfo]="serverInfo"></start-mapping>
+  <start-mapping (start)="setStart($event)" [vocIds]="serverInfo.defaultVocabularies"
+    [mappingInfo]="info" [serverInfo]="serverInfo"></start-mapping>
 </div>
 
-<mat-tab-group *ngIf="mapping" [selectedIndex]="selectedIndex">
+<mat-tab-group *ngIf="state" [selectedIndex]="selectedIndex">
 
   <mat-tab label="Mapping">
-    <div *ngIf="mapping.start != null && info.meta != null">
+    <div *ngIf="state.mapping.start != null && info.meta != null">
       <mapping-tab [projectName]="info.projectName" [shortkey]="shortkey" [latest]="latest" [info]="info!"
-                   [mapping]="mapping" [serverInfo]="serverInfo" [revisions]="revisions" [vocabularies]="vocabularies"
-                   [userCanDownload]="userCanDownload && !!shortkey && !saveRequired && mapping.undoStack.length == 0"
-                   [userCanEdit]="userCanEdit" [projectRole]="projectRole" (run)="run($event)"></mapping-tab>
+        [state]="state" [serverInfo]="serverInfo" [revisions]="revisions" [vocabularies]="vocabularies"
+        [userCanDownload]="userCanDownload && !!shortkey && !saveRequired && !state.stacks.hasUndo()"
+        [userCanEdit]="userCanEdit" [projectRole]="projectRole" (run)="run($event)"></mapping-tab>
     </div>
 
   </mat-tab>
 
-  <mat-tab label="Concepts" [disabled]="mapping.start == null">
-    <concepts *ngIf="!mapping.isEmpty()" [mapping]="mapping" [serverInfo]="serverInfo" [info]="info" [allTopics]="allTopics" [vocabularies]="vocabularies"
-              [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></concepts>
+  <mat-tab label="Concepts" [disabled]="state.mapping.start == null">
+    <concepts *ngIf="!state.mapping.isEmpty()" [state]="state" [serverInfo]="serverInfo" [info]="info"
+      [allTopics]="allTopics" [vocabularies]="vocabularies" [userCanEdit]="userCanEdit" (run)="run($event)"
+      (reviewRun)="reviewRun($event)"></concepts>
   </mat-tab>
 
-  <mat-tab label="Codes" [disabled]="mapping.start == null">
-    <codes *ngIf="!mapping.isEmpty() && mapping.numVocabularies() > 0" [mapping]="mapping" [allTopics]="allTopics"
-           [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></codes>
+  <mat-tab label="Codes" [disabled]="state.mapping.start == null">
+    <codes *ngIf="!state.mapping.isEmpty() && state.mapping.numVocabularies() > 0" [state]="state"
+      [allTopics]="allTopics" [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></codes>
   </mat-tab>
 
-  <mat-tab label="Coding systems" [disabled]="mapping.start == null">
-    <vocabularies *ngIf="!mapping.isEmpty()" [userCanEdit]="userCanEdit" [mapping]="mapping" (run)="run($event)">
+  <mat-tab label="Coding systems" [disabled]="state.mapping.start == null">
+    <vocabularies *ngIf="!state.mapping.isEmpty()" [userCanEdit]="userCanEdit" [state]="state" (run)="run($event)">
     </vocabularies>
   </mat-tab>
 </mat-tab-group>
@@ -70,8 +74,8 @@
     </mat-form-field>
     Modifications
     <ol>
-      <li *ngFor="let step of mapping?.undoStack">
-        {{step[0]}}
+      <li *ngFor="let step of state?.stacks?.undoStack">
+        {{step.description}}
       </li>
     </ol>
   </mat-dialog-content>

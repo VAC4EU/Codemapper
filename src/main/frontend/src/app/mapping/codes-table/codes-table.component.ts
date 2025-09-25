@@ -22,8 +22,9 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
-import { Code, CodeId, ConceptId, Mapping, VocabularyId } from '../data';
+import { Code, CodeId, ConceptId, VocabularyId } from '../mapping-data';
 import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
+import { MappingState } from '../mapping-state';
 
 @Component({
   selector: 'codes-table',
@@ -32,7 +33,7 @@ import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
 })
 export class CodesTableComponent {
   @Input() vocabularyId! : VocabularyId;
-  @Input() mapping! : Mapping;
+  @Input() state! : MappingState;
   @Input() filter : string = "";
   @Input() codes : Code[] = [];
   @Input() codeParents : null | { [key : CodeId] : Set<CodeId> } = null;
@@ -61,7 +62,7 @@ export class CodesTableComponent {
     this.dataSource.sortingDataAccessor = (item : any, property : string) => {
       switch (property) {
         case 'code': return item.id;
-        case 'concepts': return this.codeConcepts(item.id).map(id => this.mapping.concepts[id].name).join(',');
+        case 'concepts': return this.codeConcepts(item.id).map(id => this.state.mapping.concepts[id].name).join(',');
         default: return item[property];
       }
     };
@@ -115,14 +116,14 @@ export class CodesTableComponent {
   }
 
   parents(id : CodeId) : Code[] {
-    let codes = this.mapping.codes[this.vocabularyId];
+    let codes = this.state.mapping.codes[this.vocabularyId];
     return Array.from(this.codeParents?.[id] ?? [])
       .map(id => codes[id])
       .filter(c => c != null);
   }
 
   codeConcepts(id : CodeId) : ConceptId[] {
-    return Array.from(this.mapping.conceptsByCode[this.vocabularyId]?.[id] ?? []);
+    return this.state.caches.getConceptsByCode(this.vocabularyId, id);
   }
 
   selectAllCustomCodes() {
@@ -135,8 +136,8 @@ export class CodesTableComponent {
   }
 
   showReviews(code : CodeId) {
-    if (this.mapping != null) {
-      let codeName = this.mapping.codes[this.vocabularyId]?.[code]?.term ?? "unknown";
+    if (this.state != null) {
+      let codeName = this.state.mapping.codes[this.vocabularyId]?.[code]?.term ?? "unknown";
       this.dialog.open(ReviewsDialogComponent, {
         width: '80em',
         data: {

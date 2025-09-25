@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
-import { ConceptId, VocabularyId, CodeId } from '../data';
+import { ConceptId, VocabularyId, CodeId } from '../mapping-data';
 import { TopicsInfo, ReviewData, ReviewOperation, NewTopic, NewMessage, EditMessage, ResolveTopic, MarkAsRead } from '../review';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../auth.service';

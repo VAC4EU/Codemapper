@@ -21,11 +21,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../src/environments/environment';
 import {
   JSONObject,
-  Mapping,
   ServerInfo,
   MappingMeta,
   emptyMappingMeta,
-} from './data';
+  MappingData,
+  importMappingDataJSON,
+} from './mapping-data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, firstValueFrom, map } from 'rxjs';
 import { User } from './auth.service';
@@ -84,7 +85,7 @@ export type UserRole = {
 export interface MappingInfo {
   mappingShortkey: string | null; // null if not saved
   projectName: string;
-  mappingName: string;
+  mappingName: string; // abbreviation
   status: string | null;
   meta: MappingMeta;
 }
@@ -214,21 +215,21 @@ export class PersistencyService {
   loadLegacyMapping(
     shortkey: string,
     serverInfo: ServerInfo
-  ): Observable<Mapping> {
+  ): Observable<MappingData> {
     return this.http
       .get<JSONObject>(this.url + `/mapping/${shortkey}/legacy`)
-      .pipe(map((json) => Mapping.importLegacyJSON(json, serverInfo)));
+      .pipe(map((json) => importMappingDataLegacyJSON(json, serverInfo)));
   }
 
   loadLatestRevisionMapping(
     shortkey: string,
     serverInfo: ServerInfo
-  ): Observable<{ info: RevisionInfo; mapping: Mapping }> {
+  ): Observable<{ info: RevisionInfo; mapping: MappingData }> {
     return this.http
       .get<RevisionRaw>(this.url + `/mapping/${shortkey}/latest-revision`)
       .pipe(
         map((rev) => {
-          let mapping = Mapping.importJSON(
+          let mapping = importMappingDataJSON(
             JSON.parse(rev.mappingJson),
             serverInfo
           );
@@ -267,9 +268,9 @@ export class PersistencyService {
     );
   }
 
-  saveRevision(shortkey: string, mapping: Mapping, summary: string) {
+  saveRevision(shortkey: string, mapping: MappingData, summary: string) {
     let body = new URLSearchParams();
-    let mappingJson = JSON.stringify(mapping.toObject(), Mapping.jsonifyReplacer);
+    let mappingJson = JSON.stringify(mapping, mappingDataJsonifyReplacer);
     body.append('mapping', mappingJson);
     body.append('summary', summary);
     let url = this.url + `/mapping/${shortkey}/save-revision`;
@@ -334,3 +335,11 @@ export class PersistencyService {
     return this.http.post<void>(url, body, urlEncodedOptions);
   }
 }
+function importMappingDataLegacyJSON(json: JSONObject, serverInfo: ServerInfo): any {
+  throw new Error('Function not implemented.');
+}
+
+function mappingDataJsonifyReplacer(this: any, key: string, value: any) {
+  throw new Error('Function not implemented.');
+}
+

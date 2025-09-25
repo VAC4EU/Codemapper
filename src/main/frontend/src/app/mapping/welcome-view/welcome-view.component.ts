@@ -17,10 +17,10 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component } from '@angular/core';
-import { ServerInfo, EMPTY_SERVER_INFO } from '../data';
+import { ServerInfo, EMPTY_SERVER_INFO } from '../mapping-data';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
-import { firstValueFrom, map, Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 

@@ -17,8 +17,9 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ApiService, ImportedMapping } from '../api.service';
+import { ApiService, csvFilter, ImportedMapping } from '../api.service';
 import { firstValueFrom } from 'rxjs';
+import { MappingInfo } from '../persistency.service';
 
 @Component({
   selector: 'import-csv-dialog',
@@ -26,6 +27,7 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./import-csv-dialog.component.scss'],
 })
 export class ImportCsvDialogComponent {
+  @Input({required: true}) mappingInfo!: MappingInfo;
   @Input({required: true}) ignoreTermTypes!: string[];
   @Input() noWarning: boolean = false;
   @Output() mapping = new EventEmitter<ImportedMapping>();
@@ -50,8 +52,9 @@ export class ImportCsvDialogComponent {
 
   async importCsv(file: File, format: string) {
     try {
+      let filter = csvFilter(this.mappingInfo);
       let imported = await firstValueFrom(
-        this.api.importCsv(file, [], format, this.ignoreTermTypes, null)
+        this.api.importCsv(file, [], format, this.ignoreTermTypes, filter)
       );
       if (imported.warnings.length) {
         let msg =

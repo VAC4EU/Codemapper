@@ -18,7 +18,7 @@
 
 import { Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { Code } from '../data';
+import { Code } from '../mapping-data';
 
 @Component({
   selector: 'mapping-code',
