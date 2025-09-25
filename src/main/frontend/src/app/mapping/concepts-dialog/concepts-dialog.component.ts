@@ -21,9 +21,10 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Concept, ConceptId, VocabularyId, Code, CodeId } from '../mapping-data';
 
 @Component({
-  selector: 'app-concepts-dialog',
-  templateUrl: './concepts-dialog.component.html',
-  styleUrls: ['./concepts-dialog.component.scss']
+    selector: 'app-concepts-dialog',
+    templateUrl: './concepts-dialog.component.html',
+    styleUrls: ['./concepts-dialog.component.scss'],
+    standalone: false
 })
 export class ConceptsDialogComponent {
   constructor(

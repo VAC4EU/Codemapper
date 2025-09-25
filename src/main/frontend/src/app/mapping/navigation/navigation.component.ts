@@ -21,9 +21,10 @@ import { AuthService, User } from '../auth.service';
 import { ProjectsRoles } from '../persistency.service';
 
 @Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.scss']
+    selector: 'app-navigation',
+    templateUrl: './navigation.component.html',
+    styleUrls: ['./navigation.component.scss'],
+    standalone: false
 })
 export class NavigationComponent {
   @Input() projectName : string | null = null;

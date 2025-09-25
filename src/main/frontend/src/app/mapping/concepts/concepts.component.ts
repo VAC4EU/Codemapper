@@ -56,9 +56,10 @@ import { MappingInfo } from '../persistency.service';
 import { MappingState } from '../mapping-state';
 
 @Component({
-  selector: 'concepts',
-  templateUrl: './concepts.component.html',
-  styleUrls: ['./concepts.component.scss'],
+    selector: 'concepts',
+    templateUrl: './concepts.component.html',
+    styleUrls: ['./concepts.component.scss'],
+    standalone: false
 })
 export class ConceptsComponent implements OnInit {
   @Input({ required: true }) state!: MappingState;

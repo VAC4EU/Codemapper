@@ -2,9 +2,10 @@ import { Component, Input } from '@angular/core';
 import { User } from '../auth.service';
 
 @Component({
-  selector: 'users-table',
-  templateUrl: './users-table.component.html',
-  styleUrls: ['./users-table.component.scss'],
+    selector: 'users-table',
+    templateUrl: './users-table.component.html',
+    styleUrls: ['./users-table.component.scss'],
+    standalone: false
 })
 export class UsersTableComponent {
   @Input() users : User[] = [];

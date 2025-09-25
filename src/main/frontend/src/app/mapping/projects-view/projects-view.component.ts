@@ -24,9 +24,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  selector: 'app-projects-view',
-  templateUrl: './projects-view.component.html',
-  styleUrls: ['./projects-view.component.scss']
+    selector: 'app-projects-view',
+    templateUrl: './projects-view.component.html',
+    styleUrls: ['./projects-view.component.scss'],
+    standalone: false
 })
 export class ProjectsViewComponent {
 

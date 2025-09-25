@@ -27,9 +27,10 @@ import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 import { MappingState } from '../mapping-state';
 
 @Component({
-  selector: 'mapping-tab',
-  templateUrl: './mapping-tab.component.html',
-  styleUrls: ['./mapping-tab.component.scss'],
+    selector: 'mapping-tab',
+    templateUrl: './mapping-tab.component.html',
+    styleUrls: ['./mapping-tab.component.scss'],
+    standalone: false
 })
 export class MappingTabComponent {
   @Input({ required: true }) projectName!: string;

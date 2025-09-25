@@ -20,9 +20,10 @@ import { Component } from '@angular/core';
 import { AuthService } from '../auth.service';
 
 @Component({
-  selector: 'app-news-view',
-  templateUrl: './news-view.component.html',
-  styleUrls: ['./news-view.component.scss']
+    selector: 'app-news-view',
+    templateUrl: './news-view.component.html',
+    styleUrls: ['./news-view.component.scss'],
+    standalone: false
 })
 export class NewsViewComponent {
   hasUser : boolean = false;

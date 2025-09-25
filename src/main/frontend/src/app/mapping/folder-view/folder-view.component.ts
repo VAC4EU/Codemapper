@@ -31,9 +31,10 @@ import { AuthService, User } from '../auth.service';
 import { FolderMappingsComponent } from '../folder-mappings/folder-mappings.component';
 
 @Component({
-  selector: 'folder-view',
-  templateUrl: './folder-view.component.html',
-  styleUrls: ['./folder-view.component.scss'],
+    selector: 'folder-view',
+    templateUrl: './folder-view.component.html',
+    styleUrls: ['./folder-view.component.scss'],
+    standalone: false
 })
 export class FolderViewComponent {
   user: User | null = null;

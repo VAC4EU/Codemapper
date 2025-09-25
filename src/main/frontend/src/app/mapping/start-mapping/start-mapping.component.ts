@@ -23,9 +23,10 @@ export interface StartData {
 }
 
 @Component({
-  selector: 'start-mapping',
-  templateUrl: './start-mapping.component.html',
-  styleUrls: ['./start-mapping.component.scss'],
+    selector: 'start-mapping',
+    templateUrl: './start-mapping.component.html',
+    styleUrls: ['./start-mapping.component.scss'],
+    standalone: false
 })
 export class StartMappingComponent {
   mode: string = 'edf';

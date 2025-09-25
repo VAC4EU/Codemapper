@@ -10,9 +10,10 @@ interface Result {
 }
 
 @Component({
-  selector: 'app-edit-meta',
-  templateUrl: './edit-meta.component.html',
-  styleUrls: ['./edit-meta.component.scss'],
+    selector: 'app-edit-meta',
+    templateUrl: './edit-meta.component.html',
+    styleUrls: ['./edit-meta.component.scss'],
+    standalone: false
 })
 export class EditMetaComponent {
   name: string = '';

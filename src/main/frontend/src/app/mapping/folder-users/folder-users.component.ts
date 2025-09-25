@@ -15,9 +15,10 @@ function usernameCompare(a: User | string, b: User | string) {
 }
 
 @Component({
-  selector: 'folder-users',
-  templateUrl: './folder-users.component.html',
-  styleUrls: ['./folder-users.component.scss'],
+    selector: 'folder-users',
+    templateUrl: './folder-users.component.html',
+    styleUrls: ['./folder-users.component.scss'],
+    standalone: false
 })
 export class FolderUsersComponent {
   @Input({ required: true }) folderName!: string;

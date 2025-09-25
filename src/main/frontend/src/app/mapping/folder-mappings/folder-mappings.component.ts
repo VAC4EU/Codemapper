@@ -49,9 +49,10 @@ import { MappingState } from '../mapping-state';
 import { Mapping } from '../mapping';
 
 @Component({
-  selector: 'folder-mappings',
-  templateUrl: './folder-mappings.component.html',
-  styleUrls: ['./folder-mappings.component.scss'],
+    selector: 'folder-mappings',
+    templateUrl: './folder-mappings.component.html',
+    styleUrls: ['./folder-mappings.component.scss'],
+    standalone: false
 })
 export class FolderMappingsComponent {
   @Input({ required: true }) user!: User;

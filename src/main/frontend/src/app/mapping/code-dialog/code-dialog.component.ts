@@ -35,9 +35,10 @@ export interface CodeDialogData {
 }
 
 @Component({
-  selector: 'mapping-code-dialog',
-  templateUrl: './code-dialog.component.html',
-  styleUrls: ['./code-dialog.component.scss'],
+    selector: 'mapping-code-dialog',
+    templateUrl: './code-dialog.component.html',
+    styleUrls: ['./code-dialog.component.scss'],
+    standalone: false
 })
 export class CodeDialogComponent {
   constructor(

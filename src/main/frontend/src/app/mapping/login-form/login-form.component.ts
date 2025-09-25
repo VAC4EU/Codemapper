@@ -23,9 +23,10 @@ import { FormControl } from "@angular/forms";
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'login-form',
-  templateUrl: './login-form.component.html',
-  styleUrls: ['./login-form.component.scss'],
+    selector: 'login-form',
+    templateUrl: './login-form.component.html',
+    styleUrls: ['./login-form.component.scss'],
+    standalone: false
 })
 export class LoginFormComponent {
   hasUser : boolean = false;
