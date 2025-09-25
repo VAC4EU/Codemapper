@@ -1,60 +1,66 @@
 <menu-banner>
-    <!-- <mat-icon>person</mat-icon> -->
-    CodeMapper: Account
+  <!-- <mat-icon>person</mat-icon> -->
+  CodeMapper: Account
 </menu-banner>
 
 <div class="center-content">
-    <div class="toolbox">
+  <div class="toolbox">
 
-        <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header>
-                <h4>Account information</h4>
-            </mat-card-header>
-            <mat-card-content class="form-column">
-                <table>
-                    <tr>
-                        <td>Username:</td>
-                        <td>{{user.username}}</td>
-                    </tr>
-                    <tr>
-                        <td>Email:</td>
-                        <td>{{user.email || "(unknown, please change)"}}</td>
-                    </tr>
-                </table>
-            </mat-card-content>
-        </mat-card>
-        <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header>
-                <h4>Change password</h4>
-            </mat-card-header>
-            <mat-card-content class="form-column">
-                <mat-form-field subscriptSizing="dynamic" class="input-form">
-                    <mat-label>Old password</mat-label>
-                    <input #oldPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
-                </mat-form-field>
-                <mat-form-field subscriptSizing="dynamic" class="input-form">
-                    <mat-label>New password</mat-label>
-                    <input #newPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
-                    <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
-                        <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-                    </button>
-                </mat-form-field>
-                <button mat-raised-button [disabled]="newPassword.value.length == 0"
-                    (click)="changePassword(oldPassword.value, newPassword.value)">Change</button>
-            </mat-card-content>
-        </mat-card>
-        <mat-card *ngIf="user" appearance="outlined">
-            <mat-card-header>
-                <h4>Change email</h4>
-            </mat-card-header>
-            <mat-card-content class="form-column">
-                <mat-form-field subscriptSizing="dynamic" class="input-form">
-                    <mat-label>Email</mat-label>
-                    <input #newEmail matInput type="email">
-                </mat-form-field>
-                <button mat-raised-button [disabled]="newEmail.value.length == 0"
-                    (click)="changeEmail(newEmail.value)">Change</button>
-            </mat-card-content>
-        </mat-card>
-    </div>
+    @if (user) {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <h4>Account information</h4>
+        </mat-card-header>
+        <mat-card-content class="form-column">
+          <table>
+            <tr>
+              <td>Username:</td>
+              <td>{{user.username}}</td>
+            </tr>
+            <tr>
+              <td>Email:</td>
+              <td>{{user.email || "(unknown, please change)"}}</td>
+            </tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    }
+    @if (user) {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <h4>Change password</h4>
+        </mat-card-header>
+        <mat-card-content class="form-column">
+          <mat-form-field subscriptSizing="dynamic" class="input-form">
+            <mat-label>Old password</mat-label>
+            <input #oldPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic" class="input-form">
+            <mat-label>New password</mat-label>
+            <input #newPassword matInput [type]="hidePassword ? 'password' : 'text'" autocomplete="password">
+            <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
+              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+          </mat-form-field>
+          <button mat-raised-button [disabled]="newPassword.value.length == 0"
+          (click)="changePassword(oldPassword.value, newPassword.value)">Change</button>
+        </mat-card-content>
+      </mat-card>
+    }
+    @if (user) {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <h4>Change email</h4>
+        </mat-card-header>
+        <mat-card-content class="form-column">
+          <mat-form-field subscriptSizing="dynamic" class="input-form">
+            <mat-label>Email</mat-label>
+            <input #newEmail matInput type="email">
+          </mat-form-field>
+          <button mat-raised-button [disabled]="newEmail.value.length == 0"
+          (click)="changeEmail(newEmail.value)">Change</button>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
 </div>

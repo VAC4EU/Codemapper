@@ -2,86 +2,107 @@
   <span matTooltip="{{titleTooltip()}}">
     <!-- <mat-icon>schema</mat-icon> -->
     <button routerLink="/folder/{{info.projectName}}" class="project-link" mat-button>{{info.projectName}}:</button>
-    <span *ngIf="info"><span class="name" (click)="dump()">{{info.meta.definition ?? info.mappingName}}</span><span
-        *ngIf="saveRequired">*</span><span *ngIf="info.meta.system || info.meta.type"> ({{shortMeta()}})</span></span>
-  </span>
-  <mat-error *ngIf="error">&nbsp;Error: {{error}}</mat-error>
-  <ng-container *ngIf="state != null" onTheRight>
+    @if (info) {
+      <span><span class="name" (click)="dump()">{{info.meta.definition ?? info.mappingName}}</span>@if (saveRequired) {
+      <span
+      >*</span>
+      }@if (info.meta.system || info.meta.type) {
+      <span> ({{shortMeta()}})</span>
+    }</span>
+  }
+</span>
+@if (error) {
+  <mat-error>&nbsp;Error: {{error}}</mat-error>
+}
+@if (state != null) {
+  <ng-container onTheRight>
     <span matTooltip="{{state.stacks.undoTooltip()}}">
       <button (click)="undo()" [disabled]="!state.stacks.canUndo()" mat-icon-button>
         <mat-icon>undo</mat-icon>
       </button></span>
-    <span matTooltip="{{state.stacks.redoTooltip()}}">
-      <button (click)="redo()" [disabled]="!state.stacks.canRedo()" mat-icon-button>
-        <mat-icon>redo</mat-icon>
-      </button></span>
-    <span matTooltip="{{state.stacks.hasUndo() ? 'Save changes' : 'No changes'}}">
-      <button class="tool-mapping-save" (click)="openDialog(saveDialog)"
-        [disabled]="(info == null || info.status != 'IMPORTED') && (state.mapping.start == null || (!saveRequired && !state.stacks.hasUndo()) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
-        mat-icon-button>
-        <mat-icon>save<span *ngIf="saveRequired">*</span></mat-icon>
-      </button>
-    </span>
-    <span matTooltip="Export codelist of the current revision">
-      <button [disabled]="!userCanDownload || saveRequired || state.stacks.hasUndo()" (click)="openDownloadDialog()"
-        mat-icon-button>
-        <mat-icon>download</mat-icon>
-      </button>
-    </span>
-  </ng-container>
-</menu-banner>
+      <span matTooltip="{{state.stacks.redoTooltip()}}">
+        <button (click)="redo()" [disabled]="!state.stacks.canRedo()" mat-icon-button>
+          <mat-icon>redo</mat-icon>
+        </button></span>
+        <span matTooltip="{{state.stacks.hasUndo() ? 'Save changes' : 'No changes'}}">
+          <button class="tool-mapping-save" (click)="openDialog(saveDialog)"
+            [disabled]="(info == null || info.status != 'IMPORTED') && (state.mapping.start == null || (!saveRequired && !state.stacks.hasUndo()) || !(projectRole == 'Owner' || projectRole == 'Editor'))"
+            mat-icon-button>
+            <mat-icon>save@if (saveRequired) {
+              <span>*</span>
+            }</mat-icon>
+          </button>
+        </span>
+        <span matTooltip="Export codelist of the current revision">
+          <button [disabled]="!userCanDownload || saveRequired || state.stacks.hasUndo()" (click)="openDownloadDialog()"
+            mat-icon-button>
+            <mat-icon>download</mat-icon>
+          </button>
+        </span>
+      </ng-container>
+    }
+  </menu-banner>
 
-<div *ngIf="initial" class="center-content spaced">
-  <start-mapping (start)="setStart($event)" [vocIds]="serverInfo.defaultVocabularies"
-    [mappingInfo]="info" [serverInfo]="serverInfo"></start-mapping>
-</div>
-
-<mat-tab-group *ngIf="state" [selectedIndex]="selectedIndex">
-
-  <mat-tab label="Mapping">
-    <div *ngIf="state.mapping.start != null && info.meta != null">
-      <mapping-tab [projectName]="info.projectName" [shortkey]="shortkey" [latest]="latest" [info]="info!"
-        [state]="state" [serverInfo]="serverInfo" [revisions]="revisions" [vocabularies]="vocabularies"
-        [userCanDownload]="userCanDownload && !!shortkey && !saveRequired && !state.stacks.hasUndo()"
-        [userCanEdit]="userCanEdit" [projectRole]="projectRole" (run)="run($event)"></mapping-tab>
+  @if (initial) {
+    <div class="center-content spaced">
+      <start-mapping (start)="setStart($event)" [vocIds]="serverInfo.defaultVocabularies"
+      [mappingInfo]="info" [serverInfo]="serverInfo"></start-mapping>
     </div>
+  }
 
-  </mat-tab>
+  @if (state) {
+    <mat-tab-group [selectedIndex]="selectedIndex">
+      <mat-tab label="Mapping">
+        @if (state.mapping.start != null && info.meta != null) {
+          <div>
+            <mapping-tab [projectName]="info.projectName" [shortkey]="shortkey" [latest]="latest" [info]="info!"
+              [state]="state" [serverInfo]="serverInfo" [revisions]="revisions" [vocabularies]="vocabularies"
+              [userCanDownload]="userCanDownload && !!shortkey && !saveRequired && !state.stacks.hasUndo()"
+            [userCanEdit]="userCanEdit" [projectRole]="projectRole" (run)="run($event)"></mapping-tab>
+          </div>
+        }
+      </mat-tab>
+      <mat-tab label="Concepts" [disabled]="state.mapping.start == null">
+        @if (!state.mapping.isEmpty()) {
+          <concepts [state]="state" [serverInfo]="serverInfo" [info]="info"
+            [allTopics]="allTopics" [vocabularies]="vocabularies" [userCanEdit]="userCanEdit" (run)="run($event)"
+          (reviewRun)="reviewRun($event)"></concepts>
+        }
+      </mat-tab>
+      <mat-tab label="Codes" [disabled]="state.mapping.start == null">
+        @if (!state.mapping.isEmpty() && state.mapping.numVocabularies() > 0) {
+          <codes [state]="state"
+          [allTopics]="allTopics" [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></codes>
+        }
+      </mat-tab>
+      <mat-tab label="Coding systems" [disabled]="state.mapping.start == null">
+        @if (!state.mapping.isEmpty()) {
+          <vocabularies [userCanEdit]="userCanEdit" [state]="state" (run)="run($event)">
+          </vocabularies>
+        }
+      </mat-tab>
+    </mat-tab-group>
+  }
 
-  <mat-tab label="Concepts" [disabled]="state.mapping.start == null">
-    <concepts *ngIf="!state.mapping.isEmpty()" [state]="state" [serverInfo]="serverInfo" [info]="info"
-      [allTopics]="allTopics" [vocabularies]="vocabularies" [userCanEdit]="userCanEdit" (run)="run($event)"
-      (reviewRun)="reviewRun($event)"></concepts>
-  </mat-tab>
-
-  <mat-tab label="Codes" [disabled]="state.mapping.start == null">
-    <codes *ngIf="!state.mapping.isEmpty() && state.mapping.numVocabularies() > 0" [state]="state"
-      [allTopics]="allTopics" [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></codes>
-  </mat-tab>
-
-  <mat-tab label="Coding systems" [disabled]="state.mapping.start == null">
-    <vocabularies *ngIf="!state.mapping.isEmpty()" [userCanEdit]="userCanEdit" [state]="state" (run)="run($event)">
-    </vocabularies>
-  </mat-tab>
-</mat-tab-group>
-
-<ng-template #saveDialog>
-  <h2 matDialogTitle>Save mapping</h2>
-  <mat-dialog-content>
-    <mat-form-field style="width:100%;">
-      <mat-label>Summary</mat-label>
-      <textarea class="save-summary" rows="5" cols="30" #summary matInput></textarea>
-    </mat-form-field>
-    Modifications
-    <ol>
-      <li *ngFor="let step of state?.stacks?.undoStack">
-        {{step.description}}
-      </li>
-    </ol>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button matDialogClose>Cancel</button>
-    <button class="mapping-save" mat-raised-button [disabled]="!summary.value" (click)="save(summary.value)"
+  <ng-template #saveDialog>
+    <h2 matDialogTitle>Save mapping</h2>
+    <mat-dialog-content>
+      <mat-form-field style="width:100%;">
+        <mat-label>Summary</mat-label>
+        <textarea class="save-summary" rows="5" cols="30" #summary matInput></textarea>
+      </mat-form-field>
+      Modifications
+      <ol>
+        @for (step of state?.stacks?.undoStack; track step) {
+          <li>
+            {{step.description}}
+          </li>
+        }
+      </ol>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button matDialogClose>Cancel</button>
+      <button class="mapping-save" mat-raised-button [disabled]="!summary.value" (click)="save(summary.value)"
       matDialogClose color="primary">Save</button>
-  </mat-dialog-actions>
-</ng-template>
+    </mat-dialog-actions>
+  </ng-template>

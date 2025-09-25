@@ -4,7 +4,13 @@
   [class.custom]="code.custom"
   matTooltip="{{tooltipContent()}}"
   matTooltipPosition="right">
-  <span class="code-id">{{code.id}}<ng-container *ngIf="code.custom">*</ng-container></span><mat-icon *ngIf="showTagIndication && code.tag != null" class="tag-indicator tag-{{code.tag}}" fontIcon="label"></mat-icon><span class="term" *ngIf="showTerm"> {{code.term}}</span>
+  <span class="code-id">{{code.id}}@if (code.custom) {
+    *
+  }</span>@if (showTagIndication && code.tag != null) {
+  <mat-icon class="tag-indicator tag-{{code.tag}}" fontIcon="label"></mat-icon>
+  }@if (showTerm) {
+  <span class="term"> {{code.term}}</span>
+}
 </span>
 
 

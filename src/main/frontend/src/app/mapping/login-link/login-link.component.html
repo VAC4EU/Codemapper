@@ -1,4 +1,6 @@
 
-<a *ngIf="!hasUser" class="login" routerLink="/login" routerLinkActive="active" mat-menu-item>
+@if (!hasUser) {
+  <a class="login" routerLink="/login" routerLinkActive="active" mat-menu-item>
     Login <mat-icon class="login-icon">login</mat-icon>
-</a>
+  </a>
+}

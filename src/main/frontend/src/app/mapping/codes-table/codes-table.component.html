@@ -24,40 +24,52 @@
     <ng-container matColumnDef="concepts">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Concepts</th>
       <td mat-cell *matCellDef="let code">
-        <div *ngFor="let conceptId of codeConcepts(code.id)">
-          <div *ngIf="state.mapping.concepts[conceptId]; let concept">
-            <span class="conceptName">{{concept.name}}</span>
-            ({{concept.id}})
+        @for (conceptId of codeConcepts(code.id); track conceptId) {
+          <div>
+            @if (state.mapping.concepts[conceptId]; as concept) {
+              <div>
+                <span class="conceptName">{{concept.name}}</span>
+                ({{concept.id}})
+              </div>
+            }
           </div>
-        </div>
+        }
       </td>
     </ng-container>
 
     <ng-container matColumnDef="tag">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Tag</th>
       <td mat-cell *matCellDef="let code">
-        <mapping-tag *ngIf="code.tag != null" [tag]="code.tag"></mapping-tag>
+        @if (code.tag != null) {
+          <mapping-tag [tag]="code.tag"></mapping-tag>
+        }
       </td>
     </ng-container>
 
     <ng-container matColumnDef="parents">
       <th mat-header-cell *matHeaderCellDef>Parents</th>
       <td mat-cell *matCellDef="let code">
-        <mapping-code *ngFor="let parent of parents(code.id)" [code]="parent"></mapping-code>
+        @for (parent of parents(code.id); track parent) {
+          <mapping-code [code]="parent"></mapping-code>
+        }
       </td>
     </ng-container>
 
     <ng-container matColumnDef="comments">
       <th mat-header-cell *matHeaderCellDef>Comments</th>
       <td mat-cell *matCellDef="let code">
-        <button *ngIf="this.state.mapping && topics(code.id); let topics" mat-stroked-button matTooltip='{{topics.tooltip()}}'
-          (click)="showReviews(code.id)" class='btn-xs'>
-          <mat-icon fontIcon="comment"></mat-icon>
-          {{topics.numTopics()}}/{{topics.numMessages}}
-          <span *ngIf="topics.numNewMessages > 0" class="num-new-messages">
-            ({{topics.numNewMessages}})
-          </span>
-        </button>
+        @if (this.state.mapping && topics(code.id); as topics) {
+          <button mat-stroked-button matTooltip='{{topics.tooltip()}}'
+            (click)="showReviews(code.id)" class='btn-xs'>
+            <mat-icon fontIcon="comment"></mat-icon>
+            {{topics.numTopics()}}/{{topics.numMessages}}
+            @if (topics.numNewMessages > 0) {
+              <span class="num-new-messages">
+                ({{topics.numNewMessages}})
+              </span>
+            }
+          </button>
+        }
       </td>
     </ng-container>
 
