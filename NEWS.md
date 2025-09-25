@@ -9,10 +9,11 @@
 
 <section class="center-content">
 
-September 16, 2026
+September 17, 2026
 ---
 
 - import codelists into existing mappings
+- download progressively and any number of mappings
 
 August 13, 2025
 ---

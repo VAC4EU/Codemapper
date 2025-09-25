@@ -24,5 +24,5 @@ export interface HasPendingChanges {
 
 export const pendingChangesGuard : CanDeactivateFn<HasPendingChanges> = async (component : HasPendingChanges, _currentRoute : ActivatedRouteSnapshot, _currentState : RouterStateSnapshot, _nextState : RouterStateSnapshot) => {
   return !component.hasPendingChanges
-    || confirm('You have unsaved changes, which are lost when you navigate away');
+    || confirm('This mapping has unsaved changes, which are lost when you navigate away. Continue?');
 }

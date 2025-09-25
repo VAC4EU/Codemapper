@@ -34,7 +34,7 @@ import {
   Indexing,
   cuiOfId,
   VocabularyId,
-} from '../data';
+} from '../mapping-data';
 import { ApiService, EMPTY_TYPES_INFO, TypesInfo } from '../api.service';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';

@@ -1,5 +1,5 @@
 import { Component, Inject, Input } from '@angular/core';
-import { MappingMeta, emptyMappingMeta } from '../data';
+import { MappingMeta, emptyMappingMeta } from '../mapping-data';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MappingInfo, PersistencyService } from '../persistency.service';
 import { firstValueFrom } from 'rxjs';

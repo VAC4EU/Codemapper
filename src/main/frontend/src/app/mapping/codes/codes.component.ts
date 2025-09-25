@@ -18,8 +18,8 @@
 
 import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Mapping, Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../data';
-import * as ops from '../mapping-ops';
+import { Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../mapping-data';
+import * as ops from '../operations';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { ApiService, Descendants } from '../api.service';
 import { compareCodes } from '../sort.pipe';
@@ -28,6 +28,7 @@ import { CodeDialogComponent } from '../code-dialog/code-dialog.component';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { CodesDialogComponent } from '../codes-dialog/codes-dialog.component';
 import { CodesTableComponent } from '../codes-table/codes-table.component';
+import { MappingState } from '../mapping-state';
 
 @Component({
   selector: 'codes',
@@ -35,7 +36,7 @@ import { CodesTableComponent } from '../codes-table/codes-table.component';
   styleUrls: ['./codes.component.scss'],
 })
 export class CodesComponent {
-  @Input({ required: true }) mapping! : Mapping;
+  @Input({ required: true }) state! : MappingState;
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
   @Input() userCanEdit : boolean = false;
@@ -61,7 +62,7 @@ export class CodesComponent {
   }
 
   ngOnInit() {
-    let vocIds = Object.keys(this.mapping.vocabularies);
+    let vocIds = Object.keys(this.state.mapping.vocabularies);
     vocIds.sort((id1, id2) => id1.localeCompare(id2));
     this.vocabularyId = vocIds[0];
   }
@@ -71,11 +72,11 @@ export class CodesComponent {
   }
 
   update() {
-    let codes = this.mapping.codes[this.vocabularyId] ?? {};
-    this.vocabulary = this.mapping.vocabularies[this.vocabularyId];
+    let codes = this.state.mapping.codes[this.vocabularyId] ?? {};
+    this.vocabulary = this.state.mapping.vocabularies[this.vocabularyId];
     this.codes = Object.values(codes);
     this.codes.sort((c1, c2) => compareCodes(c1.id, c2.id));
-    this.vocabularyIds = Object.keys(this.mapping.vocabularies).sort();
+    this.vocabularyIds = Object.keys(this.state.mapping.vocabularies).sort();
   }
 
   selectVocabulary(id : VocabularyId) {
@@ -84,15 +85,15 @@ export class CodesComponent {
   }
 
   isCustom(id : VocabularyId) {
-    return this.mapping.vocabularies[id].custom;
+    return this.state.mapping.vocabularies[id].custom;
   }
 
   conceptIds(code : Code) : ConceptId[] {
-    return Array.from(this.mapping.conceptsByCode[this.vocabularyId]?.[code.id] ?? []);
+    return Array.from(this.state.caches.getConceptsByCode(this.vocabularyId, code.id));
   }
 
   conceptName(id : ConceptId) : string {
-    return this.mapping.concepts[id]?.name ?? "n/a"
+    return this.state.mapping.concepts[id]?.name ?? "n/a"
   }
 
   enableCodes(codes : Code[]) {
@@ -114,7 +115,7 @@ export class CodesComponent {
       data: {
         tag,
         heading: `${codes.length} code${codes.length == 1 ? '' : 's'}`,
-        allowedTags: this.mapping.meta.allowedTags,
+        allowedTags: this.state.mapping.meta.allowedTags,
       },
       width: '40em',
     };
@@ -140,8 +141,8 @@ export class CodesComponent {
           concept: "",
         },
         operation: "Create",
-        concepts: Object.values(this.mapping.concepts),
-        codeIds: Object.keys(this.mapping.codes[this.vocabularyId]),
+        concepts: Object.values(this.state.mapping.concepts),
+        codeIds: Object.keys(this.state.mapping.codes[this.vocabularyId]),
         idEditable: true,
       }
     });
@@ -163,7 +164,7 @@ export class CodesComponent {
       console.error("edit custom code only possible with custom code");
       return;
     }
-    let concepts = this.mapping.getConceptsByCode(this.vocabularyId, selected.id);
+    let concepts = this.state.caches.getConceptsByCode(this.vocabularyId, selected.id);
     if (concepts.length != 1) {
       console.error("custom code must have exactly one concept");
       return;
@@ -176,8 +177,8 @@ export class CodesComponent {
           concept: concepts[0],
         },
         operation: "Edit custom code",
-        concepts: Object.values(this.mapping.concepts),
-        codeIds: Object.keys(this.mapping.codes[this.vocabularyId]),
+        concepts: Object.values(this.state.mapping.concepts),
+        codeIds: Object.keys(this.state.mapping.codes[this.vocabularyId]),
         idEditable: false,
       }
     });
@@ -209,7 +210,7 @@ export class CodesComponent {
           vocabularyId: this.vocabularyId,
           codes,
           codeParents,
-          mapping: this.mapping,
+          mapping: this.state,
         };
         this.dialog.open(CodesDialogComponent, { data });
       });
@@ -219,7 +220,7 @@ export class CodesComponent {
   }
 
   numCodes(voc : VocabularyId) : number {
-    return Object.keys(this.mapping.codes[voc]).length
+    return Object.keys(this.state.mapping.codes[voc]).length
   }
 }
 

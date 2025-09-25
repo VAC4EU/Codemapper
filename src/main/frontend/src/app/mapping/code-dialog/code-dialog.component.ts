@@ -18,7 +18,7 @@
 
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { CodeId, Concept } from '../data';
+import { CodeId, Concept } from '../mapping-data';
 
 export interface CodeDialogCode {
   id : string;

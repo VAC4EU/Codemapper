@@ -17,8 +17,8 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { TypesInfo } from './api.service';
-import * as data from './data';
-import { VocabularyId } from './data';
+import * as data from './mapping-data';
+import { VocabularyId } from './mapping-data';
 
 export interface SourceConcept {
   cui : string;

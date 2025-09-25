@@ -18,7 +18,8 @@
 
 import { Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { Mapping, MappingMeta } from '../data';
+import { MappingMeta } from '../mapping-data';
+import { MappingState } from '../mapping-state';
 import { ApiService } from '../api.service';
 import { MappingInfo, ProjectRole, RevisionInfo } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -31,7 +32,7 @@ import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/
 })
 export class HistoryComponent {
   @Input({ required: true }) projectName! : string;
-  @Input({ required: true }) mapping! : Mapping;
+  @Input({ required: true }) state! : MappingState;
   @Input({ required: true }) info! : MappingInfo;
   @Input({ required: true }) meta! : MappingMeta;
   @Input({ required: true }) revisions! : RevisionInfo[];

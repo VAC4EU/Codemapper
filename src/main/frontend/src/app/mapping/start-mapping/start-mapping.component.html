@@ -21,7 +21,7 @@
           The mapping will contain all concepts that are associated with the
           codes in the codelist. Codes that are associated with the concepts but
           which <em>not</em> part of the imported codelist are disabled.</p>
-            <import-csv-dialog [ignoreTermTypes]="serverInfo.defaultIgnoreTermTypes" (mapping)="setImportedMapping($event)"></import-csv-dialog>
+            <import-csv-dialog [mappingInfo]="mappingInfo" [ignoreTermTypes]="serverInfo.defaultIgnoreTermTypes" (mapping)="setImportedMapping($event)"></import-csv-dialog>
         </div>
         <div *ngSwitchCase="'empty'">
             <p>Start with an empty mapping</p>

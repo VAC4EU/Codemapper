@@ -17,18 +17,15 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {
-  Mapping,
   Concept,
   Concepts,
   Code,
   Codes,
   EMPTY_DATA_META,
   Vocabulary,
-  MappingData,
-  CodeId,
-  VocabularyId,
   Tag,
-} from './data';
+} from './mapping-data';
+import { Mapping } from './mapping';
 
 function mkVoc(
   id: string,
@@ -91,8 +88,9 @@ function mkMapping(): Mapping {
   );
 }
 
-function makeMappingData(): MappingData {
-  return {
+function makeMappingData(): Mapping {
+  return Mapping.fromData({
+    start: null,
     meta: { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
     vocabularies: {
       V1: mkVoc('V1', '1'),
@@ -117,15 +115,14 @@ function makeMappingData(): MappingData {
         w2: mkCode('w2', { custom: true }),
       },
     },
-    umlsVersion: '',
-  };
+  });
 }
 
 describe('adding mappings', () => {
   it('should work', () => {
     let mapping = mkMapping();
     mapping.addMapping(makeMappingData());
-    expect(mapping.toObject()).toEqual(
+    expect(mapping.toData()).toEqual(
       new Mapping(
         { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
         null,
@@ -155,7 +152,7 @@ describe('adding mappings', () => {
             w2: mkCode('w2', { custom: true }),
           },
         }
-      ).toObject()
+      ).toData()
     );
   });
 
@@ -187,18 +184,6 @@ describe('adding mappings', () => {
       let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
         'the vocabulary versions do not match'
-      );
-    }
-  });
-
-  it('should fail on unknown, non-custom code', () => {
-    {
-      let mappingData = makeMappingData();
-      mappingData.codes['V1']['x4'] = mkCode('x4');
-      mappingData.concepts['C1'].codes['V1'].add('x4');
-      let mapping = mkMapping();
-      expect(() => mapping.addMapping(mappingData)).toThrowError(
-        'code V1/x4 is not in the original mapping and not a custom code'
       );
     }
   });
@@ -234,15 +219,16 @@ let nonCustomConcepts = (concepts0: Concepts, codes0: Codes): Concepts =>
 describe('remap mapping', () => {
   it('can be no-op', () => {
     let mapping = mkMapping();
-    console.log(mapping.toObject());
+    console.log(mapping.toData());
     let codes = nonCustomCodes(mapping.codes);
     let concepts = nonCustomConcepts(mapping.concepts, mapping.codes);
-    mapping.remap('2025AB', concepts, codes, mapping.vocabularies);
-    expect(mapping.toObject()).toEqual(mapping.toObject());
+    let caches = mapping.caches();
+    mapping.remap('2025AB', concepts, codes, mapping.vocabularies, caches);
+    expect(mapping.toData()).toEqual(mapping.toData());
   });
   it('can keep removed codes as custom', () => {
     let mapping = mkMapping();
-    console.log(mapping.toObject());
+    console.log(mapping.toData());
     let codes = nonCustomCodes(mapping.codes);
     delete codes['V1']['x1'];
     let concepts = nonCustomConcepts(mapping.concepts, mapping.codes);
@@ -253,7 +239,8 @@ describe('remap mapping', () => {
         return [cui, { ...concept, codes }];
       })
     );
-    mapping.remap('2025AB', concepts, codes, mapping.vocabularies);
+    let caches = mapping.caches();
+    mapping.remap('2025AB', concepts, codes, mapping.vocabularies, caches);
     expect(mapping.codes['V1']['x1'].custom).toBeTrue();
   });
 });

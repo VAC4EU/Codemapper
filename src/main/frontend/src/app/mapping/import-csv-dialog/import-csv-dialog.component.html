@@ -5,7 +5,7 @@
   <button (click)="csvFileInput.click()" mat-raised-button>
     Select file
   </button>
-  <p *ngIf="csvImportFile">{{csvImportFile.name}}</p>
+<p *ngIf="csvImportFile">{{csvImportFile.name}}</p>
 <p>
   <span matTooltip="Requires mapping name and CSV file">
     <button class="mapping-import" [disabled]="csvImportFile == null" (click)="importCsv(csvImportFile!, 'csv_compat')"
@@ -17,4 +17,7 @@
   <code>review1_author</code>,
   <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
   with consecutive numbers for multiple rounds of review.
+</p>
+<p>If the columns <code>event_abbreviation</code>, <code>type</code>,
+  <code>system</code> are included, only rows that match the current mapping are added.
 </p>

@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Observable, map, merge, of } from 'rxjs';
-import { ConceptId, VocabularyId, CodeId } from './data';
+import { ConceptId, VocabularyId, CodeId } from './mapping-data';
 import { ApiService } from './api.service';
 
 // store of review form data across reloads

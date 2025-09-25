@@ -38,7 +38,6 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { ConceptsDialogComponent } from '../concepts-dialog/concepts-dialog.component';
 import {
-  Mapping,
   Concept,
   Concepts,
   Codes,
@@ -46,17 +45,15 @@ import {
   VocabularyId,
   Vocabularies,
   filterConcepts,
-  CodeId,
-  Tag,
-  MappingMeta,
   ServerInfo,
-} from '../data';
+} from '../mapping-data';
 import { AllTopics, ReviewOperation } from '../review';
-import { ApiService, CsvFilter, TypesInfo } from '../api.service';
-import * as ops from '../mapping-ops';
-import { CodeTags } from '../mapping-ops';
+import { ApiService, csvFilter, CsvFilter, TypesInfo } from '../api.service';
+import * as ops from '../operations';
+import { CodeTags } from '../operations';
 import { firstValueFrom, of } from 'rxjs';
 import { MappingInfo } from '../persistency.service';
+import { MappingState } from '../mapping-state';
 
 @Component({
   selector: 'concepts',
@@ -64,7 +61,7 @@ import { MappingInfo } from '../persistency.service';
   styleUrls: ['./concepts.component.scss'],
 })
 export class ConceptsComponent implements OnInit {
-  @Input({ required: true }) mapping!: Mapping;
+  @Input({ required: true }) state!: MappingState;
   @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
   @Input({ required: true }) serverInfo!: ServerInfo;
@@ -83,7 +80,7 @@ export class ConceptsComponent implements OnInit {
   constructor(private dialog: MatDialog, private api: ApiService) {}
 
   get numConcepts(): number {
-    return Object.keys(this.mapping.concepts).length;
+    return Object.keys(this.state.mapping.concepts).length;
   }
 
   openDialog(templateRef: TemplateRef<any>) {
@@ -124,7 +121,7 @@ export class ConceptsComponent implements OnInit {
           }
           return this.api
             .autocompleteCode(voc, query1)
-            .pipe(map((cs) => cs.filter((c) => !this.mapping.concepts[c.id])))
+            .pipe(map((cs) => cs.filter((c) => !this.state.mapping.concepts[c.id])))
             .pipe(
               catchError((err) => {
                 console.error('Could not autocomplete code', err);
@@ -137,7 +134,7 @@ export class ConceptsComponent implements OnInit {
   }
 
   vocIds(): VocabularyId[] {
-    return Object.keys(this.mapping.vocabularies);
+    return Object.keys(this.state.mapping.vocabularies);
   }
 
   selectAutocompleteCode(concept0: Concept, query: string) {
@@ -177,7 +174,7 @@ export class ConceptsComponent implements OnInit {
   }
 
   confirmAddConceptsDialog(concepts: Concepts, codes: Codes, title: string) {
-    let currentCuis = Object.keys(this.mapping.concepts);
+    let currentCuis = Object.keys(this.state.mapping.concepts);
     return this.dialog
       .open(ConceptsDialogComponent, {
         data: {
@@ -217,7 +214,7 @@ export class ConceptsComponent implements OnInit {
 
   broaderConcepts(concept: Concept, vocIds: VocabularyId[]) {
     this.api
-      .broaderConcepts(concept.id, this.vocIds(), this.mapping.meta)
+      .broaderConcepts(concept.id, this.vocIds(), this.state.mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(
           concepts,
@@ -229,7 +226,7 @@ export class ConceptsComponent implements OnInit {
 
   narrowerConcepts(concept: Concept, vocIds: VocabularyId[]) {
     this.api
-      .narrowerConcepts(concept.id, this.vocIds(), this.mapping.meta)
+      .narrowerConcepts(concept.id, this.vocIds(), this.state.mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(
           concepts,
@@ -246,7 +243,7 @@ export class ConceptsComponent implements OnInit {
       for (let vocId of Object.keys(concept.codes)) {
         codes[vocId] ??= {};
         for (let codeId of concept.codes[vocId]) {
-          let code = this.mapping.codes[vocId][codeId];
+          let code = this.state.mapping.codes[vocId][codeId];
           if (!code.enabled) continue;
           codes[vocId][codeId] = null;
           if (code.tag != null) tags.add(code.tag);
@@ -261,7 +258,7 @@ export class ConceptsComponent implements OnInit {
       data: {
         tag: tag,
         heading: `${codesCount} codes in ${concepts.length} concepts`,
-        allowedTags: this.mapping.meta.allowedTags,
+        allowedTags: this.state.mapping.meta.allowedTags,
       },
       width: '40em',
     };
@@ -285,7 +282,7 @@ export class ConceptsComponent implements OnInit {
     let { concepts, codes } = await this.api.concepts(
       ids,
       this.vocIds(),
-      this.mapping.meta
+      this.state.mapping.meta
     );
     this.run.emit(new ops.AddConcepts(concepts, codes));
   }
@@ -303,23 +300,16 @@ export class ConceptsComponent implements OnInit {
   }
 
   async importCsv(file: File, format: string) {
-    if (this.mapping.undoStack.length > 0) {
+    if (this.state.stacks.hasUndo()) {
       alert("You cannot undo this operation, please save your mapping before");
       return;
     }
-    if (this.mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
+    if (this.state.mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
       alert("Mapping needs to be remapped first");
       return;
     }
     try {
-      let filter: CsvFilter | null = null;
-      if (this.info.meta.system && this.info.meta.type) {
-        filter = {
-          system: this.info.meta.system,
-          eventAbbreviation: this.info.mappingName,
-          type: this.info.meta.type,
-        };
-      }
+      let filter = csvFilter(this.info);
       let imported = await firstValueFrom(
         this.api.importCsv(file, [], format, [], filter)
       );

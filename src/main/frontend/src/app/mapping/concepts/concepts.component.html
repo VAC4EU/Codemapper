@@ -59,7 +59,7 @@
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
-      <button (click)="searchAddConcepts(query.value, mapping.meta)" [disabled]="!userCanEdit" mat-stroked-button
+      <button (click)="searchAddConcepts(query.value, state.mapping.meta)" [disabled]="!userCanEdit" mat-stroked-button
         matTooltip="Search concepts by query">Search</button>
       <button (click)="openDialog(indexer)" [disabled]="!userCanEdit" mat-stroked-button
         matTooltip="Search concepts in free text">
@@ -72,23 +72,23 @@
     <mat-card-header>
       Import codes
     </mat-card-header>
-    <mat-card-actions class="dense">
-      <button (click)="openDialog(addCodesCsv)" [disabled]="!userCanEdit" mat-stroked-button>
+    <mat-card-actions class="dense" matTooltip="Import codes from CSV file (only without unsaved changes)">
+      <button (click)="openDialog(addCodesCsv)" [disabled]="!userCanEdit || state.stacks.hasUndo()" mat-stroked-button>
         From CSV
       </button>
     </mat-card-actions>
   </mat-card>
 </div>
 
-<concepts-table #table [showCodeTagIndication]="true" [conceptTags]="mapping.conceptTags" [concepts]="mapping.concepts" [filter]="conceptsFilter"
-  [codes]="mapping.codes" [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit"
+<concepts-table #table [showCodeTagIndication]="true" [conceptTags]="state.caches.getConceptTags()" [concepts]="state.mapping.concepts" [filter]="conceptsFilter"
+  [codes]="state.mapping.codes" [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit"
   (reviewRun)="reviewRun.emit($event)" (selected)="setSelectedConcepts($event)">
 </concepts-table>
 
 <ng-template #indexer>
   <h2 matDialogTitle>Search and add concepts from free-text</h2>
   <mat-dialog-content>
-    <indexer [vocIds]="vocIds()" [typesInfo]="mapping.meta"
+    <indexer [vocIds]="vocIds()" [typesInfo]="state.mapping.meta"
       (confirmedIndexing)="addIndexing($event); dialogRef!.close()" confirmLabel="Add selected concepts"></indexer>
   </mat-dialog-content>
   <mat-dialog-actions>
