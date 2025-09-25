@@ -1,127 +1,148 @@
 <div class="reviews">
   <p>
-    ({{ topicsInfo.numTopics() }} topics, {{ topicsInfo.numMessages }} messages<ng-template [ngIf]="topicsInfo.numNewMessages > 0">, {{ topicsInfo.numNewMessages }} new</ng-template>)
+    ({{ topicsInfo.numTopics() }} topics, {{ topicsInfo.numMessages }} messages@if (topicsInfo.numNewMessages > 0) {
+    , {{ topicsInfo.numNewMessages }} new
+    })
   </p>
-  <section
-    *ngFor="let topic of topicsInfo.topics | keyvalue"
-    id="topic-{{topic.key}}"
-    class="topic existing mat-elevation-z3"
-    [class.resolved]="topic.value.resolved != null">
-    <h3 class="topic-heading" (click)="toggleTopicShowMessages(topic.key)">
-      <span class="topic-heading-heading">Topic: {{topic.value.heading || "(none)"}}.</span>
-      {{topic.value.numMessages}}
-      <span [ngPlural]="topic.value.numMessages">
-        <ng-template ngPluralCase="=1">message</ng-template>
-        <ng-template ngPluralCase="other">messages</ng-template>
-      </span>
-      <span *ngIf="topic.value.numNewMessages > 0">
-        (<span class="num-new-messages">{{topic.value.numNewMessages}} unread</span>)</span>.
-      Created by
-      <span class="message-author">{{displayUsername(topic.value.created.user)}}</span>
-      on
-      <span class="message-timestamp" matTooltip="{{topic.value.created.timestamp|date:'medium'}}">{{topic.value.created.timestamp | date:'mediumDate'}}</span>.
-      <span *ngIf="topic.value.resolved">
-        Resolved by
-        <span class="message-author">{{displayUsername(topic.value.resolved.user)}}</span>
-        on
-        <span class="message-timestamp" matTooltip="{{topic.value.resolved.timestamp|date:'medium'}}">{{topic.value.resolved.timestamp | date:'mediumDate'}}</span>.
-      </span>
-      <span *ngIf="data.topicShowMessages[topic.key]">
-        <mat-icon fontIcon="keyboard_arrow_down"></mat-icon>
-      </span>
-      <mat-icon
-        *ngIf="!data.topicShowMessages[topic.key]"
-        fontIcon="keyboard_arrow_right"></mat-icon>
-    </h3>
-    <div *ngIf="data.topicShowMessages[topic.key]">
-      <button
-        mat-raised-button
-        *ngIf="topic.value.numNewMessages > 0 && topic.value.resolved == null"
-        (click)="markAsRead(topic.key)"
-        class="btn-xs">
-        <mat-icon fontIcon="mark_chat_read"></mat-icon>
-        Mark topic as read
-      </button>
-      <button
-        mat-raised-button
-        *ngIf="!topic.value.resolved"
-        (click)="resolveTopic(topic.key)"
-        [disabled]="!userIsEditor && topic.value.created.user != username"
-        matTooltip="Resolve this discussion, preventing further messages"
-        class="btn-xs">
-        <mat-icon fontIcon="done"></mat-icon>
-        Mark resolved
-      </button>
-      <ul class="messages" [class.resolved]="topic.value.resolved != null">
-        <li *ngFor="let message of topic.value.messages" [class.new-message]="!message.isRead && topic.value.resolved == null" class="message"> <!--  ng-class="{new: (!message.isRead)" -->
-          <span class="message-author">{{displayUsername(message.username)}}</span>
-          on
-          <span class="message-timestamp" matTooltip="{{message.timestamp|date:'medium'}}">{{message.timestamp | date:'mediumDate'}}</span>:
-          <span class="message-content" [class.newline]="message.hasNewline">{{message.content}}</span>
-          <button
-              mat-icon-button
-              *ngIf="!topic.value.resolved && message.username == username"
-              (click)="openEditMessageDialog(editMessageDialog, topic.key, message.id, message.content)">
-            <mat-icon class="edit-button">edit</mat-icon>
-          </button> 
-        </li>
-      </ul>
-      <div *ngIf="topic.value.resolved == null" class="post-message">
-        <mat-form-field subscriptSizing="dynamic">
-          <mat-label>Message</mat-label>
-          <textarea
-            matInput
-            [(ngModel)]="data.newMessageText[topic.key]"
-            [class.filled]="data.newMessageText[topic.key]"
-            rows=1
-            class="review-message">
-          </textarea>
-        </mat-form-field>
-        <div class="mat-form-field-wrapper">
-          <button
-            mat-raised-button
-            (click)="newMessage(topic.key, data.newMessageText[topic.key])">
-            <mat-icon fontIcon="send"></mat-icon> Send message
-          </button>
+  @for (topic of topicsInfo.topics | keyvalue; track topic) {
+    <section
+      id="topic-{{topic.key}}"
+      class="topic existing mat-elevation-z3"
+      [class.resolved]="topic.value.resolved != null">
+      <h3 class="topic-heading" (click)="toggleTopicShowMessages(topic.key)">
+        <span class="topic-heading-heading">Topic: {{topic.value.heading || "(none)"}}.</span>
+        {{topic.value.numMessages}}
+        <span [ngPlural]="topic.value.numMessages">
+          <ng-template ngPluralCase="=1">message</ng-template>
+          <ng-template ngPluralCase="other">messages</ng-template>
+        </span>
+        @if (topic.value.numNewMessages > 0) {
+          <span>
+            (<span class="num-new-messages">{{topic.value.numNewMessages}} unread</span>)</span>
+            }.
+            Created by
+            <span class="message-author">{{displayUsername(topic.value.created.user)}}</span>
+            on
+            <span class="message-timestamp" matTooltip="{{topic.value.created.timestamp|date:'medium'}}">{{topic.value.created.timestamp | date:'mediumDate'}}</span>.
+            @if (topic.value.resolved) {
+              <span>
+                Resolved by
+                <span class="message-author">{{displayUsername(topic.value.resolved.user)}}</span>
+                on
+                <span class="message-timestamp" matTooltip="{{topic.value.resolved.timestamp|date:'medium'}}">{{topic.value.resolved.timestamp | date:'mediumDate'}}</span>.
+              </span>
+            }
+            @if (data.topicShowMessages[topic.key]) {
+              <span>
+                <mat-icon fontIcon="keyboard_arrow_down"></mat-icon>
+              </span>
+            }
+            @if (!data.topicShowMessages[topic.key]) {
+              <mat-icon
+              fontIcon="keyboard_arrow_right"></mat-icon>
+            }
+          </h3>
+          @if (data.topicShowMessages[topic.key]) {
+            <div>
+              @if (topic.value.numNewMessages > 0 && topic.value.resolved == null) {
+                <button
+                  mat-raised-button
+                  (click)="markAsRead(topic.key)"
+                  class="btn-xs">
+                  <mat-icon fontIcon="mark_chat_read"></mat-icon>
+                  Mark topic as read
+                </button>
+              }
+              @if (!topic.value.resolved) {
+                <button
+                  mat-raised-button
+                  (click)="resolveTopic(topic.key)"
+                  [disabled]="!userIsEditor && topic.value.created.user != username"
+                  matTooltip="Resolve this discussion, preventing further messages"
+                  class="btn-xs">
+                  <mat-icon fontIcon="done"></mat-icon>
+                  Mark resolved
+                </button>
+              }
+              <ul class="messages" [class.resolved]="topic.value.resolved != null">
+                @for (message of topic.value.messages; track message) {
+                  <li [class.new-message]="!message.isRead && topic.value.resolved == null" class="message"> <!--  ng-class="{new: (!message.isRead)" -->
+                    <span class="message-author">{{displayUsername(message.username)}}</span>
+                    on
+                    <span class="message-timestamp" matTooltip="{{message.timestamp|date:'medium'}}">{{message.timestamp | date:'mediumDate'}}</span>:
+                    <span class="message-content" [class.newline]="message.hasNewline">{{message.content}}</span>
+                    @if (!topic.value.resolved && message.username == username) {
+                      <button
+                        mat-icon-button
+                        (click)="openEditMessageDialog(editMessageDialog, topic.key, message.id, message.content)">
+                        <mat-icon class="edit-button">edit</mat-icon>
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (topic.value.resolved == null) {
+                <div class="post-message">
+                  <mat-form-field subscriptSizing="dynamic">
+                    <mat-label>Message</mat-label>
+                    <textarea
+                      matInput
+                      [(ngModel)]="data.newMessageText[topic.key]"
+                      [class.filled]="data.newMessageText[topic.key]"
+                      rows=1
+                      class="review-message">
+                    </textarea>
+                  </mat-form-field>
+                  <div class="mat-form-field-wrapper">
+                    <button
+                      mat-raised-button
+                      (click)="newMessage(topic.key, data.newMessageText[topic.key])">
+                      <mat-icon fontIcon="send"></mat-icon> Send message
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      }
+      <section class="topic new">
+        <div class="post-message">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Topic</mat-label>
+            <input matInput type="text" [(ngModel)]="data.newTopicHeading[key()]">
+          </mat-form-field>
+          <div class="mat-form-field-wrapper">
+            <button
+              mat-raised-button
+              (click)="newTopic(key())">
+              <mat-icon fontIcon="edit"></mat-icon>Start new topic
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
-  </section>
-  <section class="topic new">
-    <div class="post-message">
-      <mat-form-field subscriptSizing="dynamic">
-        <mat-label>Topic</mat-label>
-        <input matInput type="text" [(ngModel)]="data.newTopicHeading[key()]">
-      </mat-form-field>
-      <div class="mat-form-field-wrapper">
-        <button
-          mat-raised-button
-          (click)="newTopic(key())">
-          <mat-icon fontIcon="edit"></mat-icon>Start new topic
-        </button>
-      </div>
-    </div>
-  </section>
-</div>
 
-<ng-template #editMessageDialog>
-  <div *ngIf="editMessage">
-    <h2 matDialogTitle>Edit message</h2>
-    <mat-dialog-content>
-      <mat-form-field style="width:100%;">
-        <textarea rows="5" cols="30" #summary matInput [(ngModel)]="editMessage.content"></textarea>
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button 
-        mat-button
-        matDialogClose
-        (click)="cancelEditMessage()">Cancel</button>
-      <button
-        mat-raised-button
-        (click)="saveEditMessage()"
-        matDialogClose
-        color="primary">Edit</button>
-    </mat-dialog-actions>
-  </div>
-</ng-template>
+    <ng-template #editMessageDialog>
+      @if (editMessage) {
+        <div>
+          <h2 matDialogTitle>Edit message</h2>
+          <mat-dialog-content>
+            <mat-form-field style="width:100%;">
+              <textarea rows="5" cols="30" #summary matInput [(ngModel)]="editMessage.content"></textarea>
+            </mat-form-field>
+          </mat-dialog-content>
+          <mat-dialog-actions align="end">
+            <button
+              mat-button
+              matDialogClose
+            (click)="cancelEditMessage()">Cancel</button>
+            <button
+              mat-raised-button
+              (click)="saveEditMessage()"
+              matDialogClose
+            color="primary">Edit</button>
+          </mat-dialog-actions>
+        </div>
+      }
+    </ng-template>

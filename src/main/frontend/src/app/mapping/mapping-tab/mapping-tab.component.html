@@ -9,28 +9,30 @@
       </mat-expansion-panel-header>
 
       <section>
-      <mat-checkbox [checked]="state.mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
-        Include descendant codes
-      </mat-checkbox>
-      <p>The mapping needs to be saved after changes.</p>
+        <mat-checkbox [checked]="state.mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
+          Include descendant codes
+        </mat-checkbox>
+        <p>The mapping needs to be saved after changes.</p>
       </section>
 
       <section>
-      <h4>UMLS version</h4>
-      <ul>
-        <li>Mapping based on UMLS version: <span class="version">{{state.mapping.meta.umlsVersion}}</span></li>
-        <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
-      </ul>
-      <p>
-        When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
-        remap the mapping to update the concept codes using the latest version of the UMLS.
-      </p>
-      <button
-        [disabled]="!userCanEdit || state.mapping.meta.umlsVersion == serverInfo.umlsVersion || state.stacks.hasUndo()"
-        (click)="remap()" mat-raised-button color="primary">
-        Remap
-      </button>
-      <p *ngIf="state.stacks.hasUndo()">The mapping must be saved.</p>
+        <h4>UMLS version</h4>
+        <ul>
+          <li>Mapping based on UMLS version: <span class="version">{{state.mapping.meta.umlsVersion}}</span></li>
+          <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
+        </ul>
+        <p>
+          When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
+          remap the mapping to update the concept codes using the latest version of the UMLS.
+        </p>
+        <button
+          [disabled]="!userCanEdit || state.mapping.meta.umlsVersion == serverInfo.umlsVersion || state.stacks.hasUndo()"
+          (click)="remap()" mat-raised-button color="primary">
+          Remap
+        </button>
+        @if (state.stacks.hasUndo()) {
+          <p>The mapping must be saved.</p>
+        }
       </section>
     </mat-expansion-panel>
 
@@ -81,7 +83,7 @@
       </ul>
       -->
     </mat-expansion-panel>
-    
+
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Versions</mat-panel-title>
@@ -90,11 +92,15 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
       <span>Use the button on the right to export the codelist at that version.</span>
-      <span *ngIf="!info || revisions.length == 0">(The mapping must be saved first.)</span>
-      <history *ngIf="info && info.mappingShortkey && state.mapping && !state.mapping.isEmpty()" [projectName]="projectName" [meta]="info.meta"
-        [info]="info" [state]="state" [revisions]="revisions" [latestVersion]="latest?.version ?? null"
-        [projectRole]="projectRole" [userCanDownload]="userCanDownload">
-      </history>
+      @if (!info || revisions.length == 0) {
+        <span>(The mapping must be saved first.)</span>
+      }
+      @if (info && info.mappingShortkey && state.mapping && !state.mapping.isEmpty()) {
+        <history [projectName]="projectName" [meta]="info.meta"
+          [info]="info" [state]="state" [revisions]="revisions" [latestVersion]="latest?.version ?? null"
+          [projectRole]="projectRole" [userCanDownload]="userCanDownload">
+        </history>
+      }
     </mat-expansion-panel>
 
     <mat-expansion-panel>
@@ -102,23 +108,29 @@
         <mat-panel-title>Creation</mat-panel-title>
         <mat-panel-description>How the mapping was created</mat-panel-description>
       </mat-expansion-panel-header>
-      <div *ngIf="isIndexing(state.mapping.start)">
-        <p>
-          The mapping was started with the following event definition form and selected concepts:
-        </p>
-        <indexer [initialIndexing]="state.mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
-      </div>
-      <div *ngIf="isCsvImport(state.mapping.start)">
-        <p>
-          The mapping was started by importing a mapping from the following CSV data:
-        </p>
-        <pre class="csv-import">{{state.mapping.start.csvContent}}</pre>
-      </div>
-      <div *ngIf="isEmptyStart(state.mapping.start)">
-        <p>
-          The mapping was initially empty.
-        </p>
-      </div>
+      @if (isIndexing(state.mapping.start)) {
+        <div>
+          <p>
+            The mapping was started with the following event definition form and selected concepts:
+          </p>
+          <indexer [initialIndexing]="state.mapping.start" [vocIds]="[]" [locked]="true" class="center-content"></indexer>
+        </div>
+      }
+      @if (isCsvImport(state.mapping.start)) {
+        <div>
+          <p>
+            The mapping was started by importing a mapping from the following CSV data:
+          </p>
+          <pre class="csv-import">{{state.mapping.start.csvContent}}</pre>
+        </div>
+      }
+      @if (isEmptyStart(state.mapping.start)) {
+        <div>
+          <p>
+            The mapping was initially empty.
+          </p>
+        </div>
+      }
     </mat-expansion-panel>
   </mat-accordion>
 </div>

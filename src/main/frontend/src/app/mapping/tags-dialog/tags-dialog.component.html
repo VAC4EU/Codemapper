@@ -4,9 +4,11 @@
     <mat-icon matPrefix fontIcon="label"></mat-icon>
     <mat-select [(value)]="tag">
       <mat-option value="">NO TAG</mat-option>
-      <mat-option *ngFor="let tag of allowedTags" [value]="tag">
-        <mat-icon class="icon tag-{{tag}}" fontIcon="label"></mat-icon><span>{{tag}}</span>
-      </mat-option>
+      @for (tag of allowedTags; track tag) {
+        <mat-option [value]="tag">
+          <mat-icon class="icon tag-{{tag}}" fontIcon="label"></mat-icon><span>{{tag}}</span>
+        </mat-option>
+      }
     </mat-select>
   </mat-form-field>
 </div>

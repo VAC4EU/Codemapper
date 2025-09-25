@@ -13,10 +13,14 @@
 <div class="spaced center-content">
   <mat-tab-group>
     <mat-tab label="Mappings ({{numMappings}})">
-      <folder-mappings *ngIf="user && role" [user]="user" [role]="role" (numMappings)="setNumMappings($event)"></folder-mappings>
+      @if (user && role) {
+        <folder-mappings [user]="user" [role]="role" (numMappings)="setNumMappings($event)"></folder-mappings>
+      }
     </mat-tab>
     <mat-tab label="Members (you are {{(role ?? 'not member').toLowerCase()}})">
-      <folder-users *ngIf="folderName && user && (user.admin || role)" [folderName]="folderName" [user]="user" [role]="role"></folder-users>
+      @if (folderName && user && (user.admin || role)) {
+        <folder-users [folderName]="folderName" [user]="user" [role]="role"></folder-users>
+      }
     </mat-tab>
   </mat-tab-group>
 </div>

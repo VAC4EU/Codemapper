@@ -1,195 +1,221 @@
 <div class="toolbox">
 
-    <mat-card appearance="outlined">
-        <mat-card-header matTooltip="Filter the mappings in the table">
-            Filter mappings<span *ngIf="hasFilters()"> ({{this.dataSource.filteredData.length}})</span>
-        </mat-card-header>
-        <mat-card-actions class="filters">
-            <mat-form-field appearance="fill" class="filterOnName" style="display: inline" matTooltip="Filter mappings by name or definition">
-                <input matInput placeholder="Search..." [(ngModel)]="filterOnName" (keyup)="applyFilter()"
-                    size="10" class="input-element">
-            </mat-form-field>
-            <button mat-raised-button matTooltip="Filter mappings by their metadata" [matMenuTriggerFor]="menu"
-                class="input-element">By metadata<mat-icon
-                    *ngIf="this.hasFilterOnProperties()">filter_alt</mat-icon></button>
-            <mat-menu #menu="matMenu" class="tagsMenu">
-                <div class="filter-properties-title">
-                    <h3>Select metadata to filter</h3>
-                    <button mat-icon-button (click)="clearFilters()"><mat-icon>close</mat-icon></button>
-                </div>
-                <div *ngFor="let tag of allProperties | keyvalue">
-                    {{tag.key|titlecase}}s:
-                    <mat-chip-listbox [ngModel]="filterOnProperties[tag.key]"
-                        (ngModelChange)="filterOnProperties[tag.key] = $event" (click)="$event.stopPropagation()"
-                        (change)="applyFilter()">
-                        <mat-chip-option *ngFor="let name of tag.value" [value]="name" class="tag {{name}}">
-                            {{name}}
-                        </mat-chip-option>
-                    </mat-chip-listbox>
-                </div>
-            </mat-menu>
-            <button matSuffix matIconButton matTooltip="Clear all filters" [disabled]="filterOnName == '' && !hasFilterOnProperties()"
-                (click)="clearFilters()">
-                <mat-icon>filter_alt_off</mat-icon>
-            </button>
-        </mat-card-actions>
-    </mat-card>
+  <mat-card appearance="outlined">
+    <mat-card-header matTooltip="Filter the mappings in the table">
+      Filter mappings@if (hasFilters()) {
+      <span> ({{this.dataSource.filteredData.length}})</span>
+    }
+  </mat-card-header>
+  <mat-card-actions class="filters">
+    <mat-form-field appearance="fill" class="filterOnName" style="display: inline" matTooltip="Filter mappings by name or definition">
+      <input matInput placeholder="Search..." [(ngModel)]="filterOnName" (keyup)="applyFilter()"
+        size="10" class="input-element">
+    </mat-form-field>
+    <button mat-raised-button matTooltip="Filter mappings by their metadata" [matMenuTriggerFor]="menu"
+      class="input-element">By metadata@if (this.hasFilterOnProperties()) {
+      <mat-icon
+      >filter_alt</mat-icon>
+    }</button>
+    <mat-menu #menu="matMenu" class="tagsMenu">
+      <div class="filter-properties-title">
+        <h3>Select metadata to filter</h3>
+        <button mat-icon-button (click)="clearFilters()"><mat-icon>close</mat-icon></button>
+      </div>
+      @for (tag of allProperties | keyvalue; track tag) {
+        <div>
+          {{tag.key|titlecase}}s:
+          <mat-chip-listbox [ngModel]="filterOnProperties[tag.key]"
+            (ngModelChange)="filterOnProperties[tag.key] = $event" (click)="$event.stopPropagation()"
+            (change)="applyFilter()">
+            @for (name of tag.value; track name) {
+              <mat-chip-option [value]="name" class="tag {{name}}">
+                {{name}}
+              </mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </div>
+      }
+    </mat-menu>
+    <button matSuffix matIconButton matTooltip="Clear all filters" [disabled]="filterOnName == '' && !hasFilterOnProperties()"
+      (click)="clearFilters()">
+      <mat-icon>filter_alt_off</mat-icon>
+    </button>
+  </mat-card-actions>
+</mat-card>
 
-    <mat-card>
-        <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
-            Edit mapping ({{selectedFilteredMappings.length}} selected)
-        </mat-card-header>
-        <mat-card-actions>
-            <span matTooltip="Edit the properties of one selected mapping (only for owners)">
-                <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
-                    (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
-            </span>
-            <!--
-            <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
-                <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0 || !allDefaultStatus(selectedFilteredMappings)"
-                    (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
-            </span>
-            -->
-            <button class="tool-delete" (click)="deleteSelectedMappings()"
-                [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
-        </mat-card-actions>
-    </mat-card>
+<mat-card>
+  <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
+    Edit mapping ({{selectedFilteredMappings.length}} selected)
+  </mat-card-header>
+  <mat-card-actions>
+    <span matTooltip="Edit the properties of one selected mapping (only for owners)">
+      <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
+      (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
+    </span>
+    <!--
+    <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
+      <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0 || !allDefaultStatus(selectedFilteredMappings)"
+      (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
+    </span>
+    -->
+    <button class="tool-delete" (click)="deleteSelectedMappings()"
+    [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
+  </mat-card-actions>
+</mat-card>
 
-    <mat-card>
-        <mat-card-header>
-            &nbsp;
-        </mat-card-header>
-        <mat-card-actions>
-            <span matTooltip="Create a new mapping (only for owners)">
-                <button class="tool-create" (click)="openCreateMappingDialog()" [disabled]="!userCanCreate"
-                    mat-raised-button>
-                    New mapping
-                </button>
-            </span>
-        </mat-card-actions>
-    </mat-card>
+<mat-card>
+  <mat-card-header>
+    &nbsp;
+  </mat-card-header>
+  <mat-card-actions>
+    <span matTooltip="Create a new mapping (only for owners)">
+      <button class="tool-create" (click)="openCreateMappingDialog()" [disabled]="!userCanCreate"
+        mat-raised-button>
+        New mapping
+      </button>
+    </span>
+  </mat-card-actions>
+</mat-card>
 </div>
 
 <div class="table-container">
-    <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
-        <tr mat-header-row
-            *matHeaderRowDef="['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification']; sticky: true">
-        </tr>
-        <tr mat-row
-            *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification'];"
-            [routerLink]="mappingLink(mapping)" class="row-link"></tr>
+  <table mat-table [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
+    <tr mat-header-row
+      *matHeaderRowDef="['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification']; sticky: true">
+    </tr>
+    <tr mat-row
+      *matRowDef="let mapping; columns: ['select', 'name', 'system', 'type', 'projects', 'status', 'lastModification'];"
+    [routerLink]="mappingLink(mapping)" class="row-link"></tr>
 
-        <ng-container matColumnDef="select">
-            <th mat-header-cell *matHeaderCellDef>
-                <mat-checkbox matTooltip="Select/deselect all filtered mappings"
-                    (change)="$event ? toggleSelectAll() : null"
-                    [checked]="selection.hasValue() && isAllFilteredSelected()"
-                    [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
-                </mat-checkbox>
-            </th>
-            <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
-                <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(code) : null"
-                    [checked]="selection.isSelected(code)">
-                </mat-checkbox>
-            </td>
-        </ng-container>
+    <ng-container matColumnDef="select">
+      <th mat-header-cell *matHeaderCellDef>
+        <mat-checkbox matTooltip="Select/deselect all filtered mappings"
+          (change)="$event ? toggleSelectAll() : null"
+          [checked]="selection.hasValue() && isAllFilteredSelected()"
+          [indeterminate]="selection.hasValue() && !isAllFilteredSelected()">
+        </mat-checkbox>
+      </th>
+      <td [class.custom-code]="code.custom" mat-cell *matCellDef="let code">
+        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(code) : null"
+          [checked]="selection.isSelected(code)">
+        </mat-checkbox>
+      </td>
+    </ng-container>
 
-        <ng-container matColumnDef="system">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                System<mat-icon class="column-filter-indicator"
-                    *ngIf="this.filterOnProperties['system']">filter_alt</mat-icon>
-            </th>
-            <td mat-cell *matCellDef="let mapping">
-                <span>{{mapping.meta.system}}</span>
-            </td>
-        </ng-container>
+    <ng-container matColumnDef="system">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        System@if (this.filterOnProperties['system']) {
+        <mat-icon class="column-filter-indicator"
+        >filter_alt</mat-icon>
+      }
+    </th>
+    <td mat-cell *matCellDef="let mapping">
+      <span>{{mapping.meta.system}}</span>
+    </td>
+  </ng-container>
 
-        <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Definition<mat-icon class="column-filter-indicator" *ngIf="this.filterOnName">filter_alt</mat-icon>
-            </th>
-            <td mat-cell *matCellDef="let mapping" matTooltip="{{mapping.mappingName}}">
-                {{mapping.meta.definition ?? mapping.mappingName}}
-            </td>
-        </ng-container>
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+      Definition@if (this.filterOnName) {
+      <mat-icon class="column-filter-indicator">filter_alt</mat-icon>
+    }
+  </th>
+  <td mat-cell *matCellDef="let mapping" matTooltip="{{mapping.mappingName}}">
+    {{mapping.meta.definition ?? mapping.mappingName}}
+  </td>
+</ng-container>
 
-        <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Type<mat-icon class="column-filter-indicator"
-                    *ngIf="this.filterOnProperties['type']">filter_alt</mat-icon>
-            </th>
-            <td mat-cell *matCellDef="let mapping">
-                <span>{{mapping.meta.type}}</span>
-            </td>
-        </ng-container>
+<ng-container matColumnDef="type">
+  <th mat-header-cell *matHeaderCellDef mat-sort-header>
+    Type@if (this.filterOnProperties['type']) {
+    <mat-icon class="column-filter-indicator"
+    >filter_alt</mat-icon>
+  }
+</th>
+<td mat-cell *matCellDef="let mapping">
+  <span>{{mapping.meta.type}}</span>
+</td>
+</ng-container>
 
-        <ng-container matColumnDef="descendants">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Descendants
-            </th>
-            <td mat-cell *matCellDef="let mapping">
-                {{mapping.latestDataMeta?.includeDescendants ? 'Yes' : 'No'}}
-            </td>
-        </ng-container>
+<ng-container matColumnDef="descendants">
+  <th mat-header-cell *matHeaderCellDef mat-sort-header>
+    Descendants
+  </th>
+  <td mat-cell *matCellDef="let mapping">
+    {{mapping.latestDataMeta?.includeDescendants ? 'Yes' : 'No'}}
+  </td>
+</ng-container>
 
-        <ng-container matColumnDef="projects">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                Projects<mat-icon class="column-filter-indicator"
-                    *ngIf="this.filterOnProperties['project']">filter_alt</mat-icon>
-            </th>
-            <td mat-cell *matCellDef="let mapping">
-                <span>{{mapping.meta.projects.join(', ')}}</span>
-            </td>
-        </ng-container>
+<ng-container matColumnDef="projects">
+  <th mat-header-cell *matHeaderCellDef mat-sort-header>
+    Projects@if (this.filterOnProperties['project']) {
+    <mat-icon class="column-filter-indicator"
+    >filter_alt</mat-icon>
+  }
+</th>
+<td mat-cell *matCellDef="let mapping">
+  <span>{{mapping.meta.projects.join(', ')}}</span>
+</td>
+</ng-container>
 
-        <ng-container matColumnDef="lastModification">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Last modification</th>
-            <td mat-cell *matCellDef="let mapping">
-                <span *ngIf="latests[mapping.mappingShortkey] as latest">{{localeDate(latest.timestamp)}}</span>
-            </td>
-        </ng-container>
+<ng-container matColumnDef="lastModification">
+  <th mat-header-cell *matHeaderCellDef mat-sort-header>Last modification</th>
+  <td mat-cell *matCellDef="let mapping">
+    @if (latests[mapping.mappingShortkey]; as latest) {
+      <span>{{localeDate(latest.timestamp)}}</span>
+    }
+  </td>
+</ng-container>
 
-        <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
-            <td mat-cell *matCellDef="let mapping">
-                <span *ngIf="!latests[mapping.mappingShortkey]"
-                    matTooltip="From old version of CodeMapper, please open, review and save">LEGACY </span>
-                <span *ngIf="mapping.status">{{mapping.status}}</span>
-            </td>
-        </ng-container>
-    </table>
+<ng-container matColumnDef="status">
+  <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+  <td mat-cell *matCellDef="let mapping">
+    @if (!latests[mapping.mappingShortkey]) {
+      <span
+      matTooltip="From old version of CodeMapper, please open, review and save">LEGACY </span>
+    }
+    @if (mapping.status) {
+      <span>{{mapping.status}}</span>
+    }
+  </td>
+</ng-container>
+</table>
 </div>
 
 <ng-template #batchProcessDialog>
-    <h2 matDialogTitle>Batch process ({{operations.length}} operation{{operations.length == 1 ? '' : 's'}})</h2>
-    <mat-dialog-content>
-        <p>
-            This allows for applying a number of operations on the selected mappings. Use the menu "Add operation"
-            to add them. After processing each mapping with the operations, a new revision is created
-            with the given "Summary".
-        </p>
-        <button mat-stroked-button [matMenuTriggerFor]="addOperationsMenu">Add operation</button>
-        <mat-menu #addOperationsMenu="matMenu">
-            <button *ngFor="let op of DEFAULT_OPERATIONS" mat-menu-item
-                (click)="operations.push(op)">{{op.describe()}}</button>
-        </mat-menu>
-        <mat-list>
-            <mat-list-item *ngFor="let op of operations; index as i">
-                {{i+1}}: {{op.describe()}}
-                <button mat-icon-button (click)="operations.splice(i, 1)">
-                    <mat-icon matListItemIcon>close</mat-icon>
-                </button>
-            </mat-list-item>
-        </mat-list>
-        <mat-form-field style="width:100%;">
-            <mat-label>Summary</mat-label>
-            <textarea #summary matInput></textarea>
-        </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-button matDialogClose>Cancel</button>
-        <button mat-raised-button [disabled]="!operations || !summary.value || selection.selected.length == 0"
-            (click)="batchProcess(selection.selected, operations, summary.value)" matDialogClose
-            color="primary">Ok</button>
-    </mat-dialog-actions>
+  <h2 matDialogTitle>Batch process ({{operations.length}} operation{{operations.length == 1 ? '' : 's'}})</h2>
+  <mat-dialog-content>
+    <p>
+      This allows for applying a number of operations on the selected mappings. Use the menu "Add operation"
+      to add them. After processing each mapping with the operations, a new revision is created
+      with the given "Summary".
+    </p>
+    <button mat-stroked-button [matMenuTriggerFor]="addOperationsMenu">Add operation</button>
+    <mat-menu #addOperationsMenu="matMenu">
+      @for (op of DEFAULT_OPERATIONS; track op) {
+        <button mat-menu-item
+        (click)="operations.push(op)">{{op.describe()}}</button>
+      }
+    </mat-menu>
+    <mat-list>
+      @for (op of operations; track op; let i = $index) {
+        <mat-list-item>
+          {{i+1}}: {{op.describe()}}
+          <button mat-icon-button (click)="operations.splice(i, 1)">
+            <mat-icon matListItemIcon>close</mat-icon>
+          </button>
+        </mat-list-item>
+      }
+    </mat-list>
+    <mat-form-field style="width:100%;">
+      <mat-label>Summary</mat-label>
+      <textarea #summary matInput></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button matDialogClose>Cancel</button>
+    <button mat-raised-button [disabled]="!operations || !summary.value || selection.selected.length == 0"
+      (click)="batchProcess(selection.selected, operations, summary.value)" matDialogClose
+    color="primary">Ok</button>
+  </mat-dialog-actions>
 </ng-template>
