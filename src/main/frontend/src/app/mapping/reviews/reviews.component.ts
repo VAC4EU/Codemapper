@@ -23,9 +23,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../auth.service';
 
 @Component({
-  selector: 'reviews',
-  templateUrl: './reviews.component.html',
-  styleUrls: ['./reviews.component.scss']
+    selector: 'reviews',
+    templateUrl: './reviews.component.html',
+    styleUrls: ['./reviews.component.scss'],
+    standalone: false
 })
 export class ReviewsComponent {
   @Input() topicsInfo! : TopicsInfo;

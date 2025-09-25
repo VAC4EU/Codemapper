@@ -35,9 +35,10 @@ import { MappingState } from '../mapping-state';
 import * as ops from '../operations';
 
 @Component({
-  selector: 'vocabularies',
-  templateUrl: './vocabularies.component.html',
-  styleUrls: ['./vocabularies.component.scss'],
+    selector: 'vocabularies',
+    templateUrl: './vocabularies.component.html',
+    styleUrls: ['./vocabularies.component.scss'],
+    standalone: false
 })
 export class VocabulariesComponent {
   @Input() state: MappingState | null = null;

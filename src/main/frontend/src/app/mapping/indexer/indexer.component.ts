@@ -45,9 +45,10 @@ enum State {
 }
 
 @Component({
-  selector: 'indexer',
-  templateUrl: './indexer.component.html',
-  styleUrls: ['./indexer.component.scss'],
+    selector: 'indexer',
+    templateUrl: './indexer.component.html',
+    styleUrls: ['./indexer.component.scss'],
+    standalone: false
 })
 export class IndexerComponent implements OnChanges {
   @Input({ required: true }) vocIds!: VocabularyId[];

@@ -33,9 +33,10 @@ function sortConcepts(c1 : Concept, c2 : Concept) : number {
 }
 
 @Component({
-  selector: 'concepts-table',
-  templateUrl: './concepts-table.component.html',
-  styleUrls: ['./concepts-table.component.scss']
+    selector: 'concepts-table',
+    templateUrl: './concepts-table.component.html',
+    styleUrls: ['./concepts-table.component.scss'],
+    standalone: false
 })
 export class ConceptsTableComponent {
   @Input({required: true}) concepts : { [key : ConceptId] : Concept } = {};

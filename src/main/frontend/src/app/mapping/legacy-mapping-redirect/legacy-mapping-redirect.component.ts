@@ -21,9 +21,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PersistencyService } from '../persistency.service';
 
 @Component({
-  selector: 'app-legacy-mapping-redirect',
-  templateUrl: './legacy-mapping-redirect.component.html',
-  styleUrls: ['./legacy-mapping-redirect.component.scss']
+    selector: 'app-legacy-mapping-redirect',
+    templateUrl: './legacy-mapping-redirect.component.html',
+    styleUrls: ['./legacy-mapping-redirect.component.scss'],
+    standalone: false
 })
 export class LegacyMappingRedirectComponent {
   constructor(

@@ -27,9 +27,10 @@ import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
 import { MappingState } from '../mapping-state';
 
 @Component({
-  selector: 'codes-table',
-  templateUrl: './codes-table.component.html',
-  styleUrls: ['./codes-table.component.scss']
+    selector: 'codes-table',
+    templateUrl: './codes-table.component.html',
+    styleUrls: ['./codes-table.component.scss'],
+    standalone: false
 })
 export class CodesTableComponent {
   @Input() vocabularyId! : VocabularyId;

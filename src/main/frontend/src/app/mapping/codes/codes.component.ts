@@ -31,9 +31,10 @@ import { CodesTableComponent } from '../codes-table/codes-table.component';
 import { MappingState } from '../mapping-state';
 
 @Component({
-  selector: 'codes',
-  templateUrl: './codes.component.html',
-  styleUrls: ['./codes.component.scss'],
+    selector: 'codes',
+    templateUrl: './codes.component.html',
+    styleUrls: ['./codes.component.scss'],
+    standalone: false
 })
 export class CodesComponent {
   @Input({ required: true }) state! : MappingState;

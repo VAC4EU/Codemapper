@@ -22,9 +22,10 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
-  selector: 'vocabularies-table',
-  templateUrl: './vocabularies-table.component.html',
-  styleUrls: ['./vocabularies-table.component.scss']
+    selector: 'vocabularies-table',
+    templateUrl: './vocabularies-table.component.html',
+    styleUrls: ['./vocabularies-table.component.scss'],
+    standalone: false
 })
 export class VocabulariesTableComponent {
   @Input() showFilter : boolean = false;

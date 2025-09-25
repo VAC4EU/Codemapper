@@ -21,9 +21,10 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Vocabulary } from '../mapping-data';
 
 @Component({
-  selector: 'mapping-vocabularies-dialog',
-  templateUrl: './vocabularies-dialog.component.html',
-  styleUrls: ['./vocabularies-dialog.component.scss']
+    selector: 'mapping-vocabularies-dialog',
+    templateUrl: './vocabularies-dialog.component.html',
+    styleUrls: ['./vocabularies-dialog.component.scss'],
+    standalone: false
 })
 export class VocabulariesDialogComponent {
   constructor(

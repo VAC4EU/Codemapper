@@ -26,9 +26,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { DownloadDialogComponent, IncludeDescendants } from '../download-dialog/download-dialog.component';
 
 @Component({
-  selector: 'history',
-  templateUrl: './history.component.html',
-  styleUrls: ['./history.component.scss']
+    selector: 'history',
+    templateUrl: './history.component.html',
+    styleUrls: ['./history.component.scss'],
+    standalone: false
 })
 export class HistoryComponent {
   @Input({ required: true }) projectName! : string;

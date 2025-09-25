@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { AuthService } from '../auth.service';
 
 @Component({
-  selector: 'login-link',
-  templateUrl: './login-link.component.html',
-  styleUrls: ['./login-link.component.scss']
+    selector: 'login-link',
+    templateUrl: './login-link.component.html',
+    styleUrls: ['./login-link.component.scss'],
+    standalone: false
 })
 export class LoginLinkComponent {
   hasUser : boolean = false;

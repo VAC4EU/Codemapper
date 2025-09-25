@@ -25,9 +25,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 
 @Component({
-  selector: 'app-welcome-view',
-  templateUrl: './welcome-view.component.html',
-  styleUrls: ['./welcome-view.component.scss']
+    selector: 'app-welcome-view',
+    templateUrl: './welcome-view.component.html',
+    styleUrls: ['./welcome-view.component.scss'],
+    standalone: false
 })
 export class WelcomeViewComponent {
   info : ServerInfo = EMPTY_SERVER_INFO;

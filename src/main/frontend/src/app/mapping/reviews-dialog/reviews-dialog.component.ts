@@ -33,9 +33,10 @@ export interface ReviewsData {
 }
 
 @Component({
-  selector: 'app-reviews-dialog',
-  templateUrl: './reviews-dialog.component.html',
-  styleUrls: ['./reviews-dialog.component.scss']
+    selector: 'app-reviews-dialog',
+    templateUrl: './reviews-dialog.component.html',
+    styleUrls: ['./reviews-dialog.component.scss'],
+    standalone: false
 })
 export class ReviewsDialogComponent {
   constructor(

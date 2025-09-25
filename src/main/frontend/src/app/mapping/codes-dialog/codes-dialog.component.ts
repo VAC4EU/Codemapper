@@ -30,9 +30,10 @@ export interface CodesDialogData {
 }
 
 @Component({
-  selector: 'codes-dialog',
-  templateUrl: './codes-dialog.component.html',
-  styleUrls: ['./codes-dialog.component.scss']
+    selector: 'codes-dialog',
+    templateUrl: './codes-dialog.component.html',
+    styleUrls: ['./codes-dialog.component.scss'],
+    standalone: false
 })
 export class CodesDialogComponent {
   constructor(

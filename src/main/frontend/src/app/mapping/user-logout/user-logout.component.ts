@@ -4,9 +4,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-user-logout',
-  templateUrl: './user-logout.component.html',
-  styleUrls: ['./user-logout.component.scss']
+    selector: 'app-user-logout',
+    templateUrl: './user-logout.component.html',
+    styleUrls: ['./user-logout.component.scss'],
+    standalone: false
 })
 export class UserLogoutComponent {
 

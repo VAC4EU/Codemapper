@@ -18,9 +18,10 @@ export function includeDescendants(value: boolean) {
 }
 
 @Component({
-  selector: 'app-download-dialog',
-  templateUrl: './download-dialog.component.html',
-  styleUrls: ['./download-dialog.component.scss'],
+    selector: 'app-download-dialog',
+    templateUrl: './download-dialog.component.html',
+    styleUrls: ['./download-dialog.component.scss'],
+    standalone: false
 })
 export class DownloadDialogComponent {
   IncludeDescendants = IncludeDescendants;

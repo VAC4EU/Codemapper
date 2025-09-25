@@ -80,9 +80,10 @@ export interface Initial {
 }
 
 @Component({
-  selector: 'app-mapping-view',
-  templateUrl: './mapping-view.component.html',
-  styleUrls: ['./mapping-view.component.scss'],
+    selector: 'app-mapping-view',
+    templateUrl: './mapping-view.component.html',
+    styleUrls: ['./mapping-view.component.scss'],
+    standalone: false
 })
 export class MappingViewComponent implements HasPendingChanges {
   initial: Initial | null = null; // non-null iff starting

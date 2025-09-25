@@ -21,9 +21,10 @@ import { Component, Input } from '@angular/core';
 import { Concept, Tag } from '../mapping-data';
 
 @Component({
-  selector: 'mapping-concept',
-  templateUrl: './concept.component.html',
-  styleUrls: ['./concept.component.scss']
+    selector: 'mapping-concept',
+    templateUrl: './concept.component.html',
+    styleUrls: ['./concept.component.scss'],
+    standalone: false
 })
 export class ConceptComponent {
   @Input({required: true}) concept! : Concept;

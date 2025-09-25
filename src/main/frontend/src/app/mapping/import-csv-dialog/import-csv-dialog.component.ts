@@ -22,9 +22,10 @@ import { firstValueFrom } from 'rxjs';
 import { MappingInfo } from '../persistency.service';
 
 @Component({
-  selector: 'import-csv-dialog',
-  templateUrl: './import-csv-dialog.component.html',
-  styleUrls: ['./import-csv-dialog.component.scss'],
+    selector: 'import-csv-dialog',
+    templateUrl: './import-csv-dialog.component.html',
+    styleUrls: ['./import-csv-dialog.component.scss'],
+    standalone: false
 })
 export class ImportCsvDialogComponent {
   @Input({required: true}) mappingInfo!: MappingInfo;
