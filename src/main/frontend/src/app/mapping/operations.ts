@@ -35,6 +35,7 @@ import {
   codesEqualExceptTag,
 } from './mapping-data';
 import { Mapping, Caches } from './mapping';
+import { AllTopics } from './review';
 
 export class OpError extends Error {}
 
@@ -64,12 +65,13 @@ function setEq<T>(a1: Set<T>, a2: Set<T>): boolean {
 export interface Operand {
   mapping: Mapping;
   caches: Caches;
+  allTopics: AllTopics;
 }
 
 export abstract class Operation {
   // run the operation, return the inverse operation if anything was changed,
   // and it can be undone, and raise Error if the operation could not be applied
-  public abstract run({ mapping, caches }: Operand): Operation;
+  public abstract run({ mapping, caches, allTopics }: Operand): Operation;
   public abstract describe(): string;
   saveRequired: boolean;
   saveReviewRequired: boolean;
@@ -296,7 +298,10 @@ export class SetCodeEnabled extends Operation {
 
   override run({ mapping }: Operand): Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
-    expect(code !== undefined, "unknown code", {vocId: this.vocId, codeId: this.codeId});
+    expect(code !== undefined, 'unknown code', {
+      vocId: this.vocId,
+      codeId: this.codeId,
+    });
     let originalEnabled = code.enabled;
     code.enabled = this.enabled;
     return new SetCodeEnabled(this.vocId, this.codeId, originalEnabled);
@@ -431,6 +436,47 @@ export class CodesSetTag extends Operation {
   }
 }
 
+export class EditVocabulary extends Operation {
+  constructor(readonly oldId: VocabularyId, readonly newVoc: Vocabulary) {
+    super({saveReviewRequired: true});
+  }
+
+  override describe(): string {
+    return `edit vocabulary ${this.oldId}`;
+  }
+
+  override run({ mapping, allTopics }: Operand): Operation {
+    let oldVoc = mapping.vocabularies[this.oldId];
+    if (oldVoc === undefined) throw new Error('invalid vocabulary identifier');
+    let changeId = this.newVoc.id != this.oldId;
+    if (changeId && mapping.vocabularies[this.newVoc.id])
+      throw new Error('another vocabulary has this ID already');
+    if (!oldVoc.custom) throw new Error('can only edit custom vocabularies');
+    if (!this.newVoc.custom) throw new Error('vocabulary must stay custom');
+    let inv = new EditVocabulary(this.newVoc.id, oldVoc);
+    mapping.vocabularies[this.newVoc.id] = this.newVoc;
+    if (changeId) {
+      delete mapping.vocabularies[this.oldId];
+      mapping.codes[this.newVoc.id] = mapping.codes[this.oldId];
+      delete mapping.codes[this.oldId];
+      for (let concept of Object.values(mapping.concepts)) {
+        let codes = concept.codes[this.oldId];
+        if (codes !== undefined) {
+          delete concept.codes[this.oldId];
+          concept.codes[this.newVoc.id] = codes;
+        }
+      }
+    }
+    let topics = allTopics.byCode[this.oldId];
+    if (topics) {
+      delete allTopics.byCode[this.oldId];
+      allTopics.byCode[this.newVoc.id] = topics;
+    }
+    mapping.vocabularies = {...mapping.vocabularies};
+    return inv;
+  }
+}
+
 export class AddVocabularies extends Operation {
   constructor(
     readonly vocs: Vocabulary[],
@@ -450,7 +496,7 @@ export class AddVocabularies extends Operation {
     for (let voc of this.vocs) {
       expect(
         mapping.vocabularies[voc.id] === undefined,
-        'Added vocabulary must not exist',
+        'A vocabulary with that name already exists',
         voc.id
       );
     }

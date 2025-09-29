@@ -269,12 +269,6 @@ export class Mapping {
     }
     return Array.from(tags);
   }
-  static jsonifyReplacer(field: string, value: any): any {
-    if (value instanceof Set) {
-      return Array.from(value);
-    }
-    return value;
-  }
   public clone() {
     let res = new Mapping(
       this.meta,

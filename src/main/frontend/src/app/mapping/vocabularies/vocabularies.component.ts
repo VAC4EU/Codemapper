@@ -20,41 +20,48 @@ import {
   Input,
   Output,
   Component,
-  SimpleChanges,
   EventEmitter,
   ViewChild,
+  TemplateRef,
+  computed,
+  input,
+  SimpleChanges,
 } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { map } from 'rxjs';
 import { VocabulariesDialogComponent } from '../vocabularies-dialog/vocabularies-dialog.component';
 import { VocabulariesTableComponent } from '../vocabularies-table/vocabularies-table.component';
 import { CustomVocabularyDialogComponent } from '../custom-vocabulary-dialog/custom-vocabulary-dialog.component';
 import { ApiService } from '../api.service';
 import { compareVocabularies, Vocabulary } from '../mapping-data';
-import { MappingState } from '../mapping-state';
+import { Mapping } from '../mapping';
 import * as ops from '../operations';
 
 @Component({
-    selector: 'vocabularies',
-    templateUrl: './vocabularies.component.html',
-    styleUrls: ['./vocabularies.component.scss'],
-    standalone: false
+  selector: 'vocabularies',
+  templateUrl: './vocabularies.component.html',
+  styleUrls: ['./vocabularies.component.scss'],
+  standalone: false,
 })
 export class VocabulariesComponent {
-  @Input() state: MappingState | null = null;
+  mapping = input.required<Mapping>();
   @Output() run = new EventEmitter<ops.Operation>();
   @Input() userCanEdit: boolean = false;
   @ViewChild('table') table!: VocabulariesTableComponent;
-  vocabularies: Vocabulary[] = [];
-
+  vocabularies = computed(() => {
+    let vocs = Object.values(this.mapping().vocabularies);
+    vocs.sort(compareVocabularies);
+    return vocs;
+  });
+  dialogRef: MatDialogRef<any, any> | null = null;
   constructor(private dialog: MatDialog, private api: ApiService) {}
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (this.state == null) {
-      this.vocabularies = [];
-    } else {
-      this.vocabularies = Object.values(this.state.mapping.vocabularies);
-      this.vocabularies.sort(compareVocabularies);
+  ngOnChanges(changes : SimpleChanges) {
+    if (this.table) {
+      let selectedIds = this.table.selection.selected.map((v) => v.id);
+      this.table.selection.clear();
+      let selected = this.vocabularies().filter((v) => selectedIds.includes(v.id));
+      this.table.selection.select(...selected);
     }
   }
 
@@ -64,7 +71,7 @@ export class VocabulariesComponent {
   }
 
   addStandard() {
-    let vocIds = new Set(this.vocabularies.map((v) => v.id));
+    let vocIds = new Set(this.vocabularies().map((v) => v.id));
     this.api
       .vocabularies()
       .pipe(
@@ -79,12 +86,12 @@ export class VocabulariesComponent {
           .afterClosed()
           .subscribe(async (vocs) => {
             if (vocs == null) return;
-            let cuis = Object.keys(this.state!.mapping.concepts);
+            let cuis = Object.keys(this.mapping().concepts);
             let vocIds = (vocs as Vocabulary[]).map((v) => v.id);
             let { concepts, codes } = await this.api.concepts(
               cuis,
               vocIds,
-              this.state!.mapping.meta
+              this.mapping().meta
             );
             let conceptCodes = Object.fromEntries(
               Object.entries(concepts).map(([cui, concept]) => [
@@ -111,12 +118,37 @@ export class VocabulariesComponent {
   createCustom() {
     this.dialog
       .open(CustomVocabularyDialogComponent, {
-        data: { id: '', name: '', codesCSV: '' },
+        data: {
+          title: 'Create custom vocabulary',
+          id: '',
+          name: '',
+          codesCSV: '',
+        },
       })
       .afterClosed()
       .subscribe((data) => {
-        let voc = {id: data.id, name: data.name, version: null, custom: true}
+        if (data === undefined) return;
+        let voc = { id: data.id, name: data.name, version: null, custom: true };
         this.run.emit(new ops.AddVocabularies([voc], {}, {}));
+      });
+  }
+
+  editCustom(voc: Vocabulary) {
+    let oldId = voc.id;
+    this.dialog
+      .open(CustomVocabularyDialogComponent, {
+        data: {
+          title: 'Edit custom vocabulary ' + voc.id,
+          id: voc.id,
+          name: voc.name,
+        },
+      })
+      .afterClosed()
+      .subscribe((data) => {
+        if (data === undefined) return;
+        let voc = { id: data.id, name: data.name, version: null, custom: true };
+        let op = new ops.EditVocabulary(oldId, voc);
+        this.run.emit(op);
       });
   }
 }

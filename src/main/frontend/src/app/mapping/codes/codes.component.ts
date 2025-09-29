@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges } from '@angular/core';
+import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges, input, effect, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../mapping-data';
 import * as ops from '../operations';
@@ -37,7 +37,7 @@ import { MappingState } from '../mapping-state';
     standalone: false
 })
 export class CodesComponent {
-  @Input({ required: true }) state! : MappingState;
+  state = input.required<MappingState>();
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
   @Input() userCanEdit : boolean = false;
@@ -63,7 +63,7 @@ export class CodesComponent {
   }
 
   ngOnInit() {
-    let vocIds = Object.keys(this.state.mapping.vocabularies);
+    let vocIds = Object.keys(this.state().mapping.vocabularies);
     vocIds.sort((id1, id2) => id1.localeCompare(id2));
     this.vocabularyId = vocIds[0];
   }
@@ -73,11 +73,17 @@ export class CodesComponent {
   }
 
   update() {
-    let codes = this.state.mapping.codes[this.vocabularyId] ?? {};
-    this.vocabulary = this.state.mapping.vocabularies[this.vocabularyId];
+    let mapping = this.state().mapping;
+    if (!this.vocabularyId || !mapping.vocabularies[this.vocabularyId]) {
+      let vocIds = Object.keys(mapping.vocabularies);
+      vocIds.sort((id1, id2) => id1.localeCompare(id2));
+      this.vocabularyId = vocIds[0];
+    }
+    let codes = mapping.codes[this.vocabularyId] ?? {};
+    this.vocabulary = mapping.vocabularies[this.vocabularyId];
     this.codes = Object.values(codes);
     this.codes.sort((c1, c2) => compareCodes(c1.id, c2.id));
-    this.vocabularyIds = Object.keys(this.state.mapping.vocabularies).sort();
+    this.vocabularyIds = Object.keys(mapping.vocabularies).sort();
   }
 
   selectVocabulary(id : VocabularyId) {
@@ -86,15 +92,15 @@ export class CodesComponent {
   }
 
   isCustom(id : VocabularyId) {
-    return this.state.mapping.vocabularies[id].custom;
+    return this.state().mapping.vocabularies[id].custom;
   }
 
   conceptIds(code : Code) : ConceptId[] {
-    return Array.from(this.state.caches.getConceptsByCode(this.vocabularyId, code.id));
+    return Array.from(this.state().caches.getConceptsByCode(this.vocabularyId, code.id));
   }
 
   conceptName(id : ConceptId) : string {
-    return this.state.mapping.concepts[id]?.name ?? "n/a"
+    return this.state().mapping.concepts[id]?.name ?? "n/a"
   }
 
   enableCodes(codes : Code[]) {
@@ -116,7 +122,7 @@ export class CodesComponent {
       data: {
         tag,
         heading: `${codes.length} code${codes.length == 1 ? '' : 's'}`,
-        allowedTags: this.state.mapping.meta.allowedTags,
+        allowedTags: this.state().mapping.meta.allowedTags,
       },
       width: '40em',
     };
@@ -142,8 +148,8 @@ export class CodesComponent {
           concept: "",
         },
         operation: "Create",
-        concepts: Object.values(this.state.mapping.concepts),
-        codeIds: Object.keys(this.state.mapping.codes[this.vocabularyId]),
+        concepts: Object.values(this.state().mapping.concepts),
+        codeIds: Object.keys(this.state().mapping.codes[this.vocabularyId]),
         idEditable: true,
       }
     });
@@ -165,7 +171,7 @@ export class CodesComponent {
       console.error("edit custom code only possible with custom code");
       return;
     }
-    let concepts = this.state.caches.getConceptsByCode(this.vocabularyId, selected.id);
+    let concepts = this.state().caches.getConceptsByCode(this.vocabularyId, selected.id);
     if (concepts.length != 1) {
       console.error("custom code must have exactly one concept");
       return;
@@ -178,8 +184,8 @@ export class CodesComponent {
           concept: concepts[0],
         },
         operation: "Edit custom code",
-        concepts: Object.values(this.state.mapping.concepts),
-        codeIds: Object.keys(this.state.mapping.codes[this.vocabularyId]),
+        concepts: Object.values(this.state().mapping.concepts),
+        codeIds: Object.keys(this.state().mapping.codes[this.vocabularyId]),
         idEditable: false,
       }
     });
@@ -220,8 +226,8 @@ export class CodesComponent {
   importCustomCodeDialog() {
   }
 
-  numCodes(voc : VocabularyId) : number {
-    return Object.keys(this.state.mapping.codes[voc]).length
+  numCodes(vocId : VocabularyId) : number {
+    return Object.keys(this.state().mapping.codes[vocId]).length
   }
 }
 

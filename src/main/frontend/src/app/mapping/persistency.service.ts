@@ -26,6 +26,7 @@ import {
   emptyMappingMeta,
   MappingData,
   importMappingDataJSON,
+  mappingDataJsonifyReplacer,
 } from './mapping-data';
 import { urlEncodedOptions } from '../app.module';
 import { Observable, firstValueFrom, map } from 'rxjs';
@@ -338,8 +339,3 @@ export class PersistencyService {
 function importMappingDataLegacyJSON(json: JSONObject, serverInfo: ServerInfo): any {
   throw new Error('Function not implemented.');
 }
-
-function mappingDataJsonifyReplacer(this: any, key: string, value: any) {
-  throw new Error('Function not implemented.');
-}
-

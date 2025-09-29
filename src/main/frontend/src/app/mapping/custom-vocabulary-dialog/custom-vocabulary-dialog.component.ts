@@ -32,6 +32,7 @@ export class CustomVocabularyDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data : {
       id : VocabularyId,
       name : string,
+      title: string,
     }
   ) { }
   cancel() {

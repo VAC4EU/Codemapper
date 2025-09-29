@@ -333,9 +333,9 @@ export class MappingViewComponent implements HasPendingChanges {
 
   run(op: ops.Operation) {
     if (!this.state) return;
-    this.state.run(op);
+    this.state.run(op, this.allTopics);
     op.afterRunCallback();
-    this.state.cacheAndCheck();
+    this.state = this.state.cloneCacheAndCheck();
     this.updateTopics();
     if (op.saveRequired) {
       this.saveRequired = true;
@@ -347,13 +347,15 @@ export class MappingViewComponent implements HasPendingChanges {
 
   redo() {
     if (!this.state) return;
-    this.state.redo();
+    this.state.redo(this.allTopics);
+    this.state = this.state.cloneCacheAndCheck();
     this.updateTopics();
   }
 
   undo() {
     if (!this.state) return;
-    this.state.undo();
+    this.state.undo(this.allTopics);
+    this.state = this.state.cloneCacheAndCheck();
     this.updateTopics();
   }
 

@@ -1,6 +1,7 @@
 import { Caches, Mapping } from "./mapping";
 import { Codes, Concepts, MappingData, Vocabularies } from "./mapping-data";
 import { Operation } from "./operations";
+import { AllTopics } from "./review";
 
 export class MappingState {
   caches: Caches = new Caches({}, {});
@@ -12,7 +13,12 @@ export class MappingState {
 
   cacheAndCheck() {
     this.caches = this.mapping.caches();
-    this.mapping = this.mapping.clone();
+  }
+
+  cloneCacheAndCheck(): MappingState {
+    let state = new MappingState(this.mapping.clone());
+    state.stacks = this.stacks;
+    return state;
   }
 
   addMapping(data: MappingData) {
@@ -30,13 +36,13 @@ export class MappingState {
     this.cacheAndCheck();
   }
 
-  runIntern(op: Operation) {
-    let inv = op.run({mapping: this.mapping, caches: this.caches});
+  runIntern(op: Operation, allTopics: AllTopics) {
+    let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics});
     this.cacheAndCheck();
     return inv;
   }
 
-  public run(op: Operation) {
+  public run(op: Operation, allTopics: AllTopics) {
     console.log('Run', op);
     if (op.noUndo && this.stacks.hasUndo()) {
       alert('this operation cannot be undone, please save your mapping first');
@@ -44,9 +50,10 @@ export class MappingState {
     }
     let inv;
     try {
-      inv = this.runIntern(op);
+      inv = this.runIntern(op, allTopics);
     } catch (err) {
       let msg = `could not run operation: ${(err as Error).message}`;
+      console.trace(err);
       console.error(msg, op, err);
       alert(msg);
       return;
@@ -59,21 +66,21 @@ export class MappingState {
     }
   }
 
-  public undo() {
+  public undo(allTopics: AllTopics) {
     let op = this.stacks.undoStack.pop();
     if (op === undefined) return;
     console.log('Undo', op.description);
-    let inv = this.runIntern(op.op);
+    let inv = this.runIntern(op.op, allTopics);
     if (inv !== undefined) {
       this.stacks.redoStack.push({description: op.description, op: inv});
     }
   }
 
-  public redo() {
+  public redo(allTopics: AllTopics) {
     let op = this.stacks.redoStack.pop();
     if (op === undefined) return;
     console.log('Redo', op.description);
-    let inv = this.runIntern(op.op);
+    let inv = this.runIntern(op.op, allTopics);
     if (inv !== undefined) {
       this.stacks.undoStack.push({description: op.op.describe(), op: inv});
     }
