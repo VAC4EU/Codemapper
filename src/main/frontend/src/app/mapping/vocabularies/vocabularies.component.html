@@ -5,7 +5,11 @@
       Modify {{table.selection.selected.length}} coding system{{table.selection.selected.length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
-      <button mat-stroked-button (click)="delete(table.selection.selected)" [disabled]="table.selection.selected.length == 0 || !userCanEdit">Delete</button>
+      <button mat-stroked-button (click)="delete(table.selection.selected)"
+        [disabled]="table.selection.selected.length == 0 || !userCanEdit">Delete</button>
+      <button mat-stroked-button (click)="editCustom(table.selection.selected[0])"
+        [disabled]="table.selection.selected.length != 1">Edit
+        custom</button>
     </mat-card-actions>
   </mat-card>
 
@@ -20,5 +24,5 @@
   </mat-card>
 </div>
 
-<vocabularies-table #table [vocabularies]="vocabularies">
+<vocabularies-table #table [vocabularies]="vocabularies()">
 </vocabularies-table>

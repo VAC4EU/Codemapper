@@ -77,7 +77,7 @@
       </mat-tab>
       <mat-tab label="Coding systems" [disabled]="state.mapping.start == null">
         @if (!state.mapping.isEmpty()) {
-          <vocabularies [userCanEdit]="userCanEdit" [state]="state" (run)="run($event)">
+          <vocabularies [userCanEdit]="userCanEdit" [mapping]="state.mapping" (run)="run($event)">
           </vocabularies>
         }
       </mat-tab>

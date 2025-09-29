@@ -49,10 +49,10 @@ import { MappingState } from '../mapping-state';
 import { Mapping } from '../mapping';
 
 @Component({
-    selector: 'folder-mappings',
-    templateUrl: './folder-mappings.component.html',
-    styleUrls: ['./folder-mappings.component.scss'],
-    standalone: false
+  selector: 'folder-mappings',
+  templateUrl: './folder-mappings.component.html',
+  styleUrls: ['./folder-mappings.component.scss'],
+  standalone: false,
 })
 export class FolderMappingsComponent {
   @Input({ required: true }) user!: User;
@@ -130,7 +130,9 @@ export class FolderMappingsComponent {
       return (
         info.mappingName.toLowerCase().includes(filter) ||
         (info.meta?.definition ?? '').toLowerCase().includes(filter) ||
-        (info.meta.system + '_' + info.mappingName + '_' + info.meta.type).toLowerCase().includes(filter)
+        (info.meta.system + '_' + info.mappingName + '_' + info.meta.type)
+          .toLowerCase()
+          .includes(filter)
       );
     };
     this.dataSource.sortingDataAccessor = (mapping0: any, property: string) => {
@@ -336,7 +338,9 @@ export class FolderMappingsComponent {
       ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
       includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
     };
-    let mapping = new MappingState(new Mapping(info, null, vocabularies, {}, {}));
+    let mapping = new MappingState(
+      new Mapping(info, null, vocabularies, {}, {})
+    );
     let initial = { mappingName, projectName, mapping, meta };
     this.router.navigate(['/mapping'], { state: { initial } });
   }
@@ -387,6 +391,12 @@ export class FolderMappingsComponent {
           this.persistency.loadLatestRevisionMapping(shortkey, this.serverInfo)
         );
         let state = new MappingState(Mapping.fromData(mapping));
+        let allTopics0 = await firstValueFrom(this.api.allTopics(shortkey));
+        let allTopics = AllTopics.fromRaw(
+          allTopics0,
+          this.user.username,
+          Object.keys(state.mapping.concepts)
+        );
         console.log(
           'BATCH PROCESS',
           mappingInfos[index],
@@ -395,8 +405,13 @@ export class FolderMappingsComponent {
         );
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);
-          state.run(op);
+          state.run(op, allTopics);
           op.afterRunCallback();
+        }
+        if (operations.some((op) => op.saveReviewRequired)) {
+          await firstValueFrom(
+            this.api.saveAllTopics(shortkey, allTopics.toRaw())
+          );
         }
         let newVersion = await firstValueFrom(
           this.persistency.saveRevision(shortkey, state.mapping, summary)

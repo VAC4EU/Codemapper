@@ -489,7 +489,7 @@ export function cuiOfId(id: string): string {
   return 'C' + Array(8 - id.length).join('0') + id;
 }
 
-export function mappingJsonifyReplacer(_field: string, value: any): any {
+export function mappingDataJsonifyReplacer(_field: string, value: any): any {
   if (value instanceof Set) {
     return Array.from(value);
   }
