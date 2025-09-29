@@ -44,9 +44,13 @@ import { firstValueFrom } from 'rxjs';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
-import { EditMetaComponent } from '../edit-meta/edit-meta.component';
+import { EditMetaComponent, EditMetaResult } from '../edit-meta/edit-meta.component';
 import { MappingState } from '../mapping-state';
 import { Mapping } from '../mapping';
+import {
+  EditMetasComponent,
+  EditMetasResult,
+} from '../edit-metas/edit-metas.component';
 
 @Component({
   selector: 'folder-mappings',
@@ -271,29 +275,75 @@ export class FolderMappingsComponent {
     this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
 
-  openMetaDataDialog(info: MappingInfo) {
-    this.dialog
-      .open(EditMetaComponent, {
-        data: { name: info.mappingName, meta: info.meta },
-      })
-      .afterClosed()
-      .subscribe(async (result) => {
-        if (result) {
-          try {
-            await EditMetaComponent.save(
-              info,
-              this.persistency,
-              info.mappingShortkey!,
-              result
-            );
-            this.allProperties = this.getAllTags();
-          } catch (e) {
-            let msg = `Could not save name or meta`;
-            console.error(msg, e);
-            alert(msg);
+  openMetaDataDialog(infos: MappingInfo[]) {
+    if (infos.length == 1) {
+      let info = infos[0];
+      this.dialog
+        .open(EditMetaComponent, {
+          data: { name: info.mappingName, meta: info.meta },
+        })
+        .afterClosed()
+        .subscribe(async (result: EditMetaResult) => {
+          if (result) {
+            try {
+              await EditMetaComponent.save(
+                info,
+                this.persistency,
+                info.mappingShortkey!,
+                result
+              );
+              this.allProperties = this.getAllTags();
+            } catch (e) {
+              let msg = `Could not save name or meta`;
+              console.error(msg, e);
+              alert(msg);
+            }
           }
-        }
-      });
+        });
+    } else {
+      this.dialog
+        .open(EditMetasComponent)
+        .afterClosed()
+        .subscribe(async (result: EditMetasResult) => {
+          if (!result) return;
+          for (let info of infos) {
+            let needsSave = false;
+            for (let project of result.addProjects) {
+              if (!info.meta.projects.includes(project)) {
+                info.meta.projects.push(project);
+                needsSave = true;
+              }
+            }
+            for (let project of result.removeProjects) {
+              if (info.meta.projects.includes(project)) {
+                info.meta.projects = info.meta.projects.filter(
+                  (p) => p != project
+                );
+                needsSave = true;
+              }
+            }
+            if (needsSave) {
+              let result: EditMetaResult = {
+                name: info.mappingName,
+                meta: info.meta,
+              };
+              try {
+                await EditMetaComponent.save(
+                  info,
+                  this.persistency,
+                  info.mappingShortkey!,
+                  result
+                );
+                this.allProperties = this.getAllTags();
+              } catch (e) {
+                let msg = `Could not save name or meta`;
+                console.error(msg, e);
+                alert(msg);
+              }
+            }
+          }
+        });
+    }
   }
 
   async openCreateMappingDialog() {

@@ -1,10 +1,10 @@
-import { Component, Inject, Input } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { MappingMeta, emptyMappingMeta } from '../mapping-data';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MappingInfo, PersistencyService } from '../persistency.service';
 import { firstValueFrom } from 'rxjs';
 
-interface Result {
+export interface EditMetaResult {
   name: string,
   meta: MappingMeta,
 }
@@ -20,7 +20,7 @@ export class EditMetaComponent {
   meta: MappingMeta = emptyMappingMeta();
   projectsString: string = '';
   constructor(
-    public dialogRef: MatDialogRef<EditMetaComponent>,
+    public dialogRef: MatDialogRef<EditMetaComponent, EditMetaResult>,
     @Inject(MAT_DIALOG_DATA)
     public data: {
       title?: string,
@@ -34,7 +34,7 @@ export class EditMetaComponent {
     this.projectsString = this.data.meta.projects.join(', ');
   }
   submit() {
-    let result: Result = {
+    let result: EditMetaResult = {
       name: this.name,
       meta: {
         ...this.meta,
@@ -44,7 +44,7 @@ export class EditMetaComponent {
     this.dialogRef.close(result);
   }
 
-  static async set(infoOut: MappingInfo, result: Result) {
+  static async set(infoOut: MappingInfo, result: EditMetaResult) {
       infoOut.mappingName = result.name;
       Object.assign(infoOut.meta, result.meta);
   }
@@ -54,7 +54,7 @@ export class EditMetaComponent {
     infoOut: MappingInfo,
     persistency: PersistencyService,
     mappingShortkey: string,
-    result: Result,
+    result: EditMetaResult,
   ) {
     if (mappingShortkey == null) {
       throw new Error("Cannot save metadata for mapping without shortkey")
