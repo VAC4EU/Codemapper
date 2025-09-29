@@ -59,7 +59,7 @@ export class HistoryComponent {
       includeDescendants: IncludeDescendants.PerMapping,
       mappings: { [config]: {name: this.info.mappingName, meta: this.meta}},
     };
-    this.dialog.open(DownloadDialogComponent, { data })
+    this.dialog.open(DownloadDialogComponent, { data, disableClose: true })
   }
 
   selectedMappingConfig() {

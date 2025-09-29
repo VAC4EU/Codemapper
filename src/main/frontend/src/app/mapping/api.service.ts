@@ -377,6 +377,25 @@ export class ApiService {
     });
   }
 
+  downloadCsv(
+    projectName: string,
+    mappingConfigs: string[],
+    content: string,
+    filename: string
+  ): Observable<string> {
+    let params = new URLSearchParams();
+    params.set('content', content);
+    params.set('filename', filename);
+    params.set('project', projectName);
+    for (let mappingConfig of mappingConfigs) {
+      params.append('mappings', mappingConfig);
+    }
+    return this.http.post(this.codeListsUrl, params, {
+      responseType: 'text',
+      ...urlEncodedOptions,
+    });
+  }
+
   async peregrineIndex(text: string): Promise<Span[]> {
     let normalize = (text: string) => {
       // Python: print "".join(r"\u%x" % ord(c) for c in u"–—")

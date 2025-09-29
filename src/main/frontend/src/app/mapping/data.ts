@@ -280,16 +280,8 @@ export class Mapping {
     return Array.from(tags);
   }
   static jsonifyReplacer(field: string, value: any): any {
-    if (this instanceof Mapping) {
-      switch (field) {
-        case 'undoStack':
-        case 'redoStack':
-        case 'conceptsByCode':
-          return;
-      }
-    }
     if (value instanceof Set) {
-      return [...value];
+      return Array.from(value);
     }
     return value;
   }

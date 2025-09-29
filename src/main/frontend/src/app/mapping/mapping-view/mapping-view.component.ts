@@ -396,7 +396,7 @@ export class MappingViewComponent implements HasPendingChanges {
         },
       },
     };
-    this.dialog.open(DownloadDialogComponent, { data });
+    this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
 
   async save(summary: string) {

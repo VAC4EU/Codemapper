@@ -317,7 +317,7 @@ export class FolderMappingsComponent {
       ),
       includeDescendants: IncludeDescendants.PerMapping,
     };
-    this.dialog.open(DownloadDialogComponent, { data });
+    this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
 
   openMetaDataDialog(info: MappingInfo) {

@@ -269,7 +269,7 @@ export class PersistencyService {
 
   saveRevision(shortkey: string, mapping: Mapping, summary: string) {
     let body = new URLSearchParams();
-    let mappingJson = JSON.stringify(mapping, Mapping.jsonifyReplacer);
+    let mappingJson = JSON.stringify(mapping.toObject(), Mapping.jsonifyReplacer);
     body.append('mapping', mappingJson);
     body.append('summary', summary);
     let url = this.url + `/mapping/${shortkey}/save-revision`;
