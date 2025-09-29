@@ -44,7 +44,10 @@ import { firstValueFrom } from 'rxjs';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
-import { EditMetaComponent, EditMetaResult } from '../edit-meta/edit-meta.component';
+import {
+  EditMetaComponent,
+  EditMetaResult,
+} from '../edit-meta/edit-meta.component';
 import { MappingState } from '../mapping-state';
 import { Mapping } from '../mapping';
 import {

@@ -3,33 +3,16 @@
   <button mat-icon-button matDialogClose><mat-icon>close</mat-icon></button>
 </div>
 <mat-dialog-content>
-  <mat-form-field style="width:100%;">
-    <mat-label>Abbreviation</mat-label>
-    <input matInput [disabled]="true" />
-    <mat-hint>Required, the abbreviation is used in the filename of the codelist</mat-hint>
-  </mat-form-field>
-  <mat-form-field style="width:100%;">
-    <mat-label>System</mat-label>
-    <input matInput [disabled]="true" />
-  </mat-form-field>
-  <mat-form-field style="width:100%;">
-    <mat-label>Type</mat-label>
-    <input matInput [disabled]="true" />
-  </mat-form-field>
-  <mat-form-field style="width:100%;">
-    <mat-label>Definition</mat-label>
-    <input matInput [disabled]="true" />
-  </mat-form-field>
-  Multiple mappings selected, only add/remove projects allowed.
+  Multiple mappings selected, you can only add or remove projects:
   <mat-form-field style="width:100%;">
     <mat-label>Add projects</mat-label>
     <input matInput [(ngModel)]="addProjects" />
-    <mat-hint>A comma-separated list of projects</mat-hint>
+    <mat-hint>A comma-separated list of projects to be added to all selected mappings</mat-hint>
   </mat-form-field>
   <mat-form-field style="width:100%;">
     <mat-label>Remove projects</mat-label>
     <input matInput [(ngModel)]="removeProjects" />
-    <mat-hint>A comma-separated list of projects</mat-hint>
+    <mat-hint>A comma-separated list of projects to be remove from all selected mappings</mat-hint>
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
