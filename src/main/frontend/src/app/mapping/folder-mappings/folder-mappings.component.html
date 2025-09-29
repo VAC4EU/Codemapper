@@ -49,8 +49,8 @@
   </mat-card-header>
   <mat-card-actions>
     <span matTooltip="Edit the properties of one selected mapping (only for owners)">
-      <button [disabled]="!userCanRename || selectedFilteredMappings.length != 1"
-      (click)="openMetaDataDialog(selectedFilteredMappings[0])" mat-raised-button>Edit metadata</button>
+      <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0"
+      (click)="openMetaDataDialog(selectedFilteredMappings)" mat-raised-button>Edit</button>
     </span>
     <!--
     <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">

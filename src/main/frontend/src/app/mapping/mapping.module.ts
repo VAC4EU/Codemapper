@@ -88,6 +88,7 @@ import { LoginLinkComponent } from './login-link/login-link.component';
 import { FolderMappingsComponent } from './folder-mappings/folder-mappings.component';
 import { FolderUsersComponent } from './folder-users/folder-users.component';
 import { EditMetaComponent } from './edit-meta/edit-meta.component';
+import { EditMetasComponent } from './edit-metas/edit-metas.component';
 import { StartMappingComponent } from './start-mapping/start-mapping.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
@@ -138,6 +139,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
         FolderMappingsComponent,
         FolderUsersComponent,
         EditMetaComponent,
+        EditMetasComponent,
         StartMappingComponent,
     ], imports: [AppRoutingModule,
         BrowserModule,

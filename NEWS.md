@@ -9,6 +9,12 @@
 
 <section class="center-content">
 
+September 28, 2026
+---
+
+- edit custom vocabularies
+- bulk add/remove projects in metadata 
+
 September 17, 2026
 ---
 
