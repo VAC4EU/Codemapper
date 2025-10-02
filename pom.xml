@@ -20,6 +20,7 @@
     <jersey.config.test.container.port>8080</jersey.config.test.container.port>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+	<skipTests>true</skipTests> <!-- Skip by default -->
   </properties>
 
   <profiles>
@@ -186,7 +187,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.5.2</version>
         <configuration>
-          <skipTests>true</skipTests>
+          <skipTests>${skipTests}</skipTests>
         </configuration>
       </plugin>
     </plugins>
