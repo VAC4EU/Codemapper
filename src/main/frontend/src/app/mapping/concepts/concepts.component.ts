@@ -46,6 +46,7 @@ import {
   Vocabularies,
   filterConcepts,
   ServerInfo,
+  MappingData,
 } from '../mapping-data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, csvFilter, CsvFilter, TypesInfo } from '../api.service';
@@ -56,10 +57,10 @@ import { MappingInfo } from '../persistency.service';
 import { MappingState } from '../mapping-state';
 
 @Component({
-    selector: 'concepts',
-    templateUrl: './concepts.component.html',
-    styleUrls: ['./concepts.component.scss'],
-    standalone: false
+  selector: 'concepts',
+  templateUrl: './concepts.component.html',
+  styleUrls: ['./concepts.component.scss'],
+  standalone: false,
 })
 export class ConceptsComponent implements OnInit {
   @Input({ required: true }) state!: MappingState;
@@ -122,7 +123,9 @@ export class ConceptsComponent implements OnInit {
           }
           return this.api
             .autocompleteCode(voc, query1)
-            .pipe(map((cs) => cs.filter((c) => !this.state.mapping.concepts[c.id])))
+            .pipe(
+              map((cs) => cs.filter((c) => !this.state.mapping.concepts[c.id]))
+            )
             .pipe(
               catchError((err) => {
                 console.error('Could not autocomplete code', err);
@@ -302,11 +305,11 @@ export class ConceptsComponent implements OnInit {
 
   async importCsv(file: File, format: string) {
     if (this.state.stacks.hasUndo()) {
-      alert("You cannot undo this operation, please save your mapping before");
+      alert('You cannot undo this operation, please save your mapping before');
       return;
     }
     if (this.state.mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
-      alert("Mapping needs to be remapped first");
+      alert('Mapping needs to be remapped first');
       return;
     }
     try {
@@ -315,16 +318,31 @@ export class ConceptsComponent implements OnInit {
         this.api.importCsv(file, [], format, [], filter)
       );
       console.log('IMPORTED', imported);
+      let msgs: string[] = [];
       if (imported.warnings.length) {
-        let msg =
-          'There were problems with the import: ' +
-          imported.warnings.map((s) => `${s}. `).join('');
-        if (!confirm(msg + ' Continue?')) {
-          return;
-        }
+        let warnings = imported.warnings.map((s) => `${s}. `).join('');
+        msgs.push(`There were problems with the import: ${warnings}.`);
       }
+      msgs.push("Codes that are associated to these concepts in other coding systems will be disabled.")
       this.csvImportFile = null;
-      this.run.emit(new ops.AddMapping(imported.mapping))
+      //this.run.emit(new ops.AddMapping(imported.mapping));
+      let mapping = imported.mapping;
+      this.dialog
+        .open(ConceptsDialogComponent, {
+          data: {
+            title: 'Add the imported codes?',
+            subtitle: msgs.join(" "),
+            action: 'Ok',
+            concepts: mapping.concepts,
+            codes: mapping.codes,
+            vocabularies: Object.keys(imported.mapping.vocabularies),
+            allTopics: imported.allTopics,
+          },
+        })
+        .afterClosed()
+        .subscribe((selected) => {
+          if (selected) this.run.emit(new ops.AddMapping(mapping));
+        });
     } catch (err) {
       console.error('Could not import codelist', err);
       let msg =

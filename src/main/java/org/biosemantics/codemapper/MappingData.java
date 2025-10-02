@@ -23,7 +23,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 @XmlRootElement
 public class MappingData {
@@ -386,6 +388,7 @@ public class MappingData {
     }
   }
 
+  @XmlTransient
   public Map<String, Collection<String>> getCodesByVoc() {
     Map<String, Collection<String>> codesByVoc = new HashMap<>();
     for (String voc : getVocabularies().keySet()) {
@@ -395,5 +398,20 @@ public class MappingData {
       }
     }
     return codesByVoc;
+  }
+
+  @XmlTransient
+  public Map<String, Map<String, Set<String>>> getCodeConceptIds() {
+    Map<String, Map<String, Set<String>>> res = new HashMap<>();
+    for (Concept concept : concepts.values()) {
+      for (String vocId : concept.codes.keySet()) {
+        for (String codeId : concept.codes.get(vocId)) {
+          res.computeIfAbsent(vocId, key -> new HashMap<>())
+              .computeIfAbsent(codeId, key -> new HashSet<>())
+              .add(concept.id);
+        }
+      }
+    }
+    return res;
   }
 }

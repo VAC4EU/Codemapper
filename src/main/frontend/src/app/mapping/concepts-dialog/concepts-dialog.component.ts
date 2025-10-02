@@ -19,6 +19,7 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Concept, ConceptId, VocabularyId, Code, CodeId } from '../mapping-data';
+import { AllTopics } from '../review';
 
 @Component({
     selector: 'app-concepts-dialog',
@@ -31,10 +32,12 @@ export class ConceptsDialogComponent {
     public dialogRef : MatDialogRef<ConceptsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data : {
       title : string,
+      subtitle: string | null,
       action : string,
       concepts : { [key : ConceptId] : Concept },
       codes : { [key : VocabularyId] : { [key : CodeId] : Code } },
-      vocabularies : VocabularyId[]
+      vocabularies : VocabularyId[],
+      allTopics : AllTopics,
     }
   ) { }
 

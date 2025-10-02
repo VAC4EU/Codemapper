@@ -225,7 +225,7 @@ export class MappingViewComponent implements HasPendingChanges {
             return;
           }
         }
-        this.state!.cacheAndCheck();
+        this.state!.recache();
         this.reloadReviews();
         this.reloadRevisions();
         if (postOp != null) this.run(postOp);

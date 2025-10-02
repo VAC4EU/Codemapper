@@ -4,7 +4,6 @@ package org.biosemantics.codemapper;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Set;
@@ -45,7 +44,6 @@ class CsvImportTest {
     UmlsApi api = CodeMapperApplication.getUmlsApi();
 
     String dbProp = CodeMapperApplication.getProp("code-mapper-db-uri");
-    System.out.println("DB PROP: " + dbProp);
     assertEquals(dbProp, "jdbc:postgresql://127.0.0.1/codemapper");
 
     ImportedMapping imported =
@@ -58,9 +56,9 @@ class CsvImportTest {
             null);
     MappingData mapping = imported.mapping;
 
-    ObjectMapper mapper = new ObjectMapper();
-    System.out.println(mapper.writeValueAsString(mapping));
-    System.out.println(mapper.writeValueAsString(imported.allTopics));
+    //    ObjectMapper mapper = new ObjectMapper();
+    //    System.out.println(mapper.writeValueAsString(mapping));
+    //    System.out.println(mapper.writeValueAsString(imported.allTopics));
 
     assertEquals(mapping.codes.keySet(), Collections.singleton("MEDCODEID"));
     Set<String> csvCodes =
@@ -98,7 +96,7 @@ class CsvImportTest {
     String message3 = imported.warnings.iterator().next();
     assertEquals(
         message3,
-        "2 codes with invalid concept were associated to a custom concept called Unassociated custom codes");
+        "1 codes with invalid concept were associated to a custom concept called Unassociated custom codes");
 
     ImportedMapping imported0 =
         api.importCompatCSV(

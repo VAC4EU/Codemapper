@@ -1014,12 +1014,6 @@ public class UmlsApi {
         }
       }
 
-      Map<String, Collection<String>> retired = getRetiredConcepts(conceptIds);
-      Collection<String> conceptIds1 = replaceRetired(retired, conceptIds, messagesByConcept);
-
-      // retrieve UMLS data
-      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds1, vocIds, ignoreTermTypes);
-
       // All coding systems
       Map<String, CodingSystem> codingSystems = new HashMap<>();
       for (CodingSystem codingSystem : getCodingSystems()) {
@@ -1043,6 +1037,7 @@ public class UmlsApi {
         }
         vocabularies.put(vocId, voc);
       }
+
       MappingMeta meta =
           new MappingMeta(
               1,
@@ -1051,35 +1046,77 @@ public class UmlsApi {
               new String[] {},
               serverInfo.getDefaultIgnoreSemanticTypes().toArray(new String[] {}),
               false);
-      // Create mapping data from concepts
-      MappingData mapping = MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, meta);
 
-      // disable codes
-      for (String vocId : mapping.codes.keySet()) {
-        for (String codeId : mapping.codes.get(vocId).keySet()) {
-          assert codeIds.get(vocId) != null;
-          boolean enabled = codeIds.get(vocId).contains(codeId);
-          mapping.setCodeEnabled(vocId, codeId, enabled);
-        }
+      // concepts from codes in codes column
+      Collection<String> allCodeConceptIds = new HashSet<>();
+      for (String vocId : codeIds.keySet()) {
+        allCodeConceptIds.addAll(getCuisByCodes(codeIds.get(vocId), vocId));
       }
+      Map<String, UmlsConcept> umlsCodeConcepts =
+          getConcepts(allCodeConceptIds, vocIds, ignoreTermTypes);
+
+      // mapping from code concepts
+      MappingData mapping = MappingData.fromUmlsConcepts(umlsCodeConcepts, vocabularies, meta);
+      Map<String, Map<String, Set<String>>> codeCodeConceptsIds = mapping.getCodeConceptIds();
+
+      // concepts for concept column
+      Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds, vocIds, ignoreTermTypes);
+      MappingData conceptsMapping = MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, null);
 
       Concept customConcept =
           new Concept(CUSTOM_CUI, CUSTOM_NAME, CUSTOM_DESCRIPTION, new HashMap<>());
 
-      // add custom codes and check non-custom codes
+      // assign codes to concepts
+      Map<String, Map<String, Concept>> selectedCodeConcepts = new HashMap<>();
       for (String vocId : codeIds.keySet()) {
+        Map<String, Concept> selectedConcepts = new HashMap<>();
         for (String codeId : codeIds.get(vocId)) {
-          Collection<String> conceptIds2 =
-              codeConcepts
-                  .getOrDefault(vocId, new HashMap<>())
-                  .get(codeId); // getOrDefault(codeId, new HashSet<>());
-          Collection<String> conceptIds3 =
-              conceptIds2 == null ? null : replaceRetired(retired, conceptIds2, messagesByConcept);
-          Map<String, Code> mappingCodes = mapping.codes.getOrDefault(vocId, new HashMap<>());
           Collection<String> messages =
               messagesByCode
                   .computeIfAbsent(vocId, key -> new HashMap<>())
                   .computeIfAbsent(codeId, key -> new LinkedList<>());
+          Set<String> codeConceptIds =
+              codeCodeConceptsIds
+                  .getOrDefault(vocId, new HashMap<>())
+                  .getOrDefault(codeId, new HashSet<>());
+          Set<String> conceptIds1 =
+              codeConcepts
+                  .getOrDefault(vocId, new HashMap<>())
+                  .getOrDefault(codeId, new HashSet<>());
+          Concept concept;
+          if (codeConceptIds.isEmpty()) {
+            String conceptId1 = conceptIds1.stream().findFirst().orElse(null);
+            Concept concept1 = conceptsMapping.concepts.get(conceptId1);
+            if (conceptId1 != null && concept1 != null) {
+              concept = concept1;
+            } else {
+              concept = customConcept;
+            }
+            mapping.concepts.computeIfAbsent(concept.getId(), key -> concept);
+          } else {
+            String cui = codeConceptIds.iterator().next();
+            concept = mapping.concepts.get(cui);
+          }
+          selectedConcepts.put(codeId, concept);
+
+          // check if selected concept matches concept from input
+          if (!conceptIds1.isEmpty() && !conceptIds1.contains(concept.getId())) {
+            String message =
+                String.format(
+                    "changed concept from %s to %s",
+                    String.join(", ", conceptIds1), concept.getId());
+            messages.add(message);
+          }
+        }
+        selectedCodeConcepts.put(vocId, selectedConcepts);
+      }
+
+      // add custom codes to mapping
+      for (String vocId : codeIds.keySet()) {
+        for (String codeId : codeIds.get(vocId)) {
+          Concept concept = selectedCodeConcepts.get(vocId).get(codeId);
+          Map<String, Code> mappingCodes =
+              mapping.codes.computeIfAbsent(vocId, k -> new HashMap<>());
           boolean customCode = !mappingCodes.containsKey(codeId);
           if (customCode) {
             // create custom code
@@ -1087,52 +1124,24 @@ public class UmlsApi {
                 codeNames
                     .getOrDefault(vocId, new HashMap<>())
                     .getOrDefault(codeId, "(missing name)");
-            Map<String, Code> codes = mapping.codes.computeIfAbsent(vocId, k -> new HashMap<>());
-            codes.put(codeId, new Code(codeId, codeName, true, true, null));
+            mappingCodes.put(codeId, new Code(codeId, codeName, true, true, null));
             // add custom code to concepts
-            if (conceptIds3 == null) {
-              mapping
-                  .concepts
-                  .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
-                  .codes
-                  .computeIfAbsent(vocId, k -> new HashSet<>())
-                  .add(codeId);
-            } else {
-              for (String conceptId : conceptIds3) {
-                Concept concept = mapping.concepts.get(conceptId);
-                if (concept == null) {
-                  messages.add(String.format("unknown concept %s", conceptId));
-                  concept = customConcept;
-                  mapping
-                      .concepts
-                      .computeIfAbsent(CUSTOM_CUI, k -> customConcept)
-                      .codes
-                      .computeIfAbsent(vocId, k -> new HashSet<>())
-                      .add(codeId);
-                }
-                concept.codes.computeIfAbsent(vocId, k -> new HashSet<>()).add(codeId);
-              }
-            }
-          } else {
-            // check code validity
-            if (conceptIds3 == null) {
-              messages.add(
-                  "concept inferred from coding system and code, it was missing in the imported codelist");
-            } else {
-              for (String conceptId : conceptIds3) {
-                Concept concept = mapping.concepts.get(conceptId);
-                assert concept != null;
-                boolean hasCode =
-                    concept.codes.getOrDefault(vocId, new HashSet<>()).contains(codeId);
-                if (!hasCode) {
-                  messages.add(
-                      "concept changed from "
-                          + conceptId
-                          + " - in the imported codelist, this code was associated to a concept that is not associated to the code in the UMLS");
-                }
-              }
-            }
+            mapping
+                .concepts
+                .get(concept.getId())
+                .codes
+                .computeIfAbsent(vocId, k -> new HashSet<>())
+                .add(codeId);
           }
+        }
+      }
+
+      // disable codes
+      for (String vocId : mapping.codes.keySet()) {
+        for (String codeId : mapping.codes.get(vocId).keySet()) {
+          Set<String> codeIds1 = codeIds.get(vocId);
+          boolean enabled = codeIds1.contains(codeId);
+          mapping.setCodeEnabled(vocId, codeId, enabled);
         }
       }
 
@@ -1140,9 +1149,16 @@ public class UmlsApi {
       for (String vocId : codeTags.keySet()) {
         for (String codeId : codeTags.get(vocId).keySet()) {
           Set<String> tags = codeTags.get(vocId).get(codeId);
-          String tag = String.join("+", tags);
-          if (tags.size() > 1) {
-            tag = "multiple:" + tag;
+          String tag;
+          switch (tags.size()) {
+            case 0:
+              continue;
+            case 1:
+              tag = tags.iterator().next();
+              break;
+            default:
+              tag = "multiple:" + String.join("+", tags);
+              break;
           }
           mapping.codes.get(vocId).get(codeId).tag = tag;
         }
@@ -1154,10 +1170,9 @@ public class UmlsApi {
                 .mapToInt((v) -> v.size())
                 .sum();
         warnings.add(
-            ""
-                + numCodes
-                + " codes with invalid concept were associated to a custom concept called "
-                + CUSTOM_NAME);
+            String.format(
+                "%d codes with invalid concept were associated to a custom concept called %s",
+                numCodes, CUSTOM_NAME));
       }
 
       // Compile topics

@@ -29,11 +29,10 @@ export function compareCodes(s1 : string, s2 : string) : number {
 }
 
 @Pipe({
-    name: 'sort',
+    name: 'sortCodes',
     standalone: false
 })
 export class SortPipe implements PipeTransform {
-
   transform(value : ArrayLike<string>) : string[] {
     let array = Array.from(value);
     array.sort(compareCodes);
