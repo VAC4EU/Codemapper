@@ -151,7 +151,7 @@ export class AddConcept extends Operation {
     if (original !== undefined) {
       throw new Error('Concept already added');
     }
-    mapping.concepts = { [this.concept.id]: this.concept, ...mapping.concepts };
+    mapping.concepts[this.concept.id] = this.concept;
     for (const [vocId, codes] of Object.entries(this.codes)) {
       for (const [codeId, code] of Object.entries(codes)) {
         let original = mapping.codes[vocId]?.[codeId];
@@ -179,7 +179,6 @@ export class RemoveConcept extends Operation {
     let concept = mapping.concepts[this.conceptId];
     expect(concept !== undefined);
     delete mapping.concepts[this.conceptId];
-    mapping.concepts = { ...mapping.concepts };
     let codes: { [key: VocabularyId]: { [key: CodeId]: Code } } = {};
     for (const [vocId, codeIds] of Object.entries(concept.codes)) {
       codes[vocId] = {};
@@ -276,7 +275,6 @@ export class RemoveConcepts extends Operation {
         }
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new AddConcepts(concepts, codes);
   }
 }
@@ -472,7 +470,6 @@ export class EditVocabulary extends Operation {
       delete allTopics.byCode[this.oldId];
       allTopics.byCode[this.newVoc.id] = topics;
     }
-    mapping.vocabularies = {...mapping.vocabularies};
     return inv;
   }
 }
@@ -503,20 +500,17 @@ export class AddVocabularies extends Operation {
     for (let voc of this.vocs) {
       mapping.vocabularies[voc.id] = voc;
     }
-    mapping.vocabularies = { ...mapping.vocabularies };
     for (let [vocId, codes] of Object.entries(this.codes)) {
       mapping.codes[vocId] = {};
       for (let code of codes) {
         mapping.codes[vocId][code.id] = code;
       }
     }
-    mapping.codes = { ...mapping.codes };
     for (let [cui, byVoc] of Object.entries(this.conceptCodes)) {
       for (let [vocId, codeIds] of Object.entries(byVoc)) {
         mapping.concepts[cui].codes[vocId] = new Set(codeIds);
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new DeleteVocabularies(this.vocs.map((v) => v.id));
   }
 }
@@ -537,11 +531,9 @@ export class DeleteVocabularies extends Operation {
       codes[vocId] = Object.values(mapping.codes[vocId]);
       delete mapping.codes[vocId];
     }
-    mapping.codes = { ...mapping.codes };
     for (let vocId of this.vocIds) {
       delete mapping.vocabularies[vocId];
     }
-    mapping.vocabularies = { ...mapping.vocabularies };
     let conceptCodes: { [key: ConceptId]: { [key: VocabularyId]: CodeId[] } } =
       {};
     for (let concept of Object.values(mapping.concepts)) {
@@ -556,7 +548,6 @@ export class DeleteVocabularies extends Operation {
         }
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new AddVocabularies(vocs, codes, conceptCodes);
   }
 }

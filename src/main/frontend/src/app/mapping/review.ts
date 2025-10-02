@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Observable, firstValueFrom, map, merge, of } from 'rxjs';
-import { ConceptId, VocabularyId, CodeId } from './mapping-data';
+import { ConceptId, VocabularyId, CodeId, MappingData } from './mapping-data';
 import { ApiService } from './api.service';
 import { User } from './auth.service';
 

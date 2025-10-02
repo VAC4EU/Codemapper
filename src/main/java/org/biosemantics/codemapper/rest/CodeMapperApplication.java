@@ -110,6 +110,10 @@ public class CodeMapperApplication extends ResourceConfig {
   }
 
   public CodeMapperApplication(@Context ServletContext context) {
+    this();
+  }
+
+  public CodeMapperApplication() {
     initialize(); // before packages/register
     packages(getClass().getPackage().getName());
     register(

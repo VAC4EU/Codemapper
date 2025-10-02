@@ -8,22 +8,22 @@ export class MappingState {
   stacks: Stacks = new Stacks();
 
   constructor(public mapping: Mapping) {
-    this.cacheAndCheck();
+    this.recache();
   }
 
-  cacheAndCheck() {
+  recache() {
     this.caches = this.mapping.caches();
   }
 
   cloneCacheAndCheck(): MappingState {
-    let state = new MappingState(this.mapping.clone());
+    let state = new MappingState(this.mapping.deepClone());
     state.stacks = this.stacks;
     return state;
   }
 
   addMapping(data: MappingData) {
     this.mapping.addMapping(data);
-    this.cacheAndCheck();
+    this.recache();
   }
 
   remap(
@@ -33,12 +33,12 @@ export class MappingState {
     vocabularies: Vocabularies
   ) {
     this.mapping.remap(umlsVersion, concepts, codes, vocabularies, this.caches);
-    this.cacheAndCheck();
+    this.recache();
   }
 
   runIntern(op: Operation, allTopics: AllTopics) {
     let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics});
-    this.cacheAndCheck();
+    this.recache();
     return inv;
   }
 
@@ -51,6 +51,7 @@ export class MappingState {
     let inv;
     try {
       inv = this.runIntern(op, allTopics);
+      this.mapping = this.mapping.deepClone(); // ensure that all changes are picked up
     } catch (err) {
       let msg = `could not run operation: ${(err as Error).message}`;
       console.trace(err);

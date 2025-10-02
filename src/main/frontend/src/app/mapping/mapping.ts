@@ -44,8 +44,8 @@ export class Mapping {
     return this;
   }
 
-  clone(): Mapping {
-    return Mapping.fromData(this.toData());
+  deepClone(): Mapping {
+    return Mapping.fromData(structuredClone(this.toData()));
   }
 
   public isEmpty() {
@@ -73,12 +73,26 @@ export class Mapping {
         throw new Error(`the vocabulary versions do not match`);
       }
     }
+    // check that only custom codes are added to existing concepts
+    for (let concept of Object.values(data.concepts)) {
+      let concept0 = this.concepts[concept.id];
+      if (concept0 === undefined) continue;
+      for (let vocId of Object.keys(concept.codes)) {
+        let codes0 = concept0.codes[vocId];
+        if (codes0 === undefined) continue;
+        for (let codeId of concept.codes[vocId]) {
+          if (!codes0.has(codeId) && !data.codes[vocId][codeId].custom) {
+            throw new Error(`code ${vocId}/${codeId} is new in concept ${concept.id} but not marked as custom`)
+          }
+        }
+      }
+    }
+
     for (let vocId of Object.keys(data.codes)) {
       for (let [id, code] of Object.entries(data.codes[vocId])) {
         code.tag = normalizeTag(code.tag, this.meta.allowedTags);
         let code0 = this.codes[vocId][id];
         if (code0 === undefined) {
-          // custom code, checked above
           this.codes[vocId][id] = code;
         } else {
           if (!code.enabled) {
@@ -89,7 +103,7 @@ export class Mapping {
           if (code.tag) {
             if (!code0.tag) {
               code0.tag = code.tag;
-            } else if (code0.tag && code.tag && code0.tag != code.tag) {
+            } else if (code.tag && code0.tag != code.tag) {
               code0.tag = formatMultipleTags([code0.tag, code.tag]);
             }
           }
@@ -104,6 +118,7 @@ export class Mapping {
         }
       }
     }
+
     for (let [cui, concept] of Object.entries(data.concepts)) {
       if (Object.keys(concept.codes).length == 0) continue;
       let concept0 = this.concepts[cui];
