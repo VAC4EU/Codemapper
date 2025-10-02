@@ -38,8 +38,9 @@ deploy-dev:
 	sudo -u $(USER) cp target/codemapper-dev.war $(LOCAL_TOMCAT)/webapps
 
 test:
-	cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
+	mvn test -DskipTests=false
 	cd src/main/frontend; ng test --watch=false
+	#cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
 
 FRONTEND=src/main/frontend
 
