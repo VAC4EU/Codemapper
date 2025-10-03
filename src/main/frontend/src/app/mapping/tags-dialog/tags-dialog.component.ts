@@ -21,9 +21,10 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 
 @Component({
-  selector: 'mapping-tags-dialog',
-  templateUrl: './tags-dialog.component.html',
-  styleUrls: ['./tags-dialog.component.scss']
+    selector: 'mapping-tags-dialog',
+    templateUrl: './tags-dialog.component.html',
+    styleUrls: ['./tags-dialog.component.scss'],
+    standalone: false
 })
 export class TagsDialogComponent {
   heading : string = "";

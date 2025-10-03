@@ -17,15 +17,16 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
-import { ConceptId, VocabularyId, CodeId } from '../data';
+import { ConceptId, VocabularyId, CodeId } from '../mapping-data';
 import { TopicsInfo, ReviewData, ReviewOperation, NewTopic, NewMessage, EditMessage, ResolveTopic, MarkAsRead } from '../review';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../auth.service';
 
 @Component({
-  selector: 'reviews',
-  templateUrl: './reviews.component.html',
-  styleUrls: ['./reviews.component.scss']
+    selector: 'reviews',
+    templateUrl: './reviews.component.html',
+    styleUrls: ['./reviews.component.scss'],
+    standalone: false
 })
 export class ReviewsComponent {
   @Input() topicsInfo! : TopicsInfo;

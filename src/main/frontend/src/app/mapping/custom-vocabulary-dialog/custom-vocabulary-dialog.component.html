@@ -1,4 +1,4 @@
-<h1 mat-dialog-title>Custom coding system</h1>
+<h1 mat-dialog-title>{{data.title}}</h1>
 <div mat-dialog-content class="form-fields">
   <mat-form-field>
     <mat-label>Identifier</mat-label>
@@ -20,6 +20,6 @@
 <div mat-dialog-actions>
   <button mat-button (click)="cancel()">Cancel</button>
   <button mat-raised-button color="primary" [mat-dialog-close]="data" cdkFocusInitial>
-    Create
+    Ok
   </button>
 </div>

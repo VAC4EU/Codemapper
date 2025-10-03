@@ -2,19 +2,24 @@
   <!-- not display:none for puppeteer -->
   <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
     (change)="handleCsvFileInput($event)" accept="text/csv">
-  <button (click)="csvFileInput.click()" mat-raised-button>
-    Select file
-  </button>
-  <p *ngIf="csvImportFile">{{csvImportFile.name}}</p>
-<p>
-  <span matTooltip="Requires mapping name and CSV file">
-    <button class="mapping-import" [disabled]="csvImportFile == null" (click)="importCsv(csvImportFile!, 'csv_compat')"
-      color="primary" mat-raised-button>Import codelist</button>
-  </span>
-</p>
-<p>The codelist must be a CSV file with the following columns: <code>coding_system</code>, <code>concept</code>,
-  <code>code</code>, <code>code_name</code>, <code>tags</code>. Review comments can be included using columns
-  <code>review1_author</code>,
-  <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
-  with consecutive numbers for multiple rounds of review.
+    <button (click)="csvFileInput.click()" mat-raised-button>
+      Select file
+    </button>
+    @if (csvImportFile) {
+      <p>{{csvImportFile.name}}</p>
+    }
+    <p>
+      <span matTooltip="Requires mapping name and CSV file">
+        <button class="mapping-import" [disabled]="csvImportFile == null" (click)="importCsv(csvImportFile!, 'csv_compat')"
+        color="primary" mat-raised-button>Import codelist</button>
+      </span>
+    </p>
+    <p>The codelist must be a CSV file with the following columns: <code>coding_system</code>, <code>concept</code>,
+    <code>code</code>, <code>code_name</code>, <code>tags</code>. Review comments can be included using columns
+    <code>review1_author</code>,
+    <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
+    with consecutive numbers for multiple rounds of review.
+  </p>
+  <p>If the columns <code>event_abbreviation</code>, <code>type</code>,
+  <code>system</code> are included, only rows that match the current mapping are added.
 </p>

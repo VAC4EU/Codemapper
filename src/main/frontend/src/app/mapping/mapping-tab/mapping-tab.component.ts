@@ -3,20 +3,18 @@ import {
   EventEmitter,
   Input,
   Output,
-  TemplateRef,
 } from '@angular/core';
 import {
   CsvImport,
   Indexing,
-  Mapping,
   Start,
   StartType,
   ServerInfo,
   Vocabularies,
   EmptyStart,
-} from '../data';
+} from '../mapping-data';
 import { ApiService } from '../api.service';
-import * as ops from '../mapping-ops';
+import * as ops from '../operations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   MappingInfo,
@@ -26,17 +24,19 @@ import {
 } from '../persistency.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
+import { MappingState } from '../mapping-state';
 
 @Component({
-  selector: 'mapping-tab',
-  templateUrl: './mapping-tab.component.html',
-  styleUrls: ['./mapping-tab.component.scss'],
+    selector: 'mapping-tab',
+    templateUrl: './mapping-tab.component.html',
+    styleUrls: ['./mapping-tab.component.scss'],
+    standalone: false
 })
 export class MappingTabComponent {
   @Input({ required: true }) projectName!: string;
   @Input({ required: true }) shortkey!: string | null;
   @Input({ required: true }) info!: MappingInfo;
-  @Input({ required: true }) mapping!: Mapping;
+  @Input({ required: true }) state!: MappingState;
   @Input({ required: true }) serverInfo!: ServerInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
   @Input({ required: true }) latest: RevisionInfo | null = null;
@@ -66,16 +66,16 @@ export class MappingTabComponent {
   }
 
   toggleIncludeDescendants() {
-    let value = !this.mapping.meta.includeDescendants;
+    let value = !this.state.mapping.meta.includeDescendants;
     this.run.emit(new ops.SetIncludeDescendants(value));
   }
 
   async remap() {
     if (this.serverInfo.umlsVersion != null) {
       let { conceptsCodes, vocabularies, messages } = await this.api.remapData(
-        this.mapping,
+        this.state.mapping,
         this.vocabularies,
-        this.mapping.meta
+        this.state.mapping.meta
       );
       if (messages.length) {
         this.snackBar.open(messages.join('\n\n'), 'Ok', {

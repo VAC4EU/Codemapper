@@ -187,16 +187,6 @@ export class Mapping {
     }
     for (let vocId of Object.keys(mapping.codes)) {
       for (let [id, code] of Object.entries(mapping.codes[vocId])) {
-        let code0 = this.codes[vocId][id];
-        if (code0 === undefined && !code.custom) {
-          throw new Error(
-            `code ${vocId}/${id} is not in the original mapping and not a custom code`
-          );
-        }
-      }
-    }
-    for (let vocId of Object.keys(mapping.codes)) {
-      for (let [id, code] of Object.entries(mapping.codes[vocId])) {
         code.tag = normalizeTag(code.tag, this.meta.allowedTags);
         let code0 = this.codes[vocId][id];
         if (code0 === undefined) {
@@ -278,12 +268,6 @@ export class Mapping {
       }
     }
     return Array.from(tags);
-  }
-  static jsonifyReplacer(field: string, value: any): any {
-    if (value instanceof Set) {
-      return Array.from(value);
-    }
-    return value;
   }
   public clone() {
     let res = new Mapping(
@@ -458,7 +442,7 @@ export class Mapping {
   public run(op: Operation, saveRequired: boolean) {
     console.log('Run', op);
     try {
-      if (op.noUndo && (this.undoStack.length > 0 || saveRequired)) {
+      if (op.noUndo && this.undoStack.length > 0) {
         alert('save your mapping first, this operation cannot be undone');
         return;
       }

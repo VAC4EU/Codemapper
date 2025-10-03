@@ -6,7 +6,7 @@
   vertical-align: top;
 }
 
-$pad: calc((var(--mdc-checkbox-state-layer-size) - 18px) / 2);
+$pad: calc((var(--mat-checkbox-state-layer-size) - 18px) / 2);
 
 .tag, .code, .concept, .comment {
     padding: $pad;

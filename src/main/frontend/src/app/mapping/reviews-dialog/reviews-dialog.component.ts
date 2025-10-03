@@ -18,7 +18,7 @@
 
 import { Component, Inject, EventEmitter } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ConceptId, VocabularyId, CodeId } from '../data';
+import { ConceptId, VocabularyId, CodeId } from '../mapping-data';
 import { AllTopics, TopicsInfo, ReviewData, ReviewOperation } from '../review';
 
 export interface ReviewsData {
@@ -33,9 +33,10 @@ export interface ReviewsData {
 }
 
 @Component({
-  selector: 'app-reviews-dialog',
-  templateUrl: './reviews-dialog.component.html',
-  styleUrls: ['./reviews-dialog.component.scss']
+    selector: 'app-reviews-dialog',
+    templateUrl: './reviews-dialog.component.html',
+    styleUrls: ['./reviews-dialog.component.scss'],
+    standalone: false
 })
 export class ReviewsDialogComponent {
   constructor(

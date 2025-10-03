@@ -1,6 +1,8 @@
-<span *ngIf="user" class="user-logout">
+@if (user) {
+  <span class="user-logout">
     <a class="account" matTooltip="View account" routerLink="/account" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" mat-menu-item>
-        <mat-icon class="person-icon">person</mat-icon>{{user.username}}
+      <mat-icon class="person-icon">person</mat-icon>{{user.username}}
     </a>
     <button class="logout" matTooltip="Logout" mat-icon-button (click)="logout()"><mat-icon>logout</mat-icon></button>
-</span>
+  </span>
+}

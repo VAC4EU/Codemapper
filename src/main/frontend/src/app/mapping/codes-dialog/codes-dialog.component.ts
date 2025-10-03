@@ -18,20 +18,22 @@
 
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { Mapping, Code, CodeId, VocabularyId } from '../data';
+import { Code, CodeId, VocabularyId } from '../mapping-data';
+import { MappingState } from '../mapping-state';
 
 export interface CodesDialogData {
   title : string;
-  mapping : Mapping;
+  state : MappingState;
   codes : Code[];
   codeParents : { [key : CodeId] : Set<CodeId> };
   vocabularyId : VocabularyId;
 }
 
 @Component({
-  selector: 'codes-dialog',
-  templateUrl: './codes-dialog.component.html',
-  styleUrls: ['./codes-dialog.component.scss']
+    selector: 'codes-dialog',
+    templateUrl: './codes-dialog.component.html',
+    styleUrls: ['./codes-dialog.component.scss'],
+    standalone: false
 })
 export class CodesDialogComponent {
   constructor(

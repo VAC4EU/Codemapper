@@ -25,7 +25,6 @@ import {
   Concepts,
   Codes,
   ConceptId,
-  Mapping,
   Tag,
   Vocabulary,
   VocabularyId,
@@ -34,7 +33,9 @@ import {
   emptyIndexing,
   JSONObject,
   codesEqualExceptTag,
-} from './data';
+} from './mapping-data';
+import { Mapping, Caches } from './mapping';
+import { AllTopics } from './review';
 
 export class OpError extends Error {}
 
@@ -61,16 +62,28 @@ function setEq<T>(a1: Set<T>, a2: Set<T>): boolean {
   return true;
 }
 
+export interface Operand {
+  mapping: Mapping;
+  caches: Caches;
+  allTopics: AllTopics;
+}
+
 export abstract class Operation {
   // run the operation, return the inverse operation if anything was changed,
   // and it can be undone, and raise Error if the operation could not be applied
-  public abstract run(mapping: Mapping): Operation | undefined;
+  public abstract run({ mapping, caches, allTopics }: Operand): Operation;
   public abstract describe(): string;
   saveRequired: boolean;
   saveReviewRequired: boolean;
   noUndo: boolean;
   afterRunCallback: () => void = () => {};
-  constructor(options: {noUndo?: boolean, saveRequired?: boolean, saveReviewRequired?: boolean} = {}) {
+  constructor(
+    options: {
+      noUndo?: boolean;
+      saveRequired?: boolean;
+      saveReviewRequired?: boolean;
+    } = {}
+  ) {
     this.noUndo = options.noUndo ?? false;
     this.saveRequired = options.saveRequired ?? false;
     this.saveReviewRequired = options.saveReviewRequired ?? false;
@@ -101,7 +114,7 @@ export class SetIncludeDescendants extends Operation {
   constructor(readonly includeDescendants: boolean) {
     super();
   }
-  public override run(mapping: Mapping): Operation | undefined {
+  public override run({ mapping }: Operand): Operation {
     let includeDescendants = mapping.meta.includeDescendants;
     mapping.meta.includeDescendants = this.includeDescendants;
     return new SetIncludeDescendants(includeDescendants);
@@ -133,12 +146,12 @@ export class AddConcept extends Operation {
     return `Add concept ${this.concept.id}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let original = mapping.concepts[this.concept.id];
     if (original !== undefined) {
       throw new Error('Concept already added');
     }
-    mapping.concepts = { [this.concept.id]: this.concept, ...mapping.concepts };
+    mapping.concepts[this.concept.id] = this.concept;
     for (const [vocId, codes] of Object.entries(this.codes)) {
       for (const [codeId, code] of Object.entries(codes)) {
         let original = mapping.codes[vocId]?.[codeId];
@@ -162,11 +175,10 @@ export class RemoveConcept extends Operation {
     return `Remove concept ${this.conceptId}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let concept = mapping.concepts[this.conceptId];
     expect(concept !== undefined);
     delete mapping.concepts[this.conceptId];
-    mapping.concepts = { ...mapping.concepts };
     let codes: { [key: VocabularyId]: { [key: CodeId]: Code } } = {};
     for (const [vocId, codeIds] of Object.entries(concept.codes)) {
       codes[vocId] = {};
@@ -184,12 +196,12 @@ export class SetStartIndexing extends Operation {
     readonly concepts: Concepts,
     readonly codes: Codes
   ) {
-    super({saveRequired: true});
+    super({ saveRequired: true });
   }
   override describe(): string {
     return `Set start to ${this.indexing.selected.join(', ')}`;
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     expect(mapping.isEmpty(), 'mapping must be empty to set start');
     mapping.start = this.indexing;
     mapping.addConceptsCodes(this.concepts, this.codes);
@@ -199,16 +211,28 @@ export class SetStartIndexing extends Operation {
 
 export class ResetStart extends Operation {
   constructor() {
-    super({noUndo: true});
+    super({ noUndo: true });
   }
   override describe(): string {
     return `Reset start`;
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     mapping.start = null;
     mapping.codes = {};
     mapping.concepts = {};
-    return;
+    return new NoUndoInversion(this.describe());
+  }
+}
+
+export class NoUndoInversion extends Operation {
+  constructor(private description: string) {
+    super({ noUndo: true });
+  }
+  public override run({}: Operand): Operation {
+    throw new Error('Cannot invert non-undoable operation');
+  }
+  public override describe(): string {
+    return this.description;
   }
 }
 
@@ -221,7 +245,7 @@ export class AddConcepts extends Operation {
     let ids = Object.keys(this.concepts);
     return `Add concepts ${ids.join(', ')}`;
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     console.log('ADD CONCEPTS', this.concepts, this.codes);
     mapping.addConceptsCodes(this.concepts, this.codes);
     let ids = Object.keys(this.concepts).filter((id) => id in mapping.concepts);
@@ -236,7 +260,7 @@ export class RemoveConcepts extends Operation {
   override describe(): string {
     return `Remove concepts ${this.ids.join(', ')}`;
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let concepts: Concepts = {};
     let codes: Codes = {};
     for (let id of this.ids) {
@@ -251,7 +275,6 @@ export class RemoveConcepts extends Operation {
         }
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new AddConcepts(concepts, codes);
   }
 }
@@ -271,16 +294,15 @@ export class SetCodeEnabled extends Operation {
     }`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
-    expect(code !== undefined);
+    expect(code !== undefined, 'unknown code', {
+      vocId: this.vocId,
+      codeId: this.codeId,
+    });
     let originalEnabled = code.enabled;
-    if (originalEnabled !== this.enabled) {
-      code.enabled = this.enabled;
-      // mapping.codes = {...mapping.codes};
-      return new SetCodeEnabled(this.vocId, this.codeId, originalEnabled);
-    }
-    return;
+    code.enabled = this.enabled;
+    return new SetCodeEnabled(this.vocId, this.codeId, originalEnabled);
   }
 }
 
@@ -298,7 +320,7 @@ export class AddCustomCode extends Operation {
     return `Add custom code ${this.conceptId} ${this.vocId} ${this.code.term} ${this.code.id}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     console.log('ADD', this);
     let concept = mapping.concepts[this.conceptId];
     expect(
@@ -324,10 +346,10 @@ export class RemoveCustomCode extends Operation {
     return `Remove custom code ${this.vocId} ${this.codeId}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping, caches }: Operand): Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
     expect(code !== undefined && code.custom);
-    let conceptIds = mapping.getConceptsByCode(this.vocId, this.codeId);
+    let conceptIds = caches.getConceptsByCode(this.vocId, this.codeId);
     expect(
       conceptIds.length == 1,
       'custom code must be associated to one concept only'
@@ -362,13 +384,13 @@ export class EditCustomCode extends Operation {
     return `Edit custom code ${this.vocId} ${this.codeId}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping, caches }: Operand): Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
     expect(code?.custom);
-    let conceptIds = mapping.getConceptsByCode(this.vocId, this.codeId);
+    let conceptIds = caches.getConceptsByCode(this.vocId, this.codeId);
     expect(conceptIds.length == 1, 'custom code must have one concept');
     mapping.codes[this.vocId][this.codeId] = this.code;
-    mapping.setCodeConcept(this.vocId, this.codeId, [this.conceptId]);
+    mapping.setCodeConcept(this.vocId, this.codeId, [this.conceptId], caches);
     return new EditCustomCode(this.vocId, this.codeId, code, conceptIds[0]);
   }
 }
@@ -397,7 +419,7 @@ export class CodesSetTag extends Operation {
     return `Codes set tags of ${count} codes to ${tagStr}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let oldCodes: CodeTags = {};
     for (let vocId of Object.keys(this.codeTags)) {
       for (let codeId of Object.keys(this.codeTags[vocId])) {
@@ -409,6 +431,46 @@ export class CodesSetTag extends Operation {
       }
     }
     return new CodesSetTag(oldCodes);
+  }
+}
+
+export class EditVocabulary extends Operation {
+  constructor(readonly oldId: VocabularyId, readonly newVoc: Vocabulary) {
+    super({saveReviewRequired: true});
+  }
+
+  override describe(): string {
+    return `edit vocabulary ${this.oldId}`;
+  }
+
+  override run({ mapping, allTopics }: Operand): Operation {
+    let oldVoc = mapping.vocabularies[this.oldId];
+    if (oldVoc === undefined) throw new Error('invalid vocabulary identifier');
+    let changeId = this.newVoc.id != this.oldId;
+    if (changeId && mapping.vocabularies[this.newVoc.id])
+      throw new Error('another vocabulary has this ID already');
+    if (!oldVoc.custom) throw new Error('can only edit custom vocabularies');
+    if (!this.newVoc.custom) throw new Error('vocabulary must stay custom');
+    let inv = new EditVocabulary(this.newVoc.id, oldVoc);
+    mapping.vocabularies[this.newVoc.id] = this.newVoc;
+    if (changeId) {
+      delete mapping.vocabularies[this.oldId];
+      mapping.codes[this.newVoc.id] = mapping.codes[this.oldId];
+      delete mapping.codes[this.oldId];
+      for (let concept of Object.values(mapping.concepts)) {
+        let codes = concept.codes[this.oldId];
+        if (codes !== undefined) {
+          delete concept.codes[this.oldId];
+          concept.codes[this.newVoc.id] = codes;
+        }
+      }
+    }
+    let topics = allTopics.byCode[this.oldId];
+    if (topics) {
+      delete allTopics.byCode[this.oldId];
+      allTopics.byCode[this.newVoc.id] = topics;
+    }
+    return inv;
   }
 }
 
@@ -427,31 +489,28 @@ export class AddVocabularies extends Operation {
     return `Add vocabularies ${this.vocs.map((v) => v.id)}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     for (let voc of this.vocs) {
       expect(
         mapping.vocabularies[voc.id] === undefined,
-        'Added vocabulary must not exist',
+        'A vocabulary with that name already exists',
         voc.id
       );
     }
     for (let voc of this.vocs) {
       mapping.vocabularies[voc.id] = voc;
     }
-    mapping.vocabularies = { ...mapping.vocabularies };
     for (let [vocId, codes] of Object.entries(this.codes)) {
       mapping.codes[vocId] = {};
       for (let code of codes) {
         mapping.codes[vocId][code.id] = code;
       }
     }
-    mapping.codes = { ...mapping.codes };
     for (let [cui, byVoc] of Object.entries(this.conceptCodes)) {
       for (let [vocId, codeIds] of Object.entries(byVoc)) {
         mapping.concepts[cui].codes[vocId] = new Set(codeIds);
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new DeleteVocabularies(this.vocs.map((v) => v.id));
   }
 }
@@ -465,18 +524,16 @@ export class DeleteVocabularies extends Operation {
     return `Remove vocabulary ${this.vocIds.join(', ')}`;
   }
 
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     let vocs: Vocabulary[] = this.vocIds.map((id) => mapping.vocabularies[id]);
     let codes: { [key: VocabularyId]: Code[] } = {};
     for (let vocId of this.vocIds) {
       codes[vocId] = Object.values(mapping.codes[vocId]);
       delete mapping.codes[vocId];
     }
-    mapping.codes = { ...mapping.codes };
     for (let vocId of this.vocIds) {
       delete mapping.vocabularies[vocId];
     }
-    mapping.vocabularies = { ...mapping.vocabularies };
     let conceptCodes: { [key: ConceptId]: { [key: VocabularyId]: CodeId[] } } =
       {};
     for (let concept of Object.values(mapping.concepts)) {
@@ -491,7 +548,6 @@ export class DeleteVocabularies extends Operation {
         }
       }
     }
-    mapping.concepts = { ...mapping.concepts };
     return new AddVocabularies(vocs, codes, conceptCodes);
   }
 }
@@ -502,30 +558,31 @@ export class Remap extends Operation {
     private conceptsCodes: ConceptsCodes,
     private vocabularies: Vocabularies
   ) {
-    super({saveRequired: true, noUndo: true});
+    super({ saveRequired: true, noUndo: true });
   }
   override describe(): string {
     return 'Remap concept codes';
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping, caches }: Operand): Operation {
     mapping.remap(
       this.umlsVersion,
       this.conceptsCodes.concepts,
       this.conceptsCodes.codes,
-      this.vocabularies
+      this.vocabularies,
+      caches
     );
-    return;
+    return new NoUndoInversion(this.describe());
   }
 }
 
 export class ImportMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super({noUndo: true, saveRequired: true, saveReviewRequired: true});
+    super({ noUndo: true, saveRequired: true, saveReviewRequired: true });
   }
   override describe(): string {
     return 'Import initial mapping';
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping, caches }: Operand): Operation {
     if (!mapping.isEmpty()) {
       throw new Error('Cannot import, the mapping is not empty');
     }
@@ -534,19 +591,19 @@ export class ImportMapping extends Operation {
     mapping.concepts = this.mapping.concepts;
     mapping.codes = this.mapping.codes;
     mapping.meta = this.mapping.meta;
-    return;
+    return new NoUndoInversion(this.describe());
   }
 }
 
 export class AddMapping extends Operation {
   constructor(private mapping: MappingData) {
-    super({noUndo: true, saveRequired: true});
+    super({ noUndo: true, saveRequired: true });
   }
   override describe(): string {
-    return 'Add mapping';
+    return 'Import mapping';
   }
-  override run(mapping: Mapping): Operation | undefined {
+  override run({ mapping }: Operand): Operation {
     mapping.addMapping(this.mapping);
-    return;
+    return new NoUndoInversion(this.describe());
   }
 }

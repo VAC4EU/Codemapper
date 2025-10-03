@@ -18,12 +18,13 @@
 
 import { Inject, Component } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { VocabularyId } from '../data';
+import { VocabularyId } from '../mapping-data';
 
 @Component({
-  selector: 'app-custom-vocabulary-dialog',
-  templateUrl: './custom-vocabulary-dialog.component.html',
-  styleUrls: ['./custom-vocabulary-dialog.component.scss']
+    selector: 'app-custom-vocabulary-dialog',
+    templateUrl: './custom-vocabulary-dialog.component.html',
+    styleUrls: ['./custom-vocabulary-dialog.component.scss'],
+    standalone: false
 })
 export class CustomVocabularyDialogComponent {
   constructor(
@@ -31,6 +32,7 @@ export class CustomVocabularyDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data : {
       id : VocabularyId,
       name : string,
+      title: string,
     }
   ) { }
   cancel() {

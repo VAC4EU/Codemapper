@@ -18,12 +18,13 @@
 
 import { Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { Code } from '../data';
+import { Code } from '../mapping-data';
 
 @Component({
-  selector: 'mapping-code',
-  templateUrl: './code.component.html',
-  styleUrls: ['./code.component.scss']
+    selector: 'mapping-code',
+    templateUrl: './code.component.html',
+    styleUrls: ['./code.component.scss'],
+    standalone: false
 })
 export class CodeComponent {
   @Input({required: true}) code! : Code;

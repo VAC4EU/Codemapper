@@ -1,0 +1,132 @@
+import { Caches, Mapping } from "./mapping";
+import { Codes, Concepts, MappingData, Vocabularies } from "./mapping-data";
+import { Operation } from "./operations";
+import { AllTopics } from "./review";
+
+export class MappingState {
+  caches: Caches = new Caches({}, {});
+  stacks: Stacks = new Stacks();
+
+  constructor(public mapping: Mapping) {
+    this.recache();
+  }
+
+  recache() {
+    this.caches = this.mapping.caches();
+  }
+
+  cloneCacheAndCheck(): MappingState {
+    let state = new MappingState(this.mapping.deepClone());
+    state.stacks = this.stacks;
+    return state;
+  }
+
+  addMapping(data: MappingData) {
+    this.mapping.addMapping(data);
+    this.recache();
+  }
+
+  remap(
+    umlsVersion: string,
+    concepts: Concepts,
+    codes: Codes,
+    vocabularies: Vocabularies
+  ) {
+    this.mapping.remap(umlsVersion, concepts, codes, vocabularies, this.caches);
+    this.recache();
+  }
+
+  runIntern(op: Operation, allTopics: AllTopics) {
+    let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics});
+    this.recache();
+    return inv;
+  }
+
+  public run(op: Operation, allTopics: AllTopics) {
+    console.log('Run', op);
+    if (op.noUndo && this.stacks.hasUndo()) {
+      alert('this operation cannot be undone, please save your mapping first');
+      return;
+    }
+    let inv;
+    try {
+      inv = this.runIntern(op, allTopics);
+      this.mapping = this.mapping.deepClone(); // ensure that all changes are picked up
+    } catch (err) {
+      let msg = `could not run operation: ${(err as Error).message}`;
+      console.trace(err);
+      console.error(msg, op, err);
+      alert(msg);
+      return;
+    }
+    this.stacks.redoStack = [];
+    if (inv !== undefined) {
+      this.stacks.undoStack.push({description: op.describe(), op: inv});
+    } else {
+      console.log('no inverse operation');
+    }
+  }
+
+  public undo(allTopics: AllTopics) {
+    let op = this.stacks.undoStack.pop();
+    if (op === undefined) return;
+    console.log('Undo', op.description);
+    let inv = this.runIntern(op.op, allTopics);
+    if (inv !== undefined) {
+      this.stacks.redoStack.push({description: op.description, op: inv});
+    }
+  }
+
+  public redo(allTopics: AllTopics) {
+    let op = this.stacks.redoStack.pop();
+    if (op === undefined) return;
+    console.log('Redo', op.description);
+    let inv = this.runIntern(op.op, allTopics);
+    if (inv !== undefined) {
+      this.stacks.undoStack.push({description: op.op.describe(), op: inv});
+    }
+  }
+}
+
+export class Stacks {
+  
+  undoStack: {description: string, op: Operation}[] = [];
+  redoStack: {description: string, op: Operation}[] = [];
+
+  clear() {
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
+  hasUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+  
+  canUndo(): boolean {
+    return this.undoStack.length > 0 && !this.undoStack[0].op.noUndo;
+  }
+  
+  canRedo(): boolean {
+    return this.redoStack.length > 0 && !this.redoStack[0].op.noUndo;
+  }
+
+  undoTooltip(): string | undefined {
+    let op0 = this.undoStack[0];
+    if (op0) {
+      if (op0.op.noUndo)
+        return "Cannot undo";
+      else
+        return `Undo (${this.undoStack[0].description})`;
+    } else {
+      return "Nothing to undo";
+    }
+  }
+
+  redoTooltip(): string | undefined {
+    if (this.redoStack.length > 0) {
+      return `Redo (${this.redoStack[0].description})`;
+    } else {
+      return "Nothing to redo";
+    }
+  }
+}

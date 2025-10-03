@@ -2,19 +2,16 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import {
   Codes,
   Concepts,
-  DataMeta,
   EMPTY_SERVER_INFO,
   Indexing,
-  Mapping,
-  MappingFormat,
   ServerInfo,
   Start,
   StartType,
   Vocabularies,
-} from '../data';
-import { firstValueFrom } from 'rxjs';
+} from '../mapping-data';
 import { ApiService, ImportedMapping, TypesInfo } from '../api.service';
 import { AllTopics } from '../review';
+import { MappingInfo } from '../persistency.service';
 
 export interface StartData {
   start: Start;
@@ -26,15 +23,17 @@ export interface StartData {
 }
 
 @Component({
-  selector: 'start-mapping',
-  templateUrl: './start-mapping.component.html',
-  styleUrls: ['./start-mapping.component.scss'],
+    selector: 'start-mapping',
+    templateUrl: './start-mapping.component.html',
+    styleUrls: ['./start-mapping.component.scss'],
+    standalone: false
 })
 export class StartMappingComponent {
   mode: string = 'edf';
 
   @Input({ required: true }) vocIds: string[] = [];
-  @Input({ required: true }) serverInfo: ServerInfo = EMPTY_SERVER_INFO;
+  @Input({ required: true }) serverInfo!: ServerInfo;
+  @Input({ required: true }) mappingInfo!: MappingInfo;
   @Output() start = new EventEmitter<StartData>();
 
   constructor(private apiService: ApiService) {}

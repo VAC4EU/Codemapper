@@ -30,18 +30,16 @@ import {
   VocabularyId,
   ConceptId,
   Concept,
-  Concepts,
   ConceptsCodes,
   Code,
   CodeId,
   ServerInfo,
   Span,
-  Mapping,
   Vocabularies,
-  cuiOfId,
-} from './data';
+} from './mapping-data';
 import { AllTopics0 } from './review';
 import { urlEncodedOptions } from '../app.module';
+import { MappingInfo } from './persistency.service';
 
 export interface TypesInfo {
   ignoreTermTypes: string[];
@@ -57,6 +55,16 @@ export interface CsvFilter {
   type: string;
   eventAbbreviation: string;
   system: string;
+}
+
+export function csvFilter(mappingInfo: MappingInfo): CsvFilter | null {
+  if (mappingInfo.meta.type === null || mappingInfo.meta.system === null)
+    return null;
+  return {
+    type: mappingInfo.meta.type,
+    eventAbbreviation: mappingInfo.mappingName,
+    system: mappingInfo.meta.system,
+  };
 }
 
 @Injectable({
@@ -178,7 +186,7 @@ export class ApiService {
   }
 
   async remapData(
-    mapping: Mapping,
+    mapping: MappingData,
     vocabularies: Vocabularies,
     info: TypesInfo
   ): Promise<{

@@ -1,11 +1,14 @@
 <h1 mat-dialog-title>{{data.title}}</h1>
 <div mat-dialog-content>
+  @if (data.subtitle) { <span>{{data.subtitle}}</span> }
   <concepts-table
     #table
     [conceptTags]="{}"
     [concepts]="data.concepts"
     [codes]="data.codes"
     [vocabularies]="data.vocabularies"
+    [showCodeTagIndication]="true"
+    [allTopics]="data.allTopics"
     [userCanEdit]="false">
   </concepts-table>
 </div>

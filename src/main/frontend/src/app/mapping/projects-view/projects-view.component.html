@@ -6,11 +6,13 @@
 <div class="center-content">
   <div class="toolbox">
 
-    <mat-card appearance="outlined" *ngIf="user?.admin">
-      <mat-card-actions>
-        <button (click)="openDialog(newProjectDialog)" mat-button>Create new folder</button>
-      </mat-card-actions>
-    </mat-card>
+    @if (user?.admin) {
+      <mat-card appearance="outlined">
+        <mat-card-actions>
+          <button (click)="openDialog(newProjectDialog)" mat-button>Create new folder</button>
+        </mat-card-actions>
+      </mat-card>
+    }
   </div>
 
   <table mat-table [dataSource]="projects">
@@ -42,7 +44,9 @@
       <mat-label>Name</mat-label>
       <input #projectName matInput>
     </mat-form-field>
-    <p *ngIf="createProjectError">{{createProjectError}}</p>
+    @if (createProjectError) {
+      <p>{{createProjectError}}</p>
+    }
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button (click)="closeCreateProject()" matDialogClose>Cancel</button>

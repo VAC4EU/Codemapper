@@ -1,0 +1,21 @@
+<div class="dialog-title">
+  <h2 matDialogTitle>Edit metadatas</h2>
+  <button mat-icon-button matDialogClose><mat-icon>close</mat-icon></button>
+</div>
+<mat-dialog-content>
+  Multiple mappings selected, you can only add or remove projects:
+  <mat-form-field style="width:100%;">
+    <mat-label>Add projects</mat-label>
+    <input matInput [(ngModel)]="addProjects" />
+    <mat-hint>A comma-separated list of projects to be added to all selected mappings</mat-hint>
+  </mat-form-field>
+  <mat-form-field style="width:100%;">
+    <mat-label>Remove projects</mat-label>
+    <input matInput [(ngModel)]="removeProjects" />
+    <mat-hint>A comma-separated list of projects to be remove from all selected mappings</mat-hint>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="mapping-save" mat-raised-button (click)="submit()" matDialogClose
+    color="primary">Ok</button>
+</mat-dialog-actions>

@@ -19,46 +19,56 @@
         </mat-checkbox>
       </td>
     </ng-container>
-  
+
     <ng-container matColumnDef="concept" sticky>
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Concept</th>
       <td mat-cell *matCellDef="let concept" class="concept">
         <mapping-concept [tag]="conceptTags[concept.id]" [concept]="concept"></mapping-concept>
       </td>
     </ng-container>
-  
-    <ng-container *ngFor="let voc of vocabularies" matColumnDef="codes-{{voc}}">
-      <th mat-header-cell *matHeaderCellDef class="column-concept-codes">{{voc}}</th>
-      <td mat-cell *matCellDef="let concept" class="code column-concept-codes">
-        <div class="conceptCode" *ngFor="let id of concept.codes[voc] ?? [] | sort">
-          <mapping-code
-            *ngIf="codes[voc][id]; let code"
-            [code]="code"
-            [showTerm]=false
-            [showTagIndication]="showCodeTagIndication"></mapping-code>
-        </div>
-      </td>
-    </ng-container>
-  
-    <ng-container matColumnDef="comments" *ngIf="allTopics">
-      <th mat-header-cell *matHeaderCellDef>Comments</th>
-      <td mat-cell *matCellDef="let concept" class="comment">
-        <button
-          *ngIf="allTopics.byConcept[concept.id]; let topics"
-          mat-stroked-button
-          matTooltip='{{topics.tooltip()}}'
-          (click)="showReviews(concept.id)"
-          class='btn-xs'>
-          <mat-icon fontIcon="comment"></mat-icon>
-          {{topics.numTopics()}}/{{topics.numMessages}}
-          <span *ngIf="topics.numNewMessages > 0" class="num-new-messages">
-            ({{topics.numNewMessages}})
-          </span>
-        </button>
-      </td>
-    </ng-container>
-  
+
+    @for (voc of vocabularies; track voc) {
+      <ng-container matColumnDef="codes-{{voc}}">
+        <th mat-header-cell *matHeaderCellDef class="column-concept-codes">{{voc}}</th>
+        <td mat-cell *matCellDef="let concept" class="code column-concept-codes">
+          @for (id of concept.codes[voc] ?? [] | sortCodes; track id) {
+            <div class="conceptCode">
+              @if (codes[voc][id]; as code) {
+                <mapping-code
+                  [code]="code"
+                  [showTerm]=false
+                [showTagIndication]="showCodeTagIndication"></mapping-code>
+              }
+            </div>
+          }
+        </td>
+      </ng-container>
+    }
+
+    @if (allTopics) {
+      <ng-container matColumnDef="comments">
+        <th mat-header-cell *matHeaderCellDef>Comments</th>
+        <td mat-cell *matCellDef="let concept" class="comment">
+          @if (allTopics.byConcept[concept.id]; as topics) {
+            <button
+              mat-stroked-button
+              matTooltip='{{topics.tooltip()}}'
+              (click)="showReviews(concept.id)"
+              class='btn-xs'>
+              <mat-icon fontIcon="comment"></mat-icon>
+              {{topics.numTopics()}}/{{topics.numMessages}}
+              @if (topics.numNewMessages > 0) {
+                <span class="num-new-messages">
+                  ({{topics.numNewMessages}})
+                </span>
+              }
+            </button>
+          }
+        </td>
+      </ng-container>
+    }
+
     <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
     <tr mat-row *matRowDef="let concept; columns: columns;"></tr>
-  </table>  
+  </table>
 </div>

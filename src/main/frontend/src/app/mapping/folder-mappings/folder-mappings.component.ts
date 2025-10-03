@@ -22,7 +22,6 @@ import {
 } from '../download-dialog/download-dialog.component';
 import {
   EMPTY_SERVER_INFO,
-  Mapping,
   MappingFormat,
   DataMeta,
   ServerInfo,
@@ -31,10 +30,8 @@ import {
   MappingMeta,
   DEFAULT_INCLUDE_DESCENDANTS,
   emptyMappingMeta,
-  Concepts,
-  Codes,
-} from '../data';
-import * as ops from '../mapping-ops';
+} from '../mapping-data';
+import * as ops from '../operations';
 import { User } from '../auth.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
@@ -47,13 +44,22 @@ import { firstValueFrom } from 'rxjs';
 import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
-import { EditMetaComponent } from '../edit-meta/edit-meta.component';
-import { StartMappingComponent } from '../start-mapping/start-mapping.component';
+import {
+  EditMetaComponent,
+  EditMetaResult,
+} from '../edit-meta/edit-meta.component';
+import { MappingState } from '../mapping-state';
+import { Mapping } from '../mapping';
+import {
+  EditMetasComponent,
+  EditMetasResult,
+} from '../edit-metas/edit-metas.component';
 
 @Component({
   selector: 'folder-mappings',
   templateUrl: './folder-mappings.component.html',
   styleUrls: ['./folder-mappings.component.scss'],
+  standalone: false,
 })
 export class FolderMappingsComponent {
   @Input({ required: true }) user!: User;
@@ -131,7 +137,9 @@ export class FolderMappingsComponent {
       return (
         info.mappingName.toLowerCase().includes(filter) ||
         (info.meta?.definition ?? '').toLowerCase().includes(filter) ||
-        (info.meta.system + '_' + info.mappingName + '_' + info.meta.type).toLowerCase().includes(filter)
+        (info.meta.system + '_' + info.mappingName + '_' + info.meta.type)
+          .toLowerCase()
+          .includes(filter)
       );
     };
     this.dataSource.sortingDataAccessor = (mapping0: any, property: string) => {
@@ -231,56 +239,6 @@ export class FolderMappingsComponent {
     });
   }
 
-  importNew(projectName: string) {
-    if (!projectName) {
-      return;
-    }
-    let ignoreTermTypes = this.serverInfo.defaultIgnoreTermTypes;
-    let noWarning = this.user.username == 'Codelist import';
-    this.dialog
-      .open(ImportCsvDialogComponent, { data: { ignoreTermTypes, noWarning } })
-      .afterClosed()
-      .subscribe((imported) => {
-        console.log('IMPORTED', imported);
-        if (typeof imported == 'object') {
-          let start: Start = {
-            type: StartType.CsvImport,
-            csvContent: imported.csvContent,
-          };
-          let { mappingName, mapping } = imported as ImportedMapping;
-          let { vocabularies, concepts, codes, umlsVersion } = mapping;
-          let meta: DataMeta = {
-            formatVersion: MappingFormat.version,
-            umlsVersion,
-            ignoreTermTypes,
-            ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
-            allowedTags: this.serverInfo.defaultAllowedTags,
-            includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
-          };
-          let mapping1 = new Mapping(
-            meta,
-            start,
-            vocabularies,
-            concepts,
-            codes
-          );
-          let allTopics = AllTopics.fromRaw(
-            imported.allTopics,
-            null,
-            Object.keys(concepts)
-          );
-          let initial = {
-            mappingName,
-            projectName,
-            mapping: mapping1,
-            allTopics,
-            warning: imported.warning,
-          };
-          this.router.navigate(['/mapping'], { state: { initial } });
-        }
-      });
-  }
-
   async deleteSelectedMappings() {
     let names = this.selection.selected.map((c) => c.mappingName);
     if (
@@ -320,29 +278,75 @@ export class FolderMappingsComponent {
     this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
 
-  openMetaDataDialog(info: MappingInfo) {
-    this.dialog
-      .open(EditMetaComponent, {
-        data: { name: info.mappingName, meta: info.meta },
-      })
-      .afterClosed()
-      .subscribe(async (result) => {
-        if (result) {
-          try {
-            await EditMetaComponent.save(
-              info,
-              this.persistency,
-              info.mappingShortkey!,
-              result
-            );
-            this.allProperties = this.getAllTags();
-          } catch (e) {
-            let msg = `Could not save name or meta`;
-            console.error(msg, e);
-            alert(msg);
+  openMetaDataDialog(infos: MappingInfo[]) {
+    if (infos.length == 1) {
+      let info = infos[0];
+      this.dialog
+        .open(EditMetaComponent, {
+          data: { name: info.mappingName, meta: info.meta },
+        })
+        .afterClosed()
+        .subscribe(async (result: EditMetaResult) => {
+          if (result) {
+            try {
+              await EditMetaComponent.save(
+                info,
+                this.persistency,
+                info.mappingShortkey!,
+                result
+              );
+              this.allProperties = this.getAllTags();
+            } catch (e) {
+              let msg = `Could not save name or meta`;
+              console.error(msg, e);
+              alert(msg);
+            }
           }
-        }
-      });
+        });
+    } else {
+      this.dialog
+        .open(EditMetasComponent)
+        .afterClosed()
+        .subscribe(async (result: EditMetasResult) => {
+          if (!result) return;
+          for (let info of infos) {
+            let needsSave = false;
+            for (let project of result.addProjects) {
+              if (!info.meta.projects.includes(project)) {
+                info.meta.projects.push(project);
+                needsSave = true;
+              }
+            }
+            for (let project of result.removeProjects) {
+              if (info.meta.projects.includes(project)) {
+                info.meta.projects = info.meta.projects.filter(
+                  (p) => p != project
+                );
+                needsSave = true;
+              }
+            }
+            if (needsSave) {
+              let result: EditMetaResult = {
+                name: info.mappingName,
+                meta: info.meta,
+              };
+              try {
+                await EditMetaComponent.save(
+                  info,
+                  this.persistency,
+                  info.mappingShortkey!,
+                  result
+                );
+                this.allProperties = this.getAllTags();
+              } catch (e) {
+                let msg = `Could not save name or meta`;
+                console.error(msg, e);
+                alert(msg);
+              }
+            }
+          }
+        });
+    }
   }
 
   async openCreateMappingDialog() {
@@ -387,7 +391,9 @@ export class FolderMappingsComponent {
       ignoreSemanticTypes: this.serverInfo.defaultIgnoreSemanticTypes,
       includeDescendants: DEFAULT_INCLUDE_DESCENDANTS,
     };
-    let mapping = new Mapping(info, null, vocabularies, {}, {});
+    let mapping = new MappingState(
+      new Mapping(info, null, vocabularies, {}, {})
+    );
     let initial = { mappingName, projectName, mapping, meta };
     this.router.navigate(['/mapping'], { state: { initial } });
   }
@@ -437,20 +443,31 @@ export class FolderMappingsComponent {
         let { info, mapping } = await firstValueFrom(
           this.persistency.loadLatestRevisionMapping(shortkey, this.serverInfo)
         );
+        let state = new MappingState(Mapping.fromData(mapping));
+        let allTopics0 = await firstValueFrom(this.api.allTopics(shortkey));
+        let allTopics = AllTopics.fromRaw(
+          allTopics0,
+          this.user.username,
+          Object.keys(state.mapping.concepts)
+        );
         console.log(
           'BATCH PROCESS',
           mappingInfos[index],
           info.version,
           mapping
         );
-        mapping.cleanupRecacheCheck();
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);
-          mapping.run(op, false);
+          state.run(op, allTopics);
           op.afterRunCallback();
         }
+        if (operations.some((op) => op.saveReviewRequired)) {
+          await firstValueFrom(
+            this.api.saveAllTopics(shortkey, allTopics.toRaw())
+          );
+        }
         let newVersion = await firstValueFrom(
-          this.persistency.saveRevision(shortkey, mapping, summary)
+          this.persistency.saveRevision(shortkey, state.mapping, summary)
         );
         let newMappingInfo = await firstValueFrom(
           this.persistency.mappingInfo(shortkey)

@@ -14,9 +14,11 @@
   <mat-form-field>
     <mat-label>Concept*</mat-label>
     <mat-select [(ngModel)]="data.code.concept">
-      <mat-option *ngFor="let concept of data.concepts" value={{concept.id}}>
-        {{concept.name}}
-      </mat-option>
+      @for (concept of data.concepts; track concept) {
+        <mat-option value={{concept.id}}>
+          {{concept.name}}
+        </mat-option>
+      }
     </mat-select>
   </mat-form-field>
 </div>

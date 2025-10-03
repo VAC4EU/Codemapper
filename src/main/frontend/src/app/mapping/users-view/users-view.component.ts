@@ -23,9 +23,10 @@ function parseProjectRoles(csv : string) {
 }
 
 @Component({
-  selector: 'app-users-view',
-  templateUrl: './users-view.component.html',
-  styleUrls: ['./users-view.component.scss']
+    selector: 'app-users-view',
+    templateUrl: './users-view.component.html',
+    styleUrls: ['./users-view.component.scss'],
+    standalone: false
 })
 export class UsersViewComponent {
   user : User | null = null;

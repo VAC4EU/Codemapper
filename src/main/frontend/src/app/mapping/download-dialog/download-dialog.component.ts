@@ -1,8 +1,7 @@
 import { Component, HostListener, Inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MappingInfo } from '../persistency.service';
-import { MappingMeta } from '../data';
+import { MappingMeta } from '../mapping-data';
 import { AppComponent } from 'src/app/app.component';
 import { firstValueFrom, map, race, Subject, takeUntil } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -19,9 +18,10 @@ export function includeDescendants(value: boolean) {
 }
 
 @Component({
-  selector: 'app-download-dialog',
-  templateUrl: './download-dialog.component.html',
-  styleUrls: ['./download-dialog.component.scss'],
+    selector: 'app-download-dialog',
+    templateUrl: './download-dialog.component.html',
+    styleUrls: ['./download-dialog.component.scss'],
+    standalone: false
 })
 export class DownloadDialogComponent {
   IncludeDescendants = IncludeDescendants;

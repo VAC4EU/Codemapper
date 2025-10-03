@@ -1,95 +1,99 @@
 <menu-banner>
-    <!-- <mat-icon>groups</mat-icon> -->
-    CodeMapper: Users
+  <!-- <mat-icon>groups</mat-icon> -->
+  CodeMapper: Users
 </menu-banner>
 
 <div class="center-content">
-    <mat-tab-group>
+  <mat-tab-group>
 
-        <mat-tab label="Users">
-            <div class="toolbox">
-                <mat-card appearance="outlined">
-                    <mat-card-header><h4>Create new user</h4></mat-card-header>
-                    <mat-card-content class="form-column2">
-                        <mat-form-field>
-                            <mat-label>Name</mat-label>
-                            <input #createUserName matInput autocomplete="off">
-                        </mat-form-field>
-                        <mat-form-field>
-                            <mat-label>Password</mat-label>
-                            <input #createUserPassword matInput [type]="hidePasswordNew ? 'password' : 'text'"
-                                autocomplete="new-password">
-                            <button mat-icon-button matSuffix (click)="hidePasswordNew = !hidePasswordNew">
-                                <mat-icon>{{hidePasswordNew ? 'visibility_off' : 'visibility'}}</mat-icon>
-                            </button>
-                        </mat-form-field>
-                        <mat-form-field>
-                            <mat-label>Email</mat-label>
-                            <input #createUserEmail matInput autocomplete="off">
-                        </mat-form-field>
-                        <mat-form-field>
-                            <mat-label>Folder roles</mat-label>
-                            <textarea #createProjectRoles matInput autocomplete="off">Tests: Owner</textarea>
-                            <mat-hint>FOLDER: ROLE per line, ROLE is Owner/Editor/Reviewer</mat-hint>
-                        </mat-form-field>
-                        <button mat-raised-button class="create-user-button"
-                            [disabled]="!createUserName.value || !createUserPassword.value || !createUserEmail.value"
-                            (click)="createUser(createUserName.value, createUserPassword.value, createUserEmail.value, createProjectRoles.value)"
-                            color="primary">Create</button>
-                    </mat-card-content>
-                </mat-card>
-                <mat-card appearance="outlined">
-                    <mat-card-header><h4>Set password</h4></mat-card-header>
-                    <mat-card-content class="form-column">
-                        <mat-form-field subscriptSizing="dynamic" class="input-form">
-                            <mat-label>User</mat-label>
-                            <mat-select #changePasswordUsername>
-                                <mat-option *ngFor="let user of users" value="{{user.username}}">
-                                    {{user.username}}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                        <mat-form-field subscriptSizing="dynamic" class="input-form">
-                            <mat-label>Password</mat-label>
-                            <input #changePasswordPassword matInput [type]="hidePasswordSet ? 'password' : 'text'"
-                                autocomplete="new-password">
-                            <button mat-icon-button matSuffix (click)="hidePasswordSet = !hidePasswordSet">
-                                <mat-icon>{{hidePasswordSet ? 'visibility_off' : 'visibility'}}</mat-icon>
-                            </button>
-                        </mat-form-field>
-                        <button mat-raised-button
-                            [disabled]="!changePasswordUsername.value || !changePasswordPassword.value"
-                            (click)="changePassword(changePasswordUsername.value, changePasswordPassword.value)"
-                            color="primary">Set</button>
-                    </mat-card-content>
-                </mat-card>
-            </div>
-            <h3>All users</h3>
-            <users-table [users]="users"></users-table>
-        </mat-tab>
+    <mat-tab label="Users">
+      <div class="toolbox">
+        <mat-card appearance="outlined">
+          <mat-card-header><h4>Create new user</h4></mat-card-header>
+          <mat-card-content class="form-column2">
+            <mat-form-field>
+              <mat-label>Name</mat-label>
+              <input #createUserName matInput autocomplete="off">
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Password</mat-label>
+              <input #createUserPassword matInput [type]="hidePasswordNew ? 'password' : 'text'"
+                autocomplete="new-password">
+              <button mat-icon-button matSuffix (click)="hidePasswordNew = !hidePasswordNew">
+                <mat-icon>{{hidePasswordNew ? 'visibility_off' : 'visibility'}}</mat-icon>
+              </button>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Email</mat-label>
+              <input #createUserEmail matInput autocomplete="off">
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Folder roles</mat-label>
+              <textarea #createProjectRoles matInput autocomplete="off">Tests: Owner</textarea>
+              <mat-hint>FOLDER: ROLE per line, ROLE is Owner/Editor/Reviewer</mat-hint>
+            </mat-form-field>
+            <button mat-raised-button class="create-user-button"
+              [disabled]="!createUserName.value || !createUserPassword.value || !createUserEmail.value"
+              (click)="createUser(createUserName.value, createUserPassword.value, createUserEmail.value, createProjectRoles.value)"
+            color="primary">Create</button>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined">
+          <mat-card-header><h4>Set password</h4></mat-card-header>
+          <mat-card-content class="form-column">
+            <mat-form-field subscriptSizing="dynamic" class="input-form">
+              <mat-label>User</mat-label>
+              <mat-select #changePasswordUsername>
+                @for (user of users; track user) {
+                  <mat-option value="{{user.username}}">
+                    {{user.username}}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic" class="input-form">
+              <mat-label>Password</mat-label>
+              <input #changePasswordPassword matInput [type]="hidePasswordSet ? 'password' : 'text'"
+                autocomplete="new-password">
+              <button mat-icon-button matSuffix (click)="hidePasswordSet = !hidePasswordSet">
+                <mat-icon>{{hidePasswordSet ? 'visibility_off' : 'visibility'}}</mat-icon>
+              </button>
+            </mat-form-field>
+            <button mat-raised-button
+              [disabled]="!changePasswordUsername.value || !changePasswordPassword.value"
+              (click)="changePassword(changePasswordUsername.value, changePasswordPassword.value)"
+            color="primary">Set</button>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <h3>All users</h3>
+      <users-table [users]="users"></users-table>
+    </mat-tab>
 
-        <mat-tab label="Admins">
-            <div class="toolbox">
-                <mat-card appearance="outlined">
-                    <mat-card-header><h4>Set admin status</h4></mat-card-header>
-                    <mat-card-content class="form-column">
-                        <mat-form-field subscriptSizing="dynamic" class="input-form">
-                            <mat-label>User</mat-label>
-                            <mat-select #setAdminUsername>
-                                <mat-option *ngFor="let user of users" value="{{user.username}}">
-                                    {{user.username}}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                        <mat-checkbox #setAdminAdmin>Is admin</mat-checkbox>
-                        <button mat-raised-button [disabled]="!setAdminUsername.value"
-                            (click)="setAdmin(setAdminUsername.value, setAdminAdmin.checked)"
-                            color="primary">Set</button>
-                    </mat-card-content>
-                </mat-card>
-            </div>
-            <p>(Can create users and projects and assign other admins.)</p>
-            <users-table [users]="admins"></users-table>
-        </mat-tab>
-    </mat-tab-group>
+    <mat-tab label="Admins">
+      <div class="toolbox">
+        <mat-card appearance="outlined">
+          <mat-card-header><h4>Set admin status</h4></mat-card-header>
+          <mat-card-content class="form-column">
+            <mat-form-field subscriptSizing="dynamic" class="input-form">
+              <mat-label>User</mat-label>
+              <mat-select #setAdminUsername>
+                @for (user of users; track user) {
+                  <mat-option value="{{user.username}}">
+                    {{user.username}}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-checkbox #setAdminAdmin>Is admin</mat-checkbox>
+            <button mat-raised-button [disabled]="!setAdminUsername.value"
+              (click)="setAdmin(setAdminUsername.value, setAdminAdmin.checked)"
+            color="primary">Set</button>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <p>(Can create users and projects and assign other admins.)</p>
+      <users-table [users]="admins"></users-table>
+    </mat-tab>
+  </mat-tab-group>
 </div>

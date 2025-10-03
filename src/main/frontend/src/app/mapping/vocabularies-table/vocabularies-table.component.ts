@@ -17,14 +17,15 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Input, Component, SimpleChanges } from '@angular/core';
-import { Vocabulary } from '../data';
+import { Vocabulary } from '../mapping-data';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
-  selector: 'vocabularies-table',
-  templateUrl: './vocabularies-table.component.html',
-  styleUrls: ['./vocabularies-table.component.scss']
+    selector: 'vocabularies-table',
+    templateUrl: './vocabularies-table.component.html',
+    styleUrls: ['./vocabularies-table.component.scss'],
+    standalone: false
 })
 export class VocabulariesTableComponent {
   @Input() showFilter : boolean = false;

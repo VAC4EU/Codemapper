@@ -26,16 +26,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Vocabularies,
-  Mapping,
   ServerInfo,
   EMPTY_SERVER_INFO,
   MappingMeta,
   StartType,
   MappingFormat,
   DataMeta,
-} from '../data';
+} from '../mapping-data';
+import { MappingState } from "../mapping-state";
 import { AllTopics, ReviewData } from '../review';
-import * as ops from '../mapping-ops';
+import * as ops from '../operations';
 import { ApiService } from '../api.service';
 import {
   emptyMappingInfo,
@@ -56,6 +56,7 @@ import {
   includeDescendants,
 } from '../download-dialog/download-dialog.component';
 import { StartData } from '../start-mapping/start-mapping.component';
+import { Mapping } from '../mapping';
 
 export enum Tabs {
   Start = 0,
@@ -79,13 +80,14 @@ export interface Initial {
 }
 
 @Component({
-  selector: 'app-mapping-view',
-  templateUrl: './mapping-view.component.html',
-  styleUrls: ['./mapping-view.component.scss'],
+    selector: 'app-mapping-view',
+    templateUrl: './mapping-view.component.html',
+    styleUrls: ['./mapping-view.component.scss'],
+    standalone: false
 })
 export class MappingViewComponent implements HasPendingChanges {
   initial: Initial | null = null; // non-null iff starting
-  mapping: Mapping | null = null; // null iff starting
+  state: MappingState | null = null; // null iff starting
 
   shortkey: string | null = null; // non-null if saved
   info: MappingInfo = emptyMappingInfo();
@@ -118,7 +120,7 @@ export class MappingViewComponent implements HasPendingChanges {
   ) {}
 
   get hasPendingChanges(): boolean {
-    return this.mapping != null && this.mapping.undoStack.length > 0;
+    return this.state != null && this.state.stacks.undoStack.length > 0;
   }
 
   get userCanEdit() {
@@ -177,23 +179,25 @@ export class MappingViewComponent implements HasPendingChanges {
         this.projectRole = await firstValueFrom(
           this.persistency.getProjectRole(this.info.projectName)
         );
-        let postOp: null | ops.Operation = null;
+        let postOp: null | ops.Operation = null, mapping;
         try {
-          ({ info: this.latest, mapping: this.mapping } = await firstValueFrom(
+          ({ info: this.latest, mapping } = await firstValueFrom(
             this.persistency.loadLatestRevisionMapping(
               this.shortkey!,
               this.serverInfo
             )
           ));
+          this.state = new MappingState(Mapping.fromData(mapping));
         } catch (err) {
           if ((err as HttpErrorResponse).status == 404) {
             try {
-              let messages;
+              let messages, mapping;
               ({
-                mapping: this.mapping,
+                mapping,
                 postOp,
                 messages,
               } = await this.loadLegacyMapping(this.shortkey));
+              this.state = new MappingState(Mapping.fromData(mapping));
               this.latest = {
                 version: -1,
                 author: '?',
@@ -221,7 +225,7 @@ export class MappingViewComponent implements HasPendingChanges {
             return;
           }
         }
-        this.mapping!.cleanupRecacheCheck();
+        this.state!.recache();
         this.reloadReviews();
         this.reloadRevisions();
         if (postOp != null) this.run(postOp);
@@ -280,20 +284,20 @@ export class MappingViewComponent implements HasPendingChanges {
       status: null,
     };
     this.initial = null;
-    this.mapping = new Mapping(
-      dataMeta,
-      data.start,
-      data.vocabularies ?? this.defaultVocabularies(),
-      data.concepts ?? {},
-      data.codes ?? {}
-    );
+    this.state = new MappingState(Mapping.fromData({
+      meta: dataMeta,
+      start: data.start,
+      vocabularies: data.vocabularies ?? this.defaultVocabularies(),
+      concepts: data.concepts ?? {},
+      codes: data.codes ?? {}
+    }));
     this.latest = null;
     this.saveRequired = true;
     this.saveReviewRequired = true;
     this.importWarning = data.importWarning;
     this.allTopics = data.allTopics ?? new AllTopics();
     this.selectedIndex = 1;
-    this.updateMapping();
+    this.updateTopics();
   }
 
   async loadLegacyMapping(mappingShortkey: string) {
@@ -308,13 +312,13 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   async reloadReviews() {
-    if (this.mapping && this.shortkey) {
+    if (this.state && this.shortkey) {
       let allTopics0 = await firstValueFrom(
         this.apiService.allTopics(this.shortkey)
       );
       let user = await this.auth.user;
       let me = user?.username ?? 'anonymous';
-      let cuis = Object.keys(this.mapping.concepts);
+      let cuis = Object.keys(this.state.mapping.concepts);
       this.allTopics = AllTopics.fromRaw(allTopics0, me, cuis);
     }
   }
@@ -328,10 +332,11 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   run(op: ops.Operation) {
-    if (!this.mapping) return;
-    this.mapping.run(op, this.saveRequired);
+    if (!this.state) return;
+    this.state.run(op, this.allTopics);
     op.afterRunCallback();
-    this.updateMapping();
+    this.state = this.state.cloneCacheAndCheck();
+    this.updateTopics();
     if (op.saveRequired) {
       this.saveRequired = true;
     }
@@ -341,23 +346,22 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   redo() {
-    if (!this.mapping) return;
-    this.mapping.redo();
-    this.updateMapping();
+    if (!this.state) return;
+    this.state.redo(this.allTopics);
+    this.state = this.state.cloneCacheAndCheck();
+    this.updateTopics();
   }
 
   undo() {
-    if (!this.mapping) return;
-    this.mapping.undo();
-    this.updateMapping();
+    if (!this.state) return;
+    this.state.undo(this.allTopics);
+    this.state = this.state.cloneCacheAndCheck();
+    this.updateTopics();
   }
 
-  updateMapping() {
-    if (this.mapping) {
-      this.mapping = this.mapping.clone();
-      if (this.allTopics != null) {
-        this.allTopics.setConcepts(Object.keys(this.mapping.concepts));
-      }
+  updateTopics() {
+    if (this.state && this.allTopics != null) {
+      this.allTopics.setConcepts(Object.keys(this.state.mapping.concepts));
     }
   }
 
@@ -371,8 +375,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   dump() {
-    console.log('MAPPING', this.mapping);
-    console.log('ALL TOPICS', this.allTopics);
+    console.log('STATE', this);
   }
 
   openDialog(templateRef: TemplateRef<any>) {
@@ -387,7 +390,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.info.projectName,
       mappingConfigs: [this.shortkey],
       includeDescendants: includeDescendants(
-        this.mapping?.meta.includeDescendants ?? false
+        this.state?.mapping.meta.includeDescendants ?? false
       ),
       mappings: {
         [this.shortkey]: {
@@ -400,7 +403,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   async save(summary: string) {
-    if (!this.mapping) return;
+    if (!this.state) return;
     if (this.importWarning != null) summary += '\n\n' + this.importWarning;
     try {
       let shortkey =
@@ -411,7 +414,7 @@ export class MappingViewComponent implements HasPendingChanges {
           this.info.meta
         ));
       this.latest = await firstValueFrom(
-        this.persistency.saveRevision(shortkey, this.mapping, summary)
+        this.persistency.saveRevision(shortkey, this.state.mapping, summary)
       );
       if (this.saveReviewRequired) {
         try {
@@ -428,8 +431,7 @@ export class MappingViewComponent implements HasPendingChanges {
       this.snackBar.open('Saved version ' + this.latest.version, 'Ok', {
         duration: 2000,
       });
-      this.mapping!.undoStack = [];
-      this.mapping!.redoStack = [];
+      this.state!.stacks.clear();
       this.reloadRevisions();
       if (!this.info.mappingShortkey) this.info.mappingShortkey = shortkey;
       if (!this.shortkey) {
@@ -442,20 +444,6 @@ export class MappingViewComponent implements HasPendingChanges {
         'Close'
       );
     }
-  }
-
-  undoTooltip(): string | undefined {
-    if (this.mapping && this.mapping.undoStack.length > 0) {
-      return `Undo (${this.mapping.undoStack[0][0]})`;
-    }
-    return;
-  }
-
-  redoTooltip(): string | undefined {
-    if (this.mapping && this.mapping.redoStack.length > 0) {
-      return `Redo (${this.mapping.redoStack[0][0]})`;
-    }
-    return;
   }
 
   titleTooltip(): string {
@@ -471,7 +459,7 @@ export class MappingViewComponent implements HasPendingChanges {
     }
     snippets.push(
       `${
-        this.mapping?.meta.includeDescendants ? 'include' : 'exclude'
+        this.state?.mapping.meta.includeDescendants ? 'include' : 'exclude'
       } descendant codes`
     );
     let res = snippets.join(', ') + '.';
@@ -497,7 +485,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   setEmptyStart() {
-    if (!this.mapping) return;
-    this.mapping.start = { type: StartType.Empty };
+    if (!this.state) return;
+    this.state.mapping.start = { type: StartType.Empty };
   }
 }

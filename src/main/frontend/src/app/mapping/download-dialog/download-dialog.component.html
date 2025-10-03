@@ -1,46 +1,51 @@
 <div class="title">
-    <h1 mat-dialog-title>
-        Download {{numMappings}} mapping{{numMappings == 1 ? '' : 's'}}
-    </h1>
-    <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+  <h1 mat-dialog-title>
+    Download {{numMappings}} mapping{{numMappings == 1 ? '' : 's'}}
+  </h1>
+  <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
 </div>
 
 <div class="inputs" mat-dialog-content>
-    <mat-form-field>
-        <mat-label>Name</mat-label>
-        <input #filename matInput [value]="defaultFilename()">
-    </mat-form-field>
-    <p>
-        <button mat-raised-button enabled="enabled" (click)="download('codelist', filename.value)"
-            color="primary"><mat-icon>download</mat-icon>Codelist</button>
-        <br />
-        The codelist generated from the selected mappings.
-        <span *ngIf="data.includeDescendants == IncludeDescendants.PerMapping">
-            Descendant codes are included according to the configuration of each mapping.
+  <mat-form-field>
+    <mat-label>Name</mat-label>
+    <input #filename matInput [value]="defaultFilename()">
+  </mat-form-field>
+  <p>
+    <button mat-raised-button enabled="enabled" (click)="download('codelist', filename.value)"
+      color="primary"><mat-icon>download</mat-icon>Codelist</button>
+      <br />
+      The codelist generated from the selected mappings.
+      @if (data.includeDescendants == IncludeDescendants.PerMapping) {
+        <span>
+          Descendant codes are included according to the configuration of each mapping.
         </span>
-        <span *ngIf="data.includeDescendants != IncludeDescendants.PerMapping">
-            Descendant codes are
-            <span *ngIf="data.includeDescendants == IncludeDescendants.No">not</span>
-            included (according to the mapping configuration).
+      }
+      @if (data.includeDescendants != IncludeDescendants.PerMapping) {
+        <span>
+          Descendant codes are
+          @if (data.includeDescendants == IncludeDescendants.No) {
+            <span>not</span>
+          }
+          included (according to the mapping configuration).
         </span>
-        <br/>
-        The download may take some time, especially when descendant codes are included.
-        <br/>
-        Press the escape key to cancel the download.
+      }
+      <br/>
+      The download may take some time, especially when descendant codes are included.
+      Press the escape key to cancel the download.
     </p>
     <p>
-        <button mat-raised-button enabled="enabled" (click)="download('metadata', filename.value)"
-            color="primary"><mat-icon>download</mat-icon>Mappings metadata</button>
+      <button mat-raised-button enabled="enabled" (click)="download('metadata', filename.value)"
+        color="primary"><mat-icon>download</mat-icon>Mappings metadata</button>
         <br />
         Versions, configurations, coding systems, and links of the selected mappings.
-    </p>
-    <!--
-    <p>
+      </p>
+      <!--
+      <p>
         <button mat-raised-button enabled="enabled" (click)="download('coding_systems', filename.value)"
-            color="primary"><mat-icon>download</mat-icon>Coding systems metadata</button>
-        <br />
-        The versions of the coding systems used in the selected mapping.
-    </p>
-    -->
-    <p>All downloads are CSV files.</p>
-</div>
+          color="primary"><mat-icon>download</mat-icon>Coding systems metadata</button>
+          <br />
+          The versions of the coding systems used in the selected mapping.
+        </p>
+        -->
+        <p>All downloads are CSV files.</p>
+      </div>

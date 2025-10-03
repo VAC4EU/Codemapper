@@ -34,7 +34,7 @@ import {
   Indexing,
   cuiOfId,
   VocabularyId,
-} from '../data';
+} from '../mapping-data';
 import { ApiService, EMPTY_TYPES_INFO, TypesInfo } from '../api.service';
 import { ConceptsTableComponent } from '../concepts-table/concepts-table.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -45,9 +45,10 @@ enum State {
 }
 
 @Component({
-  selector: 'indexer',
-  templateUrl: './indexer.component.html',
-  styleUrls: ['./indexer.component.scss'],
+    selector: 'indexer',
+    templateUrl: './indexer.component.html',
+    styleUrls: ['./indexer.component.scss'],
+    standalone: false
 })
 export class IndexerComponent implements OnChanges {
   @Input({ required: true }) vocIds!: VocabularyId[];

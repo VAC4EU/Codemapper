@@ -1,29 +1,33 @@
 <div class="container">
   <section>
     <h4>Free text</h4>
-    <div *ngIf="!locked">
-      <div [hidden]="state === State.Indexed">
-        <button mat-raised-button (click)="index(text)">Search concepts</button>
+    @if (!locked) {
+      <div>
+        <div [hidden]="state === State.Indexed">
+          <button mat-raised-button (click)="index(text)">Search concepts</button>
+        </div>
+        <div [hidden]="state === State.Editing">
+          <button mat-raised-button (click)="setEditing()">Edit text</button>
+        </div>
       </div>
-      <div [hidden]="state === State.Editing">
-        <button mat-raised-button (click)="setEditing()">Edit text</button>
-      </div>
+    }
+    <div [hidden]="state === State.Indexed">
+      <textarea [(ngModel)]="text" id="input" rows="25" cols="60" matInput></textarea>
     </div>
-      <div [hidden]="state === State.Indexed">
-        <textarea [(ngModel)]="text" id="input" rows="25" cols="60" matInput></textarea>
-      </div>
-      <div [hidden]="state === State.Editing">
-        <div [innerHtml]="rendering" class="rendering"></div>
-      </div>
+    <div [hidden]="state === State.Editing">
+      <div [innerHtml]="rendering" class="rendering"></div>
+    </div>
   </section>
   <section>
-    <h4>Concepts</h4>   
-    <div *ngIf="!locked">
-      <button
-        [disabled]="state === State.Editing"
-        (click)="confirmedIndexing.emit(getIndexing())"
+    <h4>Concepts</h4>
+    @if (!locked) {
+      <div>
+        <button
+          [disabled]="state === State.Editing"
+          (click)="confirmedIndexing.emit(getIndexing())"
         mat-raised-button color="primary">{{confirmLabel}}</button>
-    </div>
+      </div>
+    }
     <div [hidden]="state == State.Editing">
       <concepts-table
         [disabled]="initialIndexing != null"
@@ -33,6 +37,6 @@
         [hideTagColumn]="true"
         [userCanEdit]="false">
       </concepts-table>
-    </div> 
+    </div>
   </section>
 </div>

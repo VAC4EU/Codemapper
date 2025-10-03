@@ -18,4 +18,5 @@ dist-production:
 deploy-production: dist-production
 	@printf "Deploy what? > "; read resp; [ "$$resp" = "production" ]
 	rsync -zrv --delete dist-production advance:/tmp
-	ssh -t advance sudo -u www-data rsync -avz --delete /tmp/dist-production/ /var/www/codemapper-frontend
+	@# Get rid of the angular browser/ subdirectory
+	ssh -t advance sudo -u www-data rsync -avz --delete /tmp/dist-production/browser/ /var/www/codemapper-frontend

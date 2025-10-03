@@ -12,22 +12,28 @@
     <!-- <mat-icon>notifications</mat-icon> -->
     News
   </a>
-  <a *ngIf="user?.admin" routerLink="/users" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button" mat-menu-item>
-    <!-- <mat-icon>groups</mat-icon> -->
-    Users
-  </a>
-  <a *ngIf="user" routerLink="/folders" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
-    class="navigation-button" mat-menu-item>
-    <!-- <mat-icon>dataset</mat-icon> -->
-    Folders
-  </a>
+  @if (user?.admin) {
+    <a routerLink="/users" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+      class="navigation-button" mat-menu-item>
+      <!-- <mat-icon>groups</mat-icon> -->
+      Users
+    </a>
+  }
+  @if (user) {
+    <a routerLink="/folders" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+      class="navigation-button" mat-menu-item>
+      <!-- <mat-icon>dataset</mat-icon> -->
+      Folders
+    </a>
+  }
   <ul class="projects">
-    <li *ngFor="let entry of roles| keyvalue">
-      <a [class]='{active: entry.key == projectName}' routerLink="/folder/{{entry.key}}" routerLinkActive="active"
-        [routerLinkActiveOptions]="{exact: true}" class="navigation-button project-link" mat-menu-item>
-        {{entry.key}}
-      </a>
-    </li>
+    @for (entry of roles| keyvalue; track entry) {
+      <li>
+        <a [class]='{active: entry.key == projectName}' routerLink="/folder/{{entry.key}}" routerLinkActive="active"
+          [routerLinkActiveOptions]="{exact: true}" class="navigation-button project-link" mat-menu-item>
+          {{entry.key}}
+        </a>
+      </li>
+    }
   </ul>
 </mat-menu>

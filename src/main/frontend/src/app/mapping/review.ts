@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Observable, map, merge, of } from 'rxjs';
-import { ConceptId, VocabularyId, CodeId } from './data';
+import { Observable, firstValueFrom, map, merge, of } from 'rxjs';
+import { ConceptId, VocabularyId, CodeId, MappingData } from './mapping-data';
 import { ApiService } from './api.service';
+import { User } from './auth.service';
 
 // store of review form data across reloads
 export class ReviewData {

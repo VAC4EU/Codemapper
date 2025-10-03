@@ -23,7 +23,7 @@ deploy-production-all:
 	  $(FRONTEND)/dist-production \
 	  $(SERVER):/tmp/
 	ssh -t $(SERVER) sudo sh -c \
-	  "'cp /var/lib/tomcat8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat8 cp /tmp/codemapper.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-production/ /var/www/codemapper-frontend'"
+	  "'cp /var/lib/tomcat8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat8 cp /tmp/codemapper.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-production/browser/ /var/www/codemapper-frontend'"
 
 deploy-testing:
 	mvn -P testing clean package
@@ -38,8 +38,9 @@ deploy-dev:
 	sudo -u $(USER) cp target/codemapper-dev.war $(LOCAL_TOMCAT)/webapps
 
 test:
-	cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
+	mvn test -DskipTests=false
 	cd src/main/frontend; ng test --watch=false
+	#cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
 
 FRONTEND=src/main/frontend
 
