@@ -22,7 +22,7 @@ import { environment } from '../../../src/environments/environment';
 import { map } from 'rxjs/operators';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { urlEncodedOptions } from '../app.module';
-import { PersistencyService, ProjectsRoles } from './persistency.service';
+import { PersistencyService, ProjectsRole } from './persistency.service';
 
 export interface User {
   username : string,
@@ -48,9 +48,9 @@ export class AuthService {
   private resolveUser! : (value : User | PromiseLike<User | null> | null) => void;
   private rejectUser! : (reason ?: any) => void;
 
-  roles! : Promise<ProjectsRoles>;
-  rolesSubject : BehaviorSubject<ProjectsRoles> = new BehaviorSubject({});
-  private resolveRoles! : (value : ProjectsRoles | PromiseLike<ProjectsRoles>) => void;
+  roles! : Promise<ProjectsRole>;
+  rolesSubject : BehaviorSubject<ProjectsRole> = new BehaviorSubject({});
+  private resolveRoles! : (value : ProjectsRole | PromiseLike<ProjectsRole>) => void;
   private rejectRoles! : (reason ?: any) => void;
 
   constructor(
@@ -99,7 +99,7 @@ export class AuthService {
     });
   }
 
-  setUserRoles(user : User | null, roles : ProjectsRoles) {
+  setUserRoles(user : User | null, roles : ProjectsRole) {
     this.user = Promise.resolve(null);
     this.userSubject.next(null);
     this.roles = Promise.resolve({});

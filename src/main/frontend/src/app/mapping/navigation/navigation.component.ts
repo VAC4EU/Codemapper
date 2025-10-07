@@ -18,7 +18,7 @@
 
 import { Component, Input } from '@angular/core';
 import { AuthService, User } from '../auth.service';
-import { ProjectsRoles } from '../persistency.service';
+import { ProjectsRole } from '../persistency.service';
 
 @Component({
     selector: 'app-navigation',
@@ -29,7 +29,7 @@ import { ProjectsRoles } from '../persistency.service';
 export class NavigationComponent {
   @Input() projectName : string | null = null;
   user : User | null = null;
-  roles : ProjectsRoles = {};
+  roles : ProjectsRole = {};
   public constructor(
     private auth : AuthService,
   ) {

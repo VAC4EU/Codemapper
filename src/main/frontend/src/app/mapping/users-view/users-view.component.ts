@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { AuthService, User } from '../auth.service';
-import { PersistencyService, ProjectRole, ProjectsRoles } from '../persistency.service';
+import { PersistencyService, ProjectRole } from '../persistency.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';

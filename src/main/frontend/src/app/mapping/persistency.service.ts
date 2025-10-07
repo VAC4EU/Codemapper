@@ -76,7 +76,7 @@ export function userCanRename(role: ProjectRole | null): boolean {
   return roleAtLeast(role, ProjectRole.Owner);
 }
 
-export type ProjectsRoles = { [key: string]: ProjectRole[] };
+export type ProjectsRole = { [key: string]: ProjectRole };
 
 export type UserRole = {
   user: User;
@@ -248,7 +248,7 @@ export class PersistencyService {
   }
 
   getProjectsRoles() {
-    return this.http.get<ProjectsRoles>(this.url + '/user/project-permissions');
+    return this.http.get<ProjectsRole>(this.url + '/user/project-permissions');
   }
 
   getProjectRole(projectName: string) {
