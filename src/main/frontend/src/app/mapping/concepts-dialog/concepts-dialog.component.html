@@ -1,6 +1,8 @@
 <h1 mat-dialog-title>{{data.title}}</h1>
-<div mat-dialog-content>
-  @if (data.subtitle) { <span>{{data.subtitle}}</span> }
+<div mat-dialog-content class="concepts-dialog">
+  @for (message of data.messages ?? []; track message) {
+    <p>{{message}}</p>
+  }
   <concepts-table
     #table
     [conceptTags]="{}"
@@ -9,7 +11,8 @@
     [vocabularies]="data.vocabularies"
     [showCodeTagIndication]="true"
     [allTopics]="data.allTopics"
-    [userCanEdit]="false">
+    [userCanEdit]="false"
+    [showSelectors]="false">
   </concepts-table>
 </div>
 <div mat-dialog-actions>

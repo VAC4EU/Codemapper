@@ -375,9 +375,9 @@ export class FolderMappingsComponent {
       this.dialog
         .open(SelectMappingsDialogComponent, {
           data: {
-            title: 'Copy mappings into current folder',
+            title: 'Copy mappings',
             description:
-              'Select one source folder and one or several mappings. Click Ok to copy them into the current mapping.',
+              'Select one source folder and one or several mappings. Click Ok to copy them into the current folder.',
           },
         })
         .afterClosed()

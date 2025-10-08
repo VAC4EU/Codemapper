@@ -18,8 +18,11 @@ th.select {
 
 .table-container {
   width: 100%;
-  height: calc(100vh - 18em);
-  overflow: auto;
+ overflow: auto;
+}
+
+.table-container:not(.concepts-dialog .table-container) {
+   height: calc(100vh - 18em);
 }
 
 table {

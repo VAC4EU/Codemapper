@@ -19,10 +19,10 @@
     <mat-card-actions>
       <span matTooltip="Set the tag of all codes associated to the selected concepts.">
         <button mat-stroked-button (click)="showTagsDialog(selectedConcepts)"
-        [disabled]="!hasSelectedConcepts() || !userCanEdit">Tag codes</button>
+          [disabled]="!hasSelectedConcepts() || !userCanEdit">Tag codes</button>
       </span>
       <button mat-stroked-button (click)="delete(selectedConcepts)" [disabled]="!hasSelectedConcepts() || !userCanEdit"
-      color="warn">Delete</button>
+        color="warn">Delete</button>
     </mat-card-actions>
   </mat-card>
 
@@ -55,14 +55,14 @@
           [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
         <mat-autocomplete #auto="matAutocomplete">
           @for (option of codeConcepts; track option) {
-            <mat-option (click)="selectAutocompleteCode(option, query.value)">
-              {{option.name}}
-            </mat-option>
+          <mat-option (click)="selectAutocompleteCode(option, query.value)">
+            {{option.name}}
+          </mat-option>
           }
         </mat-autocomplete>
       </mat-form-field>
       <button (click)="searchAddConcepts(query.value, state.mapping.meta)" [disabled]="!userCanEdit" mat-stroked-button
-      matTooltip="Search concepts by query">Search</button>
+        matTooltip="Search concepts by query">Search</button>
       <button (click)="openDialog(indexer)" [disabled]="!userCanEdit" mat-stroked-button
         matTooltip="Search concepts in free text">
         Free&#8209;text
@@ -72,26 +72,27 @@
 
   <mat-card appearance="outlined">
     <mat-card-header>
-      Import codes
+      &nbsp;
     </mat-card-header>
     <mat-card-actions class="dense" matTooltip="Import codes from CSV file (only without unsaved changes)">
       <button (click)="openDialog(addCodesCsv)" [disabled]="!userCanEdit || state.stacks.hasUndo()" mat-stroked-button>
-        From CSV
+        Import codes
       </button>
     </mat-card-actions>
   </mat-card>
 </div>
 
-<concepts-table #table [showCodeTagIndication]="true" [conceptTags]="state.caches.getConceptTags()" [concepts]="state.mapping.concepts" [filter]="conceptsFilter"
-  [codes]="state.mapping.codes" [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit"
-  (reviewRun)="reviewRun.emit($event)" (selected)="setSelectedConcepts($event)">
+<concepts-table #table [showCodeTagIndication]="true" [conceptTags]="state.caches.getConceptTags()"
+  [concepts]="state.mapping.concepts" [filter]="conceptsFilter" [codes]="state.mapping.codes" [vocabularies]="vocIds()"
+  [allTopics]="allTopics" [userCanEdit]="userCanEdit" (reviewRun)="reviewRun.emit($event)"
+  (selected)="setSelectedConcepts($event)">
 </concepts-table>
 
 <ng-template #indexer>
   <h2 matDialogTitle>Search and add concepts from free-text</h2>
   <mat-dialog-content>
     <indexer [vocIds]="vocIds()" [typesInfo]="state.mapping.meta"
-    (confirmedIndexing)="addIndexing($event); dialogRef!.close()" confirmLabel="Add selected concepts"></indexer>
+      (confirmedIndexing)="addIndexing($event); dialogRef!.close()" confirmLabel="Add selected concepts"></indexer>
   </mat-dialog-content>
   <mat-dialog-actions>
     <button mat-button matDialogClose>Cancel</button>
@@ -99,27 +100,12 @@
 </ng-template>
 
 <ng-template #addCodesCsv>
-  <h2 matDialogTitle>Add codes from a CSV file</h2>
+  <h2 matDialogTitle>Import codes</h2>
   <mat-dialog-content>
-    <p>
-      <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
-        (change)="handleCsvFileInput($event)" accept="text/csv">
-        <button (click)="csvFileInput.click()" mat-raised-button>
-          Select file
-        </button>
-        @if (csvImportFile) {
-          <p>{{csvImportFile.name}}</p>
-        }
-        <p>
-          <span matTooltip="Requires mapping name and CSV file">
-            <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
-            (click)="importCsv(csvImportFile!, 'csv_compat')" color="primary" mat-raised-button>Import codelist</button>
-          </span>
-        </p>
-        <p>The codelist must be a CSV file with the following columns: <code>coding_system</code>,
-        <code>code</code>, <code>tags</code>.
-      </p>
-      <p>If the columns <code>event_abbreviation</code>, <code>type</code>,
+    <p>The codelist must be a CSV file with the following columns: <code>coding_system</code>,
+      <code>code</code>, <code>tags</code>.
+    </p>
+    <p>If the columns <code>event_abbreviation</code>, <code>type</code>,
       <code>system</code> are included, only rows that match the current mapping are added.
     </p>
     <p>Review comments can be
@@ -127,6 +113,21 @@
       <code>review1_author</code>,
       <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
       with consecutive numbers for multiple rounds of review.
+    </p>
+    <p>
+      <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
+        (change)="handleCsvFileInput($event)" accept="text/csv">
+      <button (click)="csvFileInput.click()" mat-raised-button>
+        Select file
+      </button>
+      @if (csvImportFile) {
+    <p>{{csvImportFile.name}}</p>
+    }
+    <p>
+      <span matTooltip="Requires mapping name and CSV file">
+        <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
+          (click)="importCsv(csvImportFile!, 'csv_compat')" color="primary" mat-raised-button>Ok</button>
+      </span>
     </p>
   </mat-dialog-content>
 </ng-template>

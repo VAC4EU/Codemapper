@@ -32,7 +32,7 @@ export class ConceptsDialogComponent {
     public dialogRef : MatDialogRef<ConceptsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data : {
       title : string,
-      subtitle: string | null,
+      messages?: [],
       action : string,
       concepts : { [key : ConceptId] : Concept },
       codes : { [key : VocabularyId] : { [key : CodeId] : Code } },

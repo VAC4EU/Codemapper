@@ -317,21 +317,20 @@ export class ConceptsComponent implements OnInit {
       let imported = await firstValueFrom(
         this.api.importCsv(file, [], format, [], filter)
       );
-      console.log('IMPORTED', imported);
-      let msgs: string[] = [];
+      let messages: string[] = [];
+      messages.push("Please confirm the imported codes. They are structured here by the concepts to which they are associated in the mapping.")
+      messages.push("Codes that are associated with these concepts in other coding systems will be disabled.")
       if (imported.warnings.length) {
         let warnings = imported.warnings.map((s) => `${s}. `).join('');
-        msgs.push(`There were problems with the import: ${warnings}.`);
+        messages.push(warnings);
       }
-      msgs.push("Codes that are associated to these concepts in other coding systems will be disabled.")
       this.csvImportFile = null;
-      //this.run.emit(new ops.AddMapping(imported.mapping));
       let mapping = imported.mapping;
       this.dialog
         .open(ConceptsDialogComponent, {
           data: {
-            title: 'Add the imported codes?',
-            subtitle: msgs.join(" "),
+            title: 'Confirm import',
+            messages,
             action: 'Ok',
             concepts: mapping.concepts,
             codes: mapping.codes,

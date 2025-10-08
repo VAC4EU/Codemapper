@@ -26,7 +26,7 @@ import { Concept, VocabularyId, ConceptId, CodeId, Code, Tag } from '../mapping-
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 
-const BASE_COLUMNS = ["select", "concept", "comments"];
+const BASE_COLUMNS = ["concept", "comments"];
 
 function sortConcepts(c1 : Concept, c2 : Concept) : number {
   return (c1.name ?? "").localeCompare(c2.name ?? "");
@@ -50,6 +50,7 @@ export class ConceptsTableComponent {
   @Input() showCodeTagIndication : boolean = false;
   @Input() filter : string = "";
   @Input() userCanEdit : boolean = false;
+  @Input() showSelectors : boolean = true;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Concept[]> = new EventEmitter();
   @ViewChild(MatSort) sort! : MatSort;
@@ -85,7 +86,11 @@ export class ConceptsTableComponent {
     if (changes['allTopics']) {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
-    this.columns = Object.assign([], BASE_COLUMNS);
+    this.columns = [];
+    if (this.showSelectors) {
+      this.columns.push("select");
+    }
+    this.columns.push(...BASE_COLUMNS);
     if (this.hideTagColumn) {
       this.columns = this.columns.filter(c => c != "tag");
     }
