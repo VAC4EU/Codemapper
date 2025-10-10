@@ -6,3 +6,9 @@
         width: fit-content !important;  // <= and HERE...
     }
  }
+
+.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

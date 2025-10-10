@@ -63,20 +63,20 @@
       </mat-form-field>
       <button (click)="searchAddConcepts(query.value, state.mapping.meta)" [disabled]="!userCanEdit" mat-stroked-button
         matTooltip="Search concepts by query">Search</button>
-      <button (click)="openDialog(indexer)" [disabled]="!userCanEdit" mat-stroked-button
-        matTooltip="Search concepts in free text">
-        Free&#8209;text
-      </button>
     </mat-card-actions>
   </mat-card>
 
   <mat-card appearance="outlined">
     <mat-card-header>
-      &nbsp;
+      Import
     </mat-card-header>
     <mat-card-actions class="dense" matTooltip="Import codes from CSV file (only without unsaved changes)">
       <button (click)="openDialog(addCodesCsv)" [disabled]="!userCanEdit || state.stacks.hasUndo()" mat-stroked-button>
-        Import codes
+        Code list
+      </button>
+      <button (click)="openDialog(indexer)" [disabled]="!userCanEdit" mat-stroked-button
+        matTooltip="Search concepts in free text">
+        Free&#8209;text
       </button>
     </mat-card-actions>
   </mat-card>
@@ -100,29 +100,34 @@
 </ng-template>
 
 <ng-template #addCodesCsv>
-  <h2 matDialogTitle>Import codes</h2>
+  <div class="title">
+    <h2 mat-dialog-title>
+      Import code list
+    </h2>
+    <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+  </div>
   <mat-dialog-content>
-    <p>The codelist must be a CSV file with the following columns: <code>coding_system</code>,
+    <p>
+      <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
+        (change)="handleCsvFileInput($event)" accept="text/csv">
+      <button (click)="csvFileInput.click()" mat-raised-button>
+        Select CSV file
+      </button>
+      @if (csvImportFile) {
+    <p>{{csvImportFile.name}}</p>
+    }
+    <p>The code list must be a CSV file with the following columns: <code>coding_system</code>,
       <code>code</code>, <code>tags</code>.
     </p>
     <p>If the columns <code>event_abbreviation</code>, <code>type</code>,
       <code>system</code> are included, only rows that match the current mapping are added.
     </p>
-    <p>Review comments can be
+    <!-- <p>Review comments can be
       included using columns
       <code>review1_author</code>,
       <code>review1_timestamp</code>, <code>review1_content</code>, <code>...</code>
       with consecutive numbers for multiple rounds of review.
-    </p>
-    <p>
-      <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
-        (change)="handleCsvFileInput($event)" accept="text/csv">
-      <button (click)="csvFileInput.click()" mat-raised-button>
-        Select file
-      </button>
-      @if (csvImportFile) {
-    <p>{{csvImportFile.name}}</p>
-    }
+    </p> -->
     <p>
       <span matTooltip="Requires mapping name and CSV file">
         <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
