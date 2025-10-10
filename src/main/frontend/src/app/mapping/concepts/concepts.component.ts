@@ -336,6 +336,7 @@ export class ConceptsComponent implements OnInit {
             codes: mapping.codes,
             vocabularies: Object.keys(imported.mapping.vocabularies),
             allTopics: imported.allTopics,
+            showConceptSelectors: false,
           },
         })
         .afterClosed()

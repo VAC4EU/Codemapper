@@ -38,6 +38,7 @@ export class ConceptsDialogComponent {
       codes : { [key : VocabularyId] : { [key : CodeId] : Code } },
       vocabularies : VocabularyId[],
       allTopics : AllTopics,
+      showConceptSelectors?: boolean,
     }
   ) { }
 
