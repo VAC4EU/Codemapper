@@ -23,10 +23,7 @@ import {
 import {
   EMPTY_SERVER_INFO,
   MappingFormat,
-  DataMeta,
   ServerInfo,
-  Start,
-  StartType,
   MappingMeta,
   DEFAULT_INCLUDE_DESCENDANTS,
   emptyMappingMeta,
@@ -35,13 +32,12 @@ import * as ops from '../operations';
 import { User } from '../auth.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
-import { ApiService, ImportedMapping } from '../api.service';
+import { ApiService } from '../api.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { firstValueFrom } from 'rxjs';
-import { ImportCsvDialogComponent } from '../import-csv-dialog/import-csv-dialog.component';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { AllTopics } from '../review';
 import { SelectionModel } from '@angular/cdk/collections';
 import {
@@ -54,6 +50,10 @@ import {
   EditMetasComponent,
   EditMetasResult,
 } from '../edit-metas/edit-metas.component';
+import {
+  SelectMappingsDialogComponent,
+  SelectMappingsResult,
+} from '../select-mappings-dialog/select-mappings-dialog.component';
 
 @Component({
   selector: 'folder-mappings',
@@ -368,6 +368,75 @@ export class FolderMappingsComponent {
       meta: result.meta,
     };
     this.router.navigate(['/mapping'], { state: { initial } });
+  }
+
+  async openCopyMappingsDialog() {
+    let res: SelectMappingsResult | undefined = await firstValueFrom(
+      this.dialog
+        .open(SelectMappingsDialogComponent, {
+          data: {
+            title: 'Copy mappings',
+            description:
+              'Select one source folder and one or several mappings. Click Ok to copy them into the current folder.',
+          },
+        })
+        .afterClosed()
+    );
+    if (res === undefined) return;
+    this.selection.clear();
+    let importedShortkeys = new Set<string>();
+    for (let mappingInfo of res.mappingInfos) {
+      let description = `mapping ${
+        mappingInfo.meta.definition ?? mappingInfo.mappingName
+      } from folder ${res.folderName}`;
+      try {
+        let { mapping } = await firstValueFrom(
+          this.persistency
+            .loadLatestRevisionMapping(
+              mappingInfo.mappingShortkey!,
+              this.serverInfo
+            )
+            .pipe(
+              catchError((error) =>
+                error.status == 404
+                  ? throwError(
+                      () =>
+                        new Error(
+                          'The mapping is in legacy format, please save it before importing it'
+                        )
+                    )
+                  : throwError(() => error)
+              )
+            )
+        );
+        let shortkey = await this.persistency.createMapping(
+          this.folderName,
+          mappingInfo.mappingName,
+          { ...mappingInfo.meta, projects: [] }
+        );
+        let summary = `Imported from folder ${this.folderName}`;
+        await firstValueFrom(
+          this.persistency.saveRevision(shortkey, mapping, summary)
+        );
+        importedShortkeys.add(shortkey);
+        console.log(`Copied ${description}`, mappingInfo);
+      } catch (error) {
+        let msg = `Could not copy ${description}: ${(error as Error).message}`;
+        console.error(msg, error);
+        alert(msg);
+      }
+    }
+    await this.reload();
+    let mappingInfos = this.dataSource.data.filter(
+      (info) =>
+        info.mappingShortkey !== null &&
+        importedShortkeys.has(info.mappingShortkey)
+    );
+    this.selection.setSelection(...mappingInfos);
+    let message = `Imported ${importedShortkeys.size} mapping${
+      importedShortkeys.size == 1 ? '' : 's'
+    }`;
+    this.snackbar.open(message, "Ok");
   }
 
   async newMapping(

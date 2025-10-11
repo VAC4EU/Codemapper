@@ -958,12 +958,18 @@ public class UmlsApi {
         String codeId = row[codeIx];
         String codeName = row[codeNameIx];
         String tag = row[tagIx];
-        if (hasFiltersAndFilterRows
-            && !(filterEventAbbreviation.equals(row[eventAbbreviationIx])
-                || filterSystem.equals(row[systemIx])
-                || filterType.equals(row[typeIx]))) {
-          logger.debug("Ignore code that does not match the mapping: " + String.join(",", row));
-          continue;
+        if (hasFiltersAndFilterRows) {
+          String eventAbbr = row[eventAbbreviationIx];
+          String system = row[systemIx];
+          String type = row[typeIx];
+          if (!((eventAbbr.isEmpty()
+              || eventAbbr.equals(filterEventAbbreviation)
+                  && (system.isEmpty()
+                      || system.equals(filterSystem)
+                          && (type.isEmpty() || type.equals(filterType)))))) {
+            logger.debug("Ignore code that does not match the mapping: " + String.join(",", row));
+            continue;
+          }
         }
         if (vocId.isEmpty()) {
           String msg = String.format("row %d: missing coding system", rowIx);
@@ -1047,27 +1053,32 @@ public class UmlsApi {
               serverInfo.getDefaultIgnoreSemanticTypes().toArray(new String[] {}),
               false);
 
-      // concepts from codes in codes column
       Collection<String> allCodeConceptIds = new HashSet<>();
       for (String vocId : codeIds.keySet()) {
-        allCodeConceptIds.addAll(getCuisByCodes(codeIds.get(vocId), vocId));
+        Collection<String> codeConceptIds = getCuisByCodes(codeIds.get(vocId), vocId);
+        allCodeConceptIds.addAll(codeConceptIds);
       }
       Map<String, UmlsConcept> umlsCodeConcepts =
           getConcepts(allCodeConceptIds, vocIds, ignoreTermTypes);
 
-      // mapping from code concepts
+      // mapping from concepts derived from codes
       MappingData mapping = MappingData.fromUmlsConcepts(umlsCodeConcepts, vocabularies, meta);
+
+      // concept ids for codes
       Map<String, Map<String, Set<String>>> codeCodeConceptsIds = mapping.getCodeConceptIds();
 
-      // concepts for concept column
       Map<String, UmlsConcept> umlsConcepts = getConcepts(conceptIds, vocIds, ignoreTermTypes);
+
+      // mapping from concepts in concepts column
       MappingData conceptsMapping = MappingData.fromUmlsConcepts(umlsConcepts, vocabularies, null);
 
       Concept customConcept =
           new Concept(CUSTOM_CUI, CUSTOM_NAME, CUSTOM_DESCRIPTION, new HashMap<>());
 
       // assign codes to concepts
-      Map<String, Map<String, Concept>> selectedCodeConcepts = new HashMap<>();
+      Set<String> additionalConceptIds = new HashSet<>();
+      Map<String, Map<String, Concept>> selectedCodeConcepts = // voc -> code -> cui
+          new HashMap<>();
       for (String vocId : codeIds.keySet()) {
         Map<String, Concept> selectedConcepts = new HashMap<>();
         for (String codeId : codeIds.get(vocId)) {
@@ -1075,27 +1086,40 @@ public class UmlsApi {
               messagesByCode
                   .computeIfAbsent(vocId, key -> new HashMap<>())
                   .computeIfAbsent(codeId, key -> new LinkedList<>());
-          Set<String> codeConceptIds =
+          Iterator<String> codeConceptIds =
               codeCodeConceptsIds
                   .getOrDefault(vocId, new HashMap<>())
-                  .getOrDefault(codeId, new HashSet<>());
+                  .getOrDefault(codeId, new HashSet<>())
+                  .iterator();
           Set<String> conceptIds1 =
               codeConcepts
                   .getOrDefault(vocId, new HashMap<>())
                   .getOrDefault(codeId, new HashSet<>());
           Concept concept;
-          if (codeConceptIds.isEmpty()) {
+          if (codeConceptIds.hasNext()) {
+            // codes associated to a concept by mapping
+            String cui = codeConceptIds.next();
+            concept = mapping.concepts.get(cui);
+          } else {
+            // assign the concept from the concepts column
             String conceptId1 = conceptIds1.stream().findFirst().orElse(null);
             Concept concept1 = conceptsMapping.concepts.get(conceptId1);
             if (conceptId1 != null && concept1 != null) {
               concept = concept1;
+              // ensure that all codes from the concept are in the mapping
+              for (String vocId1 : concept.codes.keySet()) {
+                for (String codeId1 : concept.codes.get(vocId1)) {
+                  mapping
+                      .codes
+                      .get(vocId1)
+                      .computeIfAbsent(
+                          codeId1, key -> conceptsMapping.codes.get(vocId1).get(codeId1));
+                }
+              }
             } else {
               concept = customConcept;
             }
             mapping.concepts.computeIfAbsent(concept.getId(), key -> concept);
-          } else {
-            String cui = codeConceptIds.iterator().next();
-            concept = mapping.concepts.get(cui);
           }
           selectedConcepts.put(codeId, concept);
 

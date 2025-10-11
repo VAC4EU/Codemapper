@@ -90,6 +90,7 @@ import { FolderUsersComponent } from './folder-users/folder-users.component';
 import { EditMetaComponent } from './edit-meta/edit-meta.component';
 import { EditMetasComponent } from './edit-metas/edit-metas.component';
 import { StartMappingComponent } from './start-mapping/start-mapping.component';
+import { SelectMappingsDialogComponent } from './select-mappings-dialog/select-mappings-dialog.component';
 
 const matSnackbarDefaultConfig : MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -141,6 +142,7 @@ const matSnackbarDefaultConfig : MatSnackBarConfig = {
         EditMetaComponent,
         EditMetasComponent,
         StartMappingComponent,
+        SelectMappingsDialogComponent,
     ], imports: [AppRoutingModule,
         BrowserModule,
         CommonModule,

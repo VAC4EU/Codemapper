@@ -17,7 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { Component, TemplateRef } from '@angular/core';
-import { PersistencyService, ProjectInfo, ProjectRole, ProjectsRoles } from '../persistency.service';
+import { PersistencyService, ProjectInfo, ProjectRole, ProjectsRole } from '../persistency.service';
 import { AuthService, User } from '../auth.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -34,7 +34,7 @@ export class ProjectsViewComponent {
   newNames : { [key : string] : string } = {};
   user : User | null = null;
   dialogRef : MatDialogRef<any, any> | null = null;
-  roles : ProjectsRoles = {};
+  roles : ProjectsRole = {};
   createProjectError : string | null = null;
   projects : ProjectInfo[] = [];
 

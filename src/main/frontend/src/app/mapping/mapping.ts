@@ -127,6 +127,7 @@ export class Mapping {
       } else {
         for (let vocId of Object.keys(concept.codes)) {
           for (let id of concept.codes[vocId]) {
+            concept0.codes[vocId] ??= new Set();
             concept0.codes[vocId].add(id);
           }
         }

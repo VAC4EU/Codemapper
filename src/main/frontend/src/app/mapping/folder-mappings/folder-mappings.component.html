@@ -43,7 +43,25 @@
     </mat-card-actions>
   </mat-card>
 
-  <mat-card>
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      New mapping
+    </mat-card-header>
+    <mat-card-actions>
+      <span matTooltip="Create a new mapping (only for owners)">
+        <button class="tool-create" (click)="openCreateMappingDialog()" [disabled]="!userCanCreate" mat-raised-button>
+          Create
+        </button>
+      </span>
+      <span matTooltip="Copy mappings from another folder (only for owners)">
+        <button class="tool-create" (click)="openCopyMappingsDialog()" [disabled]="!userCanCreate" mat-raised-button>
+          Copy
+        </button>
+      </span>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined">
     <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
       Modify {{selectedFilteredMappings.length}} mapping@if (selectedFilteredMappings.length != 1) {s}
     </mat-card-header>
@@ -60,19 +78,6 @@
     -->
       <button class="tool-delete" (click)="deleteSelectedMappings()"
         [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
-    </mat-card-actions>
-  </mat-card>
-
-  <mat-card>
-    <mat-card-header>
-      &nbsp;
-    </mat-card-header>
-    <mat-card-actions>
-      <span matTooltip="Create a new mapping (only for owners)">
-        <button class="tool-create" (click)="openCreateMappingDialog()" [disabled]="!userCanCreate" mat-raised-button>
-          New mapping
-        </button>
-      </span>
     </mat-card-actions>
   </mat-card>
 </div>

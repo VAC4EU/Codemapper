@@ -9,6 +9,11 @@
 
 <section class="center-content">
 
+October 7, 2026
+---
+
+- copy mappings from other folders
+
 September 28, 2026
 ---
 
