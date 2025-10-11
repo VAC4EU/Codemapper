@@ -51,13 +51,13 @@ export class ImportCsvDialogComponent {
     this.csvImportFile = null;
   }
 
-  async importCsv(file: File, format: string) {
+  async importCsv(file: File, applyFilter: boolean, format: string) {
     try {
-      let filter = csvFilter(this.mappingInfo);
+      let filter = applyFilter ? csvFilter(this.mappingInfo) : null;
       let imported = await firstValueFrom(
         this.api.importCsv(file, [], format, this.ignoreTermTypes, filter)
       );
-      if (imported.warnings.length) {
+      if (imported.warnings.length > 0) {
         let msg =
           'There were problems with the import: ' +
           imported.warnings.map((s) => `${s}. `).join('');

@@ -303,7 +303,7 @@ export class ConceptsComponent implements OnInit {
     }
   }
 
-  async importCsv(file: File, format: string) {
+  async importCsv(file: File, applyFilter: boolean, format: string) {
     if (this.state.stacks.hasUndo()) {
       alert('You cannot undo this operation, please save your mapping before');
       return;
@@ -313,7 +313,7 @@ export class ConceptsComponent implements OnInit {
       return;
     }
     try {
-      let filter = csvFilter(this.info);
+      let filter = applyFilter ? csvFilter(this.info) : null;
       let imported = await firstValueFrom(
         this.api.importCsv(file, [], format, [], filter)
       );

@@ -107,6 +107,9 @@
     <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
   </div>
   <mat-dialog-content>
+    <p>The code list must be a CSV file with the following columns: <code>coding_system</code>,
+      <code>code</code>, <code>tags</code>.
+    </p>
     <p>
       <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"
         (change)="handleCsvFileInput($event)" accept="text/csv">
@@ -114,14 +117,8 @@
         Select CSV file
       </button>
       @if (csvImportFile) {
-    <p>{{csvImportFile.name}}</p>
+    <span>&nbsp;{{csvImportFile.name}}</span>
     }
-    <p>The code list must be a CSV file with the following columns: <code>coding_system</code>,
-      <code>code</code>, <code>tags</code>.
-    </p>
-    <p>If the columns <code>event_abbreviation</code>, <code>type</code>,
-      <code>system</code> are included, only rows that match the current mapping are added.
-    </p>
     <!-- <p>Review comments can be
       included using columns
       <code>review1_author</code>,
@@ -129,10 +126,12 @@
       with consecutive numbers for multiple rounds of review.
     </p> -->
     <p>
-      <span matTooltip="Requires mapping name and CSV file">
-        <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
-          (click)="importCsv(csvImportFile!, 'csv_compat')" color="primary" mat-raised-button>Ok</button>
-      </span>
+      <mat-checkbox #filter [checked]="true">Filter by columns <code>event_abbreviation</code>,
+        <code>type</code>,
+        <code>system</code>.</mat-checkbox>
+    </p><p>
+      <button class="mapping-import" [disabled]="csvImportFile == null" mat-dialog-close
+        (click)="importCsv(csvImportFile!, filter.checked, 'csv_compat')" color="primary" mat-raised-button>Ok</button>
     </p>
   </mat-dialog-content>
 </ng-template>

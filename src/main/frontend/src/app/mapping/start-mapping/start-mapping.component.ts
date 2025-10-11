@@ -63,7 +63,7 @@ export class StartMappingComponent {
   }
 
   setImportedMapping(imported: ImportedMapping) {
-    if (imported.warnings) {
+    if (imported.warnings.length > 0) {
       let warnings = imported.warnings.join(', ');
       if (!confirm(`${warnings}. Continue?`)) return;
     }
