@@ -2,14 +2,14 @@
   <section>
     <h4>Free text</h4>
     @if (!locked) {
-      <div>
-        <div [hidden]="state === State.Indexed">
-          <button mat-raised-button (click)="index(text)">Search concepts</button>
-        </div>
-        <div [hidden]="state === State.Editing">
-          <button mat-raised-button (click)="setEditing()">Edit text</button>
-        </div>
+    <div>
+      <div [hidden]="state === State.Indexed">
+        <button mat-raised-button (click)="index(text)">Search concepts</button>
       </div>
+      <div [hidden]="state === State.Editing">
+        <button mat-raised-button (click)="setEditing()">Edit text</button>
+      </div>
+    </div>
     }
     <div [hidden]="state === State.Indexed">
       <textarea [(ngModel)]="text" id="input" rows="25" cols="60" matInput></textarea>
@@ -21,22 +21,15 @@
   <section>
     <h4>Concepts</h4>
     @if (!locked) {
-      <div>
-        <button
-          [disabled]="state === State.Editing"
-          (click)="confirmedIndexing.emit(getIndexing())"
-        mat-raised-button color="primary">{{confirmLabel}}</button>
-      </div>
-    }
-    <div [hidden]="state == State.Editing">
-      <concepts-table
-        [disabled]="initialIndexing != null"
-        [concepts]="concepts"
-        [conceptTags]="{}"
-        (selected)="setSelected($event)"
-        [hideTagColumn]="true"
-        [userCanEdit]="false">
-      </concepts-table>
+    <div>
+      <button [disabled]="state === State.Editing" (click)="confirmedIndexing.emit(getIndexing())" mat-raised-button
+        color="primary">{{confirmLabel}}</button>
     </div>
+    }
+    @if (state !== State.Editing) {
+    <!-- <concepts-table #indexerConceptsTable [disabled]="initialIndexing != null" [concepts]="concepts" [conceptTags]="{}" [hideTagColumn]="true"
+      [userCanEdit]="false">
+    </concepts-table> -->
+    }
   </section>
 </div>

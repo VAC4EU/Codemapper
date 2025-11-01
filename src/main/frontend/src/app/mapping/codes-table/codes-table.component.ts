@@ -78,7 +78,7 @@ export class CodesTableComponent {
       this.selected.emit(this.getSelectedFilteredCodes());
     }
     if (changes['vocabularyId']) {
-      setTimeout(() => this.selection.clear(), 0);
+      setTimeout(() => this.selection.clear());
     }
     if (changes['codes']) {
       this.dataSource.data = changes['codes'].currentValue;

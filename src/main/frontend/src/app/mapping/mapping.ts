@@ -17,7 +17,6 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { CodeId, Codes, Concept, ConceptId, Concepts, ConceptsCodes, CustomCodes, DataMeta, formatMultipleTags, getCodesTag, JSONArray, MappingData, normalizeTag, Start, Tag, Tags, Vocabularies, VocabularyId } from './mapping-data';
-import { Operation } from './operations';
 
 export const CUSTOM_CUI = 'C0000000';
 
@@ -387,7 +386,17 @@ export class Mapping {
     for (let vocId of Object.keys(codes)) {
       this.codes[vocId] ??= {};
       for (let [id, code] of Object.entries(codes[vocId])) {
-        this.codes[vocId][id] = code;
+        let original = this.codes[vocId][id];
+        if (original === undefined) {
+          this.codes[vocId][id] = code;
+        } else {
+          if (code.tag) {
+            original.tag = code.tag;
+          }
+          if (code.enabled) {
+            original.enabled = true;
+          }
+        }
       }
     }
   }

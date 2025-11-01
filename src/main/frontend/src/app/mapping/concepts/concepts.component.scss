@@ -12,3 +12,36 @@
   justify-content: space-between;
   align-items: center;
 }
+
+::ng-deep .mat-mdc-paginator-range-label {
+    display: none;
+}
+
+::ng-deep .mat-mdc-paginator-range-actions button, .concepts-filter button {
+   width: 30px !important;
+   height: 30px !important;
+   padding: 0px !important;
+   display: inline-flex !important;
+   align-items: center;
+   justify-content: center;
+
+   & > *[role=img] {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+
+      svg {
+         width: 20px;
+         height: 20px;
+      }
+   }
+
+   .mat-mdc-button-touch-target {
+      width: 30px !important;
+      height: 30px !important;
+   }
+}
+
+mat-form-field {
+    max-width: 10em;
+}
