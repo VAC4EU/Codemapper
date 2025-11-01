@@ -61,13 +61,13 @@ function arrayEquals<T>(a1: T[], a2: T[]): boolean {
 })
 export class ConceptsTableComponent {
   concepts = input<{ [key: ConceptId]: Concept }>({});
+  codes = input<{ [key: VocabularyId]: { [key: CodeId]: Code } }>({});
   allTopics = input<AllTopics | null>(null);
   vocabularies = input<VocabularyId[]>([]);
   paginator = input<MatPaginator | null>(null);
   filter = input('');
 
   @Input({ required: true }) conceptTags: { [key: ConceptId]: Tag | null } = {};
-  @Input() codes: { [key: VocabularyId]: { [key: CodeId]: Code } } = {};
   @Input() reviewData: ReviewData = new ReviewData();
   @Input() hideTagColumn: boolean = false;
   @Input() disabled: boolean = false;
@@ -81,8 +81,10 @@ export class ConceptsTableComponent {
 
   // call if filter, selection, or concepts changed
   updateSelectedFiltered() {
-    let filtered = new Set(this.dataSource.filteredData.map(c => c.id));
-    let selectedFiltered = this.selection.selected.filter(c => filtered.has(c.id));
+    let filtered = new Set(this.dataSource.filteredData.map((c) => c.id));
+    let selectedFiltered = this.selection.selected.filter((c) =>
+      filtered.has(c.id)
+    );
     this.selectedFiltered.set(selectedFiltered);
   }
 
@@ -108,8 +110,11 @@ export class ConceptsTableComponent {
       let concepts = this.concepts();
       this.dataSource.data = Object.values(concepts);
       this.dataSource.data.sort(sortConcepts);
-      let cuis = new Set(this.selection.selected.map(c => c.id));
-      this.selection.setSelection(...this.dataSource.data.filter(c => cuis.has(c.id)));
+      this.dataSource.filterPredicate = this.filterPredicate.bind(this);
+      let cuis = new Set(this.selection.selected.map((c) => c.id));
+      this.selection.setSelection(
+        ...this.dataSource.data.filter((c) => cuis.has(c.id))
+      );
       this.updateSelectedFiltered();
     });
     effect(() => {
@@ -122,6 +127,14 @@ export class ConceptsTableComponent {
         this.setColumns(vocabularies);
       }
     });
+  }
+
+  filterPredicate(concept: Concept, filter: string) {
+    let codes = Object.values(concept.codes)
+      .map((ids) => Array.from(ids).join(' '))
+      .join(' ');
+    let haystack = concept.id + ' ' + concept.name + ' ' + codes;
+    return haystack.toLowerCase().includes(filter);
   }
 
   setColumns(vocabularies: VocabularyId[]) {
