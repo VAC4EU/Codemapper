@@ -23,7 +23,11 @@ import {
   Output,
   EventEmitter,
   OnInit,
-  ViewChild,
+  viewChild,
+  signal,
+  effect,
+  input,
+  computed,
 } from '@angular/core';
 import {
   debounceTime,
@@ -46,15 +50,15 @@ import {
   Vocabularies,
   filterConcepts,
   ServerInfo,
-  MappingData,
 } from '../mapping-data';
 import { AllTopics, ReviewOperation } from '../review';
-import { ApiService, csvFilter, CsvFilter, TypesInfo } from '../api.service';
+import { ApiService, csvFilter, TypesInfo } from '../api.service';
 import * as ops from '../operations';
 import { CodeTags } from '../operations';
 import { firstValueFrom, of } from 'rxjs';
 import { MappingInfo } from '../persistency.service';
 import { MappingState } from '../mapping-state';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'concepts',
@@ -63,44 +67,61 @@ import { MappingState } from '../mapping-state';
   standalone: false,
 })
 export class ConceptsComponent implements OnInit {
-  @Input({ required: true }) state!: MappingState;
+  state = input.required<MappingState>();
   @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
   @Input({ required: true }) serverInfo!: ServerInfo;
   @Input() allTopics: AllTopics = new AllTopics();
   @Input() userCanEdit: boolean = false;
+
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
-  @ViewChild(ConceptsTableComponent) table!: ConceptsTableComponent;
 
-  selectedConcepts: Concept[] = [];
+  table = viewChild.required<ConceptsTableComponent>('conceptsTable');
+  paginator = viewChild.required(MatPaginator);
+
   codeSearchQueryControl = new FormControl('');
   codeConcepts: Concept[] = [];
   dialogRef: MatDialogRef<any, any> | null = null;
-  conceptsFilter: string = '';
+  conceptsFilter = signal('');
 
-  constructor(private dialog: MatDialog, private api: ApiService) {}
+  PAGE_SIZE = 50;
+  pagesInfo = '';
+
+  hasSelectedConcepts = computed(
+    () => this.table().selectedFiltered().length > 0
+  );
+
+  ngAfterViewInit() {
+    this.setPageInfo({
+      length: Object.keys(this.state().mapping.concepts).length,
+      pageIndex: 0,
+      pageSize: this.PAGE_SIZE,
+    });
+  }
+
+  constructor(private dialog: MatDialog, private api: ApiService) {
+    effect(() => {
+      this.conceptsFilter();
+      this.setPageInfo(this.paginator());
+    });
+  }
 
   get numConcepts(): number {
-    return Object.keys(this.state.mapping.concepts).length;
+    return Object.keys(this.state().mapping.concepts).length;
+  }
+
+  setPageInfo(
+    page: PageEvent | { length: number; pageIndex: number; pageSize: number }
+  ) {
+    let numPages = Math.ceil(page.length / page.pageSize);
+    this.pagesInfo = `${page.pageIndex + 1} of ${numPages}`;
   }
 
   openDialog(templateRef: TemplateRef<any>) {
     this.dialogRef = this.dialog.open(templateRef, {
       width: '700px',
     });
-  }
-
-  setSelectedConcepts(selected: Concept[]) {
-    setTimeout(
-      // avoid ExpressionChangedAfterItHasBeenCheckedError
-      () => (this.selectedConcepts = selected),
-      0
-    );
-  }
-
-  hasSelectedConcepts(): boolean {
-    return this.selectedConcepts.length > 0;
   }
 
   ngOnInit() {
@@ -124,7 +145,9 @@ export class ConceptsComponent implements OnInit {
           return this.api
             .autocompleteCode(voc, query1)
             .pipe(
-              map((cs) => cs.filter((c) => !this.state.mapping.concepts[c.id]))
+              map((cs) =>
+                cs.filter((c) => !this.state().mapping.concepts[c.id])
+              )
             )
             .pipe(
               catchError((err) => {
@@ -138,7 +161,7 @@ export class ConceptsComponent implements OnInit {
   }
 
   vocIds(): VocabularyId[] {
-    return Object.keys(this.state.mapping.vocabularies);
+    return Object.keys(this.state().mapping.vocabularies);
   }
 
   selectAutocompleteCode(concept0: Concept, query: string) {
@@ -170,7 +193,7 @@ export class ConceptsComponent implements OnInit {
     }
     this.run.emit(
       new ops.AddConcepts(concepts, codes).withAfterRunCallback(() => {
-        this.table.setSelected(selected);
+        setTimeout(() => this.table().setSelected(selected.map((c) => c.id)));
         this.codeConcepts = [];
         this.codeSearchQueryControl.setValue('');
       })
@@ -178,7 +201,7 @@ export class ConceptsComponent implements OnInit {
   }
 
   confirmAddConceptsDialog(concepts: Concepts, codes: Codes, title: string) {
-    let currentCuis = Object.keys(this.state.mapping.concepts);
+    let currentCuis = Object.keys(this.state().mapping.concepts);
     return this.dialog
       .open(ConceptsDialogComponent, {
         data: {
@@ -218,7 +241,7 @@ export class ConceptsComponent implements OnInit {
 
   broaderConcepts(concept: Concept, vocIds: VocabularyId[]) {
     this.api
-      .broaderConcepts(concept.id, this.vocIds(), this.state.mapping.meta)
+      .broaderConcepts(concept.id, this.vocIds(), this.state().mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(
           concepts,
@@ -230,7 +253,7 @@ export class ConceptsComponent implements OnInit {
 
   narrowerConcepts(concept: Concept, vocIds: VocabularyId[]) {
     this.api
-      .narrowerConcepts(concept.id, this.vocIds(), this.state.mapping.meta)
+      .narrowerConcepts(concept.id, this.vocIds(), this.state().mapping.meta)
       .subscribe(({ concepts, codes }) =>
         this.confirmAddConceptsDialog(
           concepts,
@@ -247,7 +270,7 @@ export class ConceptsComponent implements OnInit {
       for (let vocId of Object.keys(concept.codes)) {
         codes[vocId] ??= {};
         for (let codeId of concept.codes[vocId]) {
-          let code = this.state.mapping.codes[vocId][codeId];
+          let code = this.state().mapping.codes[vocId][codeId];
           if (!code.enabled) continue;
           codes[vocId][codeId] = null;
           if (code.tag != null) tags.add(code.tag);
@@ -262,7 +285,7 @@ export class ConceptsComponent implements OnInit {
       data: {
         tag: tag,
         heading: `${codesCount} codes in ${concepts.length} concepts`,
-        allowedTags: this.state.mapping.meta.allowedTags,
+        allowedTags: this.state().mapping.meta.allowedTags,
       },
       width: '40em',
     };
@@ -286,7 +309,7 @@ export class ConceptsComponent implements OnInit {
     let { concepts, codes } = await this.api.concepts(
       ids,
       this.vocIds(),
-      this.state.mapping.meta
+      this.state().mapping.meta
     );
     this.run.emit(new ops.AddConcepts(concepts, codes));
   }
@@ -304,11 +327,11 @@ export class ConceptsComponent implements OnInit {
   }
 
   async importCsv(file: File, applyFilter: boolean, format: string) {
-    if (this.state.stacks.hasUndo()) {
+    if (this.state().stacks.hasUndo()) {
       alert('You cannot undo this operation, please save your mapping before');
       return;
     }
-    if (this.state.mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
+    if (this.state().mapping.meta.umlsVersion != this.serverInfo.umlsVersion) {
       alert('Mapping needs to be remapped first');
       return;
     }
@@ -318,8 +341,12 @@ export class ConceptsComponent implements OnInit {
         this.api.importCsv(file, [], format, [], filter)
       );
       let messages: string[] = [];
-      messages.push("Please confirm the imported codes. They are structured here by the concepts to which they are associated in the mapping.")
-      messages.push("Codes that are associated with these concepts in other coding systems will be disabled.")
+      messages.push(
+        'Please confirm the imported codes. They are structured here by the concepts to which they are associated in the mapping.'
+      );
+      messages.push(
+        'Codes that are associated with these concepts in other coding systems will be disabled.'
+      );
       if (imported.warnings.length) {
         let warnings = imported.warnings.map((s) => `${s}. `).join('');
         messages.push(warnings);

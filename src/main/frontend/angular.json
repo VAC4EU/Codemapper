@@ -62,9 +62,9 @@
                             ]
                         },
                         "production": {
-                          "optimization": false,
+                          "optimization": true,
                             "extractLicenses": false,
-                            "sourceMap": true,
+                            "sourceMap": false,
                             "namedChunks": true,
                             "fileReplacements": [
                                 {
@@ -74,7 +74,7 @@
                             ]
                         },
                         "testing": {
-                          "optimization": false,
+                          "optimization": true,
                             "extractLicenses": false,
                             "sourceMap": true,
                             "namedChunks": true,

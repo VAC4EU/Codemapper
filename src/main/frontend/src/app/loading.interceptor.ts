@@ -37,12 +37,12 @@ export class LoadingInterceptor implements HttpInterceptor {
       return next.handle(request);
     } else {
       this.totalRequests++;
-      setTimeout(() => this.loadingService.setLoading(true), 0);
+      setTimeout(() => this.loadingService.setLoading(true));
       return next.handle(request).pipe(
         finalize(() => {
           this.totalRequests--;
           if (this.totalRequests == 0) {
-            setTimeout(() => this.loadingService.setLoading(false), 0);
+            setTimeout(() => this.loadingService.setLoading(false));
           }
         })
       );

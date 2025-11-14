@@ -24,6 +24,10 @@ import {
   ViewChild,
   SimpleChanges,
   OnChanges,
+  signal,
+  effect,
+  viewChild,
+  OnInit,
 } from '@angular/core';
 import {
   Concept,
@@ -45,12 +49,12 @@ enum State {
 }
 
 @Component({
-    selector: 'indexer',
-    templateUrl: './indexer.component.html',
-    styleUrls: ['./indexer.component.scss'],
-    standalone: false
+  selector: 'indexer',
+  templateUrl: './indexer.component.html',
+  styleUrls: ['./indexer.component.scss'],
+  standalone: false,
 })
-export class IndexerComponent implements OnChanges {
+export class IndexerComponent implements OnChanges, OnInit {
   @Input({ required: true }) vocIds!: VocabularyId[];
   @Input() typesInfo: TypesInfo = EMPTY_TYPES_INFO;
   @Input() initialIndexing: Indexing | null = null;
@@ -63,14 +67,33 @@ export class IndexerComponent implements OnChanges {
   spans: Span[] = [];
   selected: Concept[] = [];
   concepts: { [key: ConceptId]: Concept } = {};
-  @ViewChild(ConceptsTableComponent) table!: ConceptsTableComponent;
+  table = viewChild<ConceptsTableComponent>('indexerConceptsTable');
 
   state: State = State.Editing;
   rendering: SafeHtml | null = null;
 
   readonly State = State;
 
-  constructor(private api: ApiService, private sanitizer: DomSanitizer) {}
+  constructor(private api: ApiService, private sanitizer: DomSanitizer) {
+    effect(() => {
+      let table = this.table();
+      if (table === undefined) return;
+      let concepts = table.selectedFiltered();
+      this.selected = concepts;
+      let ids = concepts.map((c) => c.id);
+      let elts = document.getElementsByClassName('indexedConcept');
+      for (let i = 0; i < elts.length; i++) {
+        let elt = elts[i];
+        if (ids.some((id) => elt.classList.contains(id))) {
+          elt.classList.add('enabled');
+        } else {
+          elt.classList.remove('enabled');
+        }
+      }
+    });
+  }
+
+  ngOnInit() {}
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.initialIndexing != null) {
@@ -84,21 +107,9 @@ export class IndexerComponent implements OnChanges {
         this.initialIndexing!.selected.includes(c.id)
       );
       this.setRendering(this.text, this.spans, this.concepts, this.selected);
-      setTimeout(() => this.table.setSelected(this.selected), 0);
-    }
-  }
-
-  setSelected(concepts: Concept[]) {
-    this.selected = concepts;
-    let ids = concepts.map((c) => c.id);
-    let elts = document.getElementsByClassName('indexedConcept');
-    for (let i = 0; i < elts.length; i++) {
-      let elt = elts[i];
-      if (ids.some((id) => elt.classList.contains(id))) {
-        elt.classList.add('enabled');
-      } else {
-        elt.classList.remove('enabled');
-      }
+      setTimeout(() =>
+        this.table()?.setSelected(this.selected.map((c) => c.id))
+      );
     }
   }
 
@@ -109,7 +120,7 @@ export class IndexerComponent implements OnChanges {
       this.vocIds,
       this.typesInfo
     );
-    console.log("INDEX CONCEPTS", concepts);
+    console.log('INDEX CONCEPTS', concepts);
     this.indexedText = text;
     this.state = State.Indexed;
     this.spans = spans;
@@ -120,7 +131,7 @@ export class IndexerComponent implements OnChanges {
       this.concepts,
       Object.values(this.concepts)
     );
-    setTimeout(() => this.table.selectAll(), 0);
+    setTimeout(() => this.table()?.selectAll());
   }
 
   setRendering(

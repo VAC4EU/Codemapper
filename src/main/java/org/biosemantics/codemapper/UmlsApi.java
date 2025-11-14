@@ -72,7 +72,7 @@ public class UmlsApi {
   private static final String CUSTOM_NAME = "Unassociated custom codes";
   private static final String CUSTOM_DESCRIPTION =
       "Custom codes that were imported but have not been associated to a concept";
-  private static final String CUSTOM_VERSION = "0";
+  private static final String CUSTOM_VERSION = null;
   private static final String CUSTOM_CUI = "C0000000";
 
   private static Logger logger = LogManager.getLogger(UmlsApi.class);

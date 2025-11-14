@@ -17,7 +17,10 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import { NgModule } from '@angular/core';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
@@ -41,7 +44,11 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarConfig, MatSnackBarModule } from '@angular/material/snack-bar';
+import {
+  MAT_SNACK_BAR_DEFAULT_OPTIONS,
+  MatSnackBarConfig,
+  MatSnackBarModule,
+} from '@angular/material/snack-bar';
 import { MatSortModule } from '@angular/material/sort';
 import { MatStepperModule } from '@angular/material/stepper';
 import { AppRoutingModule } from '../app-routing.module';
@@ -91,94 +98,102 @@ import { EditMetaComponent } from './edit-meta/edit-meta.component';
 import { EditMetasComponent } from './edit-metas/edit-metas.component';
 import { StartMappingComponent } from './start-mapping/start-mapping.component';
 import { SelectMappingsDialogComponent } from './select-mappings-dialog/select-mappings-dialog.component';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
-const matSnackbarDefaultConfig : MatSnackBarConfig = {
+const matSnackbarDefaultConfig: MatSnackBarConfig = {
   verticalPosition: 'top',
   horizontalPosition: 'center',
   duration: 5000,
 };
 
-@NgModule({ declarations: [
-        CodeComponent,
-        CodesComponent,
-        ConceptComponent,
-        ConceptsComponent,
-        ConceptsDialogComponent,
-        ConceptsTableComponent,
-        HistoryComponent,
-        MappingViewComponent,
-        TagsComponent,
-        TagsDialogComponent,
-        VocabulariesComponent,
-        VocabulariesDialogComponent,
-        VocabulariesTableComponent,
-        CodeDialogComponent,
-        CustomVocabularyDialogComponent,
-        ReviewsDialogComponent,
-        ReviewsComponent,
-        NavigationComponent,
-        ProjectsViewComponent,
-        LoginFormComponent,
-        NewsViewComponent,
-        WelcomeViewComponent,
-        IndexerComponent,
-        ImportCsvDialogComponent,
-        FolderViewComponent,
-        SortPipe,
-        CodesDialogComponent,
-        CodesTableComponent,
-        LegacyMappingRedirectComponent,
-        MappingTabComponent,
-        UserViewComponent,
-        UsersViewComponent,
-        UsersTableComponent,
-        MenuBannerComponent,
-        UserLogoutComponent,
-        DownloadDialogComponent,
-        LoginComponent,
-        LoginLinkComponent,
-        FolderMappingsComponent,
-        FolderUsersComponent,
-        EditMetaComponent,
-        EditMetasComponent,
-        StartMappingComponent,
-        SelectMappingsDialogComponent,
-    ], imports: [AppRoutingModule,
-        BrowserModule,
-        CommonModule,
-        FormsModule,
-        MatAutocompleteModule,
-        MatButtonModule,
-        MatButtonToggleModule,
-        MatCardModule,
-        MatCheckboxModule,
-        MatChipsModule,
-        MatDialogModule,
-        MatDividerModule,
-        MatFormFieldModule,
-        MatIconModule,
-        MatInputModule,
-        MatListModule,
-        MatMenuModule,
-        MatRadioModule,
-        MatSelectModule,
-        MatTableModule,
-        MatTabsModule,
-        MatToolbarModule,
-        MatTooltipModule,
-        MatSnackBarModule,
-        MatSortModule,
-        MatStepperModule,
-        MatExpansionModule,
-        NgFor,
-        NgIf,
-        NoopAnimationsModule,
-        ReactiveFormsModule,
-        RouterModule], providers: [
-        {
-            provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
-            useValue: matSnackbarDefaultConfig,
-        },
-        provideHttpClient(withInterceptorsFromDi()),
-    ] })
-export class MappingModule { }
+@NgModule({
+  declarations: [
+    CodeComponent,
+    CodesComponent,
+    ConceptComponent,
+    ConceptsComponent,
+    ConceptsDialogComponent,
+    ConceptsTableComponent,
+    HistoryComponent,
+    MappingViewComponent,
+    TagsComponent,
+    TagsDialogComponent,
+    VocabulariesComponent,
+    VocabulariesDialogComponent,
+    VocabulariesTableComponent,
+    CodeDialogComponent,
+    CustomVocabularyDialogComponent,
+    ReviewsDialogComponent,
+    ReviewsComponent,
+    NavigationComponent,
+    ProjectsViewComponent,
+    LoginFormComponent,
+    NewsViewComponent,
+    WelcomeViewComponent,
+    IndexerComponent,
+    ImportCsvDialogComponent,
+    FolderViewComponent,
+    SortPipe,
+    CodesDialogComponent,
+    CodesTableComponent,
+    LegacyMappingRedirectComponent,
+    MappingTabComponent,
+    UserViewComponent,
+    UsersViewComponent,
+    UsersTableComponent,
+    MenuBannerComponent,
+    UserLogoutComponent,
+    DownloadDialogComponent,
+    LoginComponent,
+    LoginLinkComponent,
+    FolderMappingsComponent,
+    FolderUsersComponent,
+    EditMetaComponent,
+    EditMetasComponent,
+    StartMappingComponent,
+    SelectMappingsDialogComponent,
+  ],
+  imports: [
+    AppRoutingModule,
+    BrowserModule,
+    CommonModule,
+    FormsModule,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatCardModule,
+    MatCheckboxModule,
+    MatChipsModule,
+    MatDialogModule,
+    MatDividerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatListModule,
+    MatMenuModule,
+    MatRadioModule,
+    MatSelectModule,
+    MatTableModule,
+    MatTabsModule,
+    MatToolbarModule,
+    MatTooltipModule,
+    MatPaginatorModule,
+    MatSnackBarModule,
+    MatSortModule,
+    MatStepperModule,
+    MatExpansionModule,
+    NgFor,
+    NgIf,
+    NoopAnimationsModule,
+    ReactiveFormsModule,
+    RouterModule,
+  ],
+  providers: [
+    {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
+      useValue: matSnackbarDefaultConfig,
+    },
+    provideHttpClient(withInterceptorsFromDi()),
+  ],
+})
+export class MappingModule {}

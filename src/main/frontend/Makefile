@@ -8,7 +8,7 @@ dist-testing:
 .PHONY: deploy-testing
 deploy-testing: dist-testing
 	rsync -zrv --delete dist-testing advance:/tmp
-	ssh -t advance sudo -u www-data rsync -avz --delete /tmp/dist-testing/ /var/www/codemapper-frontend-testing
+	ssh -t advance sudo -u www-data rsync -avz --delete /tmp/dist-testing/browser/ /var/www/codemapper-frontend-testing
 
 .PHONY: dist-production
 dist-production:
