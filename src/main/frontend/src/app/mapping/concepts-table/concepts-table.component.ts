@@ -67,7 +67,7 @@ export class ConceptsTableComponent {
   paginator = input<MatPaginator | null>(null);
   filter = input('');
 
-  @Input({ required: true }) conceptTags: { [key: ConceptId]: Tag | null } = {};
+  @Input() conceptTags: { [key: ConceptId]: Tag | null } = {};
   @Input() reviewData: ReviewData = new ReviewData();
   @Input() hideTagColumn: boolean = false;
   @Input() disabled: boolean = false;
