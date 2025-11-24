@@ -100,7 +100,7 @@
     </mat-card-actions>
   </mat-card>
 </div>
-<concepts-table #conceptsTable [showCodeTagIndication]="true" [conceptTags]="state().caches.getConceptTags()"
+<concepts-table #conceptsTable [showCodeTagIndication]="true" [conceptTags]="state().caches.conceptTags"
   [concepts]="state().mapping.concepts" [filter]="conceptsFilter()" [codes]="state().mapping.codes"
   [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit" (reviewRun)="reviewRun.emit($event)"
   [paginator]="paginator">

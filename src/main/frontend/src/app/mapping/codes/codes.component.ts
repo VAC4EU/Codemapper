@@ -172,7 +172,7 @@ export class CodesComponent {
       return;
     }
     let concepts = this.state().caches.getConceptsByCode(this.vocabularyId, selected.id);
-    if (concepts.length != 1) {
+    if (concepts.size != 1) {
       console.error("custom code must have exactly one concept");
       return;
     }
@@ -181,7 +181,7 @@ export class CodesComponent {
         code: {
           id: selected.id,
           term: selected.term,
-          concept: concepts[0],
+          concept: concepts.values().next().value,
         },
         operation: "Edit custom code",
         concepts: Object.values(this.state().mapping.concepts),

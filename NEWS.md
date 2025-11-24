@@ -9,6 +9,12 @@
 
 <section class="center-content">
 
+December 3, 2026
+---
+
+- vocabulary updates: UMLS 2025AB + MEDCODEID 202506
+- messages about changed custom-status of codes in remap
+
 October 7, 2026
 ---
 

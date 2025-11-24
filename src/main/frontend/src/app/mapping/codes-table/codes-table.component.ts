@@ -63,7 +63,7 @@ export class CodesTableComponent {
     this.dataSource.sortingDataAccessor = (item : any, property : string) => {
       switch (property) {
         case 'code': return item.id;
-        case 'concepts': return this.codeConcepts(item.id).map(id => this.state.mapping.concepts[id].name).join(',');
+        case 'concepts': return Array.from(this.codeConcepts(item.id)).map(id => this.state.mapping.concepts[id].name).join(',');
         default: return item[property];
       }
     };
@@ -123,7 +123,7 @@ export class CodesTableComponent {
       .filter(c => c != null);
   }
 
-  codeConcepts(id : CodeId) : ConceptId[] {
+  codeConcepts(id : CodeId) : Set<ConceptId> {
     return this.state.caches.getConceptsByCode(this.vocabularyId, id);
   }
 

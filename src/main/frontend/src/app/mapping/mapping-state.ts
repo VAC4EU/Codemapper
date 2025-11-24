@@ -1,10 +1,12 @@
-import { Caches, Mapping } from "./mapping";
+import { Mapping } from "./mapping";
+import { Caches } from './caches';
 import { Codes, Concepts, MappingData, Vocabularies } from "./mapping-data";
 import { Operation } from "./operations";
+import { Messages } from './messages';
 import { AllTopics } from "./review";
 
 export class MappingState {
-  caches: Caches = new Caches({}, {});
+  caches: Caches = new Caches();
   stacks: Stacks = new Stacks();
 
   constructor(public mapping: Mapping) {
@@ -13,9 +15,10 @@ export class MappingState {
 
   recache() {
     this.caches = this.mapping.caches();
+    this.mapping.cleanupCheck(this.caches);
   }
 
-  cloneCacheAndCheck(): MappingState {
+  deepCloneMapping(): MappingState {
     let state = new MappingState(this.mapping.deepClone());
     state.stacks = this.stacks;
     return state;
@@ -30,19 +33,20 @@ export class MappingState {
     umlsVersion: string,
     concepts: Concepts,
     codes: Codes,
-    vocabularies: Vocabularies
+    vocabularies: Vocabularies,
+    messages: Messages,
   ) {
-    this.mapping.remap(umlsVersion, concepts, codes, vocabularies, this.caches);
+    this.mapping.remap(umlsVersion, {concepts, codes}, vocabularies, this.caches, messages);
     this.recache();
   }
 
-  runIntern(op: Operation, allTopics: AllTopics) {
-    let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics});
+  runIntern(op: Operation, allTopics: AllTopics, messages: Messages) {
+    let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics, messages});
     this.recache();
     return inv;
   }
 
-  public run(op: Operation, allTopics: AllTopics) {
+  public run(op: Operation, allTopics: AllTopics, messages: Messages) {
     console.log('Run', op);
     if (op.noUndo && this.stacks.hasUndo()) {
       alert('this operation cannot be undone, please save your mapping first');
@@ -50,7 +54,7 @@ export class MappingState {
     }
     let inv;
     try {
-      inv = this.runIntern(op, allTopics);
+      inv = this.runIntern(op, allTopics, messages);
       this.mapping = this.mapping.deepClone(); // ensure that all changes are picked up
     } catch (err) {
       let msg = `could not run operation: ${(err as Error).message}`;
@@ -67,21 +71,21 @@ export class MappingState {
     }
   }
 
-  public undo(allTopics: AllTopics) {
+  public undo(allTopics: AllTopics, messages: Messages) {
     let op = this.stacks.undoStack.pop();
     if (op === undefined) return;
     console.log('Undo', op.description);
-    let inv = this.runIntern(op.op, allTopics);
+    let inv = this.runIntern(op.op, allTopics, messages);
     if (inv !== undefined) {
       this.stacks.redoStack.push({description: op.description, op: inv});
     }
   }
 
-  public redo(allTopics: AllTopics) {
+  public redo(allTopics: AllTopics, messages: Messages) {
     let op = this.stacks.redoStack.pop();
     if (op === undefined) return;
     console.log('Redo', op.description);
-    let inv = this.runIntern(op.op, allTopics);
+    let inv = this.runIntern(op.op, allTopics, messages);
     if (inv !== undefined) {
       this.stacks.undoStack.push({description: op.op.describe(), op: inv});
     }

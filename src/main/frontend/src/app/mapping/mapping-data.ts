@@ -1,4 +1,5 @@
 import { Mapping } from "./mapping";
+import { Message } from './messages';
 
 
 export type JSONPrimitive = string | number | boolean | null;
@@ -25,14 +26,9 @@ export interface ConceptsCodes {
   codes: Codes;
 }
 
-export type ConceptCodes = {
+export type ConceptCodeIds = {
   [key: ConceptId]: { [key: VocabularyId]: CodeId[] };
 };
-
-export interface CustomCodes {
-  codes: Codes;
-  conceptCodes: ConceptCodes;
-}
 
 export interface Span {
   id: string;
@@ -166,7 +162,7 @@ export function importMappingDataJSON(
     let name = conceptJson['name'] as string;
     let definition = conceptJson['definition'] as string;
     let conceptTag = getTag(conceptJson);
-    let codes: { [key: VocabularyId]: Set<CodeId> } = {};
+    let codes: CodeIds = {};
     for (let [vocId, codeIds0] of Object.entries(
       conceptJson['codes'] as JSONObject
     )) {
@@ -398,11 +394,14 @@ export function compareVocabularies(v1: Vocabulary, v2: Vocabulary): number {
   return v1.id.localeCompare(v2.id);
 }
 
+// Used in `Concept` to refer to codes
+export type CodeIds = { [key: VocabularyId]: Set<CodeId> };
+
 export interface Concept {
   readonly id: ConceptId;
   readonly name: string;
   readonly definition: string;
-  codes: { [key: VocabularyId]: Set<CodeId> };
+  codes: CodeIds;
 }
 
 export function getCodesTag(concept: Concept, codes: Codes): Tag | null {

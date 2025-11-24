@@ -3,20 +3,27 @@
 On a machine with graphical interface:
 
 ```shell
-export UMLS_VERSION=2025AA
-umls/migrate.sh download
-umls/migrate.sh subset
-umls/migrate.sh createdb
-umls/migrate.sh populate
-umls/migrate.sh dumpsql
-rsync -av umls-$UMLS_VERSION.sql.gz $SERVER
+
+$ export UMLS_VERSION=2025AA
+$ export API_KEY=...
+$ make download
+$ make subset
+- Click "Install"
+- Select output folder "$UMLS_VERSION-codemapper"
+- Only Metathesaurus
+- select properties "codemapper-mmsys.prop"
+- check vocabularies
+$ make tables
+$ make db
+$ make dumpsql
+$ rsync -av $UMLS_VERSION/UMLS-$UMLS_VERSION.sql.gz $SERVER
 ```
 
 On the server:
 
 ```shell
-umls/migrate.sh createdb
-gunzip -c umls-$UMLS_VERSION.sql.gz | psql umls-$UMLS_VERSION
+createdb UMLS-$UMLS_VERSION
+gunzip -c UMLS-$UMLS_VERSION.sql.gz | psql UMLS-$UMLS_VERSION
 ```
 
 Set `codemapper-umls-version=$UMLS_VERSION` and

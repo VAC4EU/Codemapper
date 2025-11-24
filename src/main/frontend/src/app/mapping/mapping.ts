@@ -16,9 +16,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { CodeId, Codes, Concept, ConceptId, Concepts, ConceptsCodes, CustomCodes, DataMeta, formatMultipleTags, getCodesTag, JSONArray, MappingData, normalizeTag, Start, Tag, Tags, Vocabularies, VocabularyId } from './mapping-data';
+import {
+  CodeId,
+  CodeIds,
+  Codes,
+  ConceptCodeIds,
+  ConceptId,
+  Concepts,
+  ConceptsCodes,
+  DataMeta,
+  formatMultipleTags,
+  MappingData,
+  normalizeTag,
+  Start,
+  Tags,
+  Vocabularies,
+  VocabularyId,
+} from './mapping-data';
+import {
+  DowngradedMessage,
+  UpgradedMessage,
+  Message,
+  Messages,
+} from './messages';
+import { CacheConceptsByCode, Caches } from './caches';
 
 export const CUSTOM_CUI = 'C0000000';
+
+type CustomCodes = { codes: Codes; conceptCodeIds: ConceptCodeIds };
 
 export class Mapping {
   constructor(
@@ -81,7 +106,9 @@ export class Mapping {
         if (codes0 === undefined) continue;
         for (let codeId of concept.codes[vocId]) {
           if (!codes0.has(codeId) && !data.codes[vocId][codeId].custom) {
-            throw new Error(`code ${vocId}/${codeId} is new in concept ${concept.id} but not marked as custom`)
+            throw new Error(
+              `code ${vocId}/${codeId} is new in concept ${concept.id} but not marked as custom`
+            );
           }
         }
       }
@@ -136,100 +163,120 @@ export class Mapping {
 
   remap(
     umlsVersion: string,
-    concepts: Concepts,
-    codes: Codes,
+    remap: ConceptsCodes,
     vocabularies: Vocabularies,
-    caches: Caches
+    caches: Caches,
+    messages: Messages // output
   ) {
-    let customCodes = this.getCustomCodes(caches);
-    let customVocabularies = this.getCustomVocabularies();
-    let disabled = this.getCodesDisabled();
-    let tags = this.getTags();
+    // collect details from this mapping that are not in the remap object
+    let customCodes = Mapping.getCustomCodes(this.codes, caches);
+    let customVocabularies = Mapping.getCustomVocabularies(this.vocabularies);
+    let disabled = Mapping.getCodesDisabled(this.codes);
+    let tags = Mapping.getTags(this.codes);
     let customConcept = this.concepts[CUSTOM_CUI];
-    let lost = this.getLost(concepts, codes);
-    console.log('Lost in remap', lost);
-    this.meta.umlsVersion = umlsVersion;
-    this.concepts = concepts;
-    this.codes = codes;
-    this.vocabularies = vocabularies;
+    let downgraded = Mapping.getDowngraded(this, remap);
+
+    // write the details to the remap object
     Object.assign(this.vocabularies, customVocabularies);
-    if (customConcept) this.concepts[customConcept.id] = customConcept;
-    this.setCustomCodes(customCodes);
-    this.setCodesDisabled(disabled);
-    this.setLost(lost);
-    this.setTags(tags);
+    if (customConcept) remap.concepts[customConcept.id] = customConcept;
+    let upgraded = Mapping.setCustomCodes(remap, customCodes);
+    Mapping.setCodesDisabled(remap.codes, disabled);
+    Mapping.setDowngraded(remap, downgraded);
+    Mapping.setTags(remap.codes, tags);
+
+    // make the updated remap object this mapping
+    this.meta.umlsVersion = umlsVersion;
+    this.vocabularies = vocabularies;
+    this.concepts = remap.concepts;
+    this.codes = remap.codes;
+
+    messages.addNonEmpty(new DowngradedMessage(downgraded.codes));
+    messages.addNonEmpty(new UpgradedMessage(upgraded));
   }
-  public getTags(): Tags {
+
+  public static getTags(codes: Codes): Tags {
     let tags: Tags = {};
-    for (let vocId of Object.keys(this.codes)) {
-      for (let code of Object.values(this.codes[vocId])) {
-        if (code.tag != null) {
-          tags[vocId] ??= {};
-          tags[vocId][code.id] = code.tag;
-        }
+    for (let vocId of Object.keys(codes)) {
+      for (let code of Object.values(codes[vocId])) {
+        if (code.tag === null) continue;
+        (tags[vocId] ??= {})[code.id] = code.tag;
       }
     }
     return tags;
   }
 
-  public setTags(tags: Tags) {
+  public static setTags(codes: Codes, tags: Tags) {
     for (let vocId of Object.keys(tags)) {
-      if (this.codes[vocId]) {
-        for (let codeId of Object.keys(tags[vocId])) {
-          if (this.codes[vocId][codeId]) {
-            this.codes[vocId][codeId].tag = tags[vocId][codeId];
-          }
-        }
+      let codes1 = codes[vocId];
+      if (codes1 === undefined) continue;
+      for (let codeId of Object.keys(tags[vocId])) {
+        let code = codes1[codeId];
+        if (code === undefined) continue;
+        code.tag = tags[vocId][codeId];
       }
     }
   }
 
-  getCustomCodes(caches: Caches): CustomCodes {
-    let res: CustomCodes = { codes: {}, conceptCodes: {} };
-    for (let [vocId, codes] of Object.entries(this.codes)) {
-      for (let [codeId, code] of Object.entries(codes)) {
-        if (code.custom) {
-          res.codes[vocId] ??= {};
-          res.codes[vocId][codeId] = code;
-          for (let conceptId of caches.getConceptsByCode(vocId, codeId)) {
-            res.conceptCodes[conceptId] ??= {};
-            res.conceptCodes[conceptId][vocId] ??= [];
-            res.conceptCodes[conceptId][vocId].push(codeId);
-          }
+  static getCustomCodes(codes: Codes, caches: Caches): CustomCodes {
+    let res: CustomCodes = { codes: {}, conceptCodeIds: {} };
+    for (let vocId of Object.keys(codes)) {
+      for (let code of Object.values(codes[vocId])) {
+        if (!code.custom) continue;
+        (res.codes[vocId] ??= {})[code.id] = code;
+        for (let conceptId of caches.getConceptsByCode(vocId, code.id)) {
+          ((res.conceptCodeIds[conceptId] ??= {})[vocId] ??= []).push(code.id);
         }
       }
     }
     return res;
   }
 
-  setCustomCodes(custom: CustomCodes) {
+  static setCustomCodes(
+    conceptsCodes: ConceptsCodes,
+    custom: CustomCodes
+  ): Upgraded {
+    let upgraded: Upgraded = {};
+    // Insert custom codes or copy properties to new existing codes
     for (let vocId of Object.keys(custom.codes)) {
+      let codes = (conceptsCodes.codes[vocId] ??= {});
       for (let code of Object.values(custom.codes[vocId])) {
-        this.codes[vocId] ??= {};
-        if (this.codes[vocId][code.id] !== undefined) {
-          throw new Error(
-            `Custom code ${code.id} in ${vocId} already defined as regular code`
-          );
+        let code0 = codes[code.id];
+        if (code0 === undefined) {
+          codes[code.id] = structuredClone(code);
+        } else {
+          (upgraded[vocId] ??= {})[code.id] = null;
+          code0.tag = code.tag;
+          code0.enabled = code.enabled;
         }
-        this.codes[vocId][code.id] = code;
       }
     }
-    for (let conceptId of Object.keys(custom.conceptCodes)) {
-      if (this.concepts[conceptId] === undefined) {
+    // link remaining custom codes to new concepts, and record upgrade codes that were moved
+    let conceptsCache = CacheConceptsByCode.create(conceptsCodes.concepts);
+    for (let conceptId of Object.keys(custom.conceptCodeIds)) {
+      if (conceptsCodes.concepts[conceptId] === undefined) {
         throw new Error(`Custom code with unavailable concept ${conceptId}`);
       }
-      for (let vocId of Object.keys(custom.conceptCodes[conceptId])) {
-        for (let codeId of custom.conceptCodes[conceptId][vocId]) {
-          this.concepts[conceptId].codes[vocId] ??= new Set();
-          this.concepts[conceptId].codes[vocId].add(codeId);
+      for (let vocId of Object.keys(custom.conceptCodeIds[conceptId])) {
+        for (let codeId of custom.conceptCodeIds[conceptId][vocId]) {
+          if (upgraded?.[vocId]?.[codeId] !== undefined) {
+            let conceptIds = conceptsCache.get(vocId, codeId);
+            if (!conceptIds.has(conceptId)) {
+              upgraded[vocId][codeId] = [conceptId, conceptIds];
+            }
+          } else {
+            (conceptsCodes.concepts[conceptId].codes[vocId] ??= new Set()).add(
+              codeId
+            );
+          }
         }
       }
     }
+    return upgraded;
   }
 
-  getCustomVocabularies(): Vocabularies {
+  static getCustomVocabularies(vocabularies: Vocabularies): Vocabularies {
     let res: Vocabularies = {};
-    for (let [vocId, voc] of Object.entries(this.vocabularies)) {
+    for (let [vocId, voc] of Object.entries(vocabularies)) {
       if (voc.custom) {
         res[vocId] = voc;
       }
@@ -237,85 +284,78 @@ export class Mapping {
     return res;
   }
 
-  getCodesDisabled(): { [key: VocabularyId]: Set<CodeId> } {
-    let res: { [key: VocabularyId]: Set<CodeId> } = {};
-    for (let vocId of Object.keys(this.codes)) {
-      res[vocId] ??= new Set();
-      for (let code of Object.values(this.codes[vocId])) {
-        if (!code.enabled) {
-          res[vocId].add(code.id);
-        }
+  static getCodesDisabled(codes: Codes): CodeIds {
+    let res: CodeIds = {};
+    for (let vocId of Object.keys(codes)) {
+      let codeIds = (res[vocId] ??= new Set());
+      for (let code of Object.values(codes[vocId])) {
+        if (code.enabled) continue;
+        codeIds.add(code.id);
       }
     }
     return res;
   }
 
-  setCodesDisabled(disabled: { [key: VocabularyId]: Set<CodeId> }) {
+  static setCodesDisabled(codes: Codes, disabled: CodeIds) {
     for (let vocId of Object.keys(disabled)) {
       for (let codeId of disabled[vocId]) {
-        if (this.codes[vocId]?.[codeId]) {
-          this.codes[vocId][codeId].enabled = false;
-        }
+        let code = codes[vocId]?.[codeId];
+        if (code === undefined) continue;
+        code.enabled = false;
       }
     }
   }
 
-  public getLost(remapConcepts: Concepts, remapCodes: Codes): ConceptsCodes {
-    let lost: ConceptsCodes = {
+  /** Find regular codes in that are not available in the remapped codes (and have to become custom codes)  */
+  public static getDowngraded(
+    current: ConceptsCodes,
+    remap: ConceptsCodes
+  ): ConceptsCodes {
+    let downgraded: ConceptsCodes = {
       concepts: {},
       codes: {},
     };
-    for (let [cui, concept] of Object.entries(this.concepts)) {
-      let hasLostCode = false;
-      let concept1: Concept = {
-        id: cui,
-        name: concept.name,
-        definition: concept.definition,
-        codes: {},
-      };
-      for (let voc of Object.keys(concept.codes)) {
-        for (let code of concept.codes[voc]) {
-          if (!remapConcepts[cui]?.codes[voc]?.has(code)) {
-            hasLostCode = true;
-            concept1.codes[voc] ??= new Set();
-            concept1.codes[voc].add(code);
-            if (!remapCodes[voc]?.[code]) {
-              lost.codes[voc] ??= {};
-              let oldCode = this.codes[voc][code];
-              lost.codes[voc][code] = {
-                id: code,
-                term: oldCode.term,
-                custom: true,
-                enabled: oldCode.enabled,
-                tag: oldCode.tag,
-              };
-            }
-          }
+    for (let cui of Object.keys(current.concepts)) {
+      let codeIds: CodeIds = {};
+      for (let vocId of Object.keys(current.concepts[cui].codes)) {
+        for (let codeId of current.concepts[cui].codes[vocId]) {
+          if (remap.concepts[cui]?.codes[vocId]?.has(codeId)) continue; // code in remap
+          (codeIds[vocId] ??= new Set()).add(codeId);
+          if (remap.codes[vocId]?.[codeId]) continue; // code in other concepts in remap
+          let code = structuredClone(current.codes[vocId][codeId]);
+          if (code.custom) continue; // already captured in custom codes
+          code.custom = true;
+          downgraded.codes[vocId] ??= {};
+          downgraded.codes[vocId][codeId] = code;
         }
       }
-      if (hasLostCode) lost.concepts[cui] = concept1;
+      if (Object.keys(codeIds).length > 0) {
+        let concept = structuredClone(current.concepts[cui]);
+        concept.codes = codeIds;
+        downgraded.concepts[cui] = concept;
+      }
     }
-    return lost;
+    return downgraded;
   }
 
-  public setLost(lost: ConceptsCodes) {
-    for (let [cui, concept] of Object.entries(lost.concepts)) {
-      if (this.concepts[cui]) {
-        for (let [voc, codes] of Object.entries(concept.codes)) {
-          this.concepts[cui].codes[voc] ??= new Set();
-          for (let code of codes) {
-            this.concepts[cui].codes[voc].add(code);
-          }
-        }
-      } else {
-        this.concepts[cui] = concept;
+  public static setDowngraded(conceptsCodes: ConceptsCodes, downgraded: ConceptsCodes) {
+    for (let vocId of Object.keys(downgraded.codes)) {
+      let codes = conceptsCodes.codes[vocId] ??= {};
+      for (let codeId of Object.keys(downgraded.codes[vocId])) {
+        let code = downgraded.codes[vocId][codeId];
+        if (codes[codeId] !== undefined) continue;
+        codes[codeId] = code;
       }
     }
-    for (let [voc, codes] of Object.entries(lost.codes)) {
-      this.codes[voc] ??= {};
-      for (let [id, code] of Object.entries(codes)) {
-        if (!this.codes[voc]?.[id]) {
-          this.codes[voc][id] = code;
+    for (let cui of Object.keys(downgraded.concepts)) {
+      let concept = conceptsCodes.concepts[cui];
+      if (concept === undefined) {
+        conceptsCodes.concepts[cui] = downgraded.concepts[cui];
+      } else {
+        for (let vocId of Object.keys(downgraded.concepts[cui].codes)) {
+          for (let codeId of downgraded.concepts[cui].codes[vocId]) {
+            (concept.codes[vocId] ??= new Set()).add(codeId);
+          }
         }
       }
     }
@@ -335,26 +375,18 @@ export class Mapping {
 
   caches(): Caches {
     // reset: conceptsByCode lookup
-    let conceptsByCode: ConceptsByCode = {};
-    let conceptTags: ConceptTags = {};
+    return Caches.create(this.concepts, this.codes);
+  }
+
+  cleanupCheck(caches: Caches) {
     for (const vocId of Object.keys(this.vocabularies)) {
       this.codes[vocId] ??= {};
-    }
-    for (const concept of Object.values(this.concepts)) {
-      for (const [vocId, codeIds] of Object.entries(concept.codes)) {
-        conceptsByCode[vocId] ??= {};
-        for (const codeId of codeIds) {
-          conceptsByCode[vocId][codeId] ??= new Set();
-          conceptsByCode[vocId][codeId].add(concept.id);
-        }
-      }
-      conceptTags[concept.id] = getCodesTag(concept, this.codes);
     }
     // cleanup: drop non-custom codes that are not referred to by any concepts
     for (const [vocId, codes] of Object.entries(this.codes)) {
       for (const codeId of Object.keys(codes)) {
         if (
-          conceptsByCode[vocId]?.[codeId] == undefined &&
+          caches.getConceptsByCode(vocId, codeId).size == 0 &&
           !this.codes[vocId]?.[codeId]?.custom
         ) {
           delete this.codes[vocId][codeId];
@@ -366,10 +398,14 @@ export class Mapping {
     // - for all vocId, codeId, code of codes[vocId][codeId]:
     //     code.custom || exists conceptId: concepts[conceptId].codes[vocId].contains(codeId]
     // - every custom code has exactly one concept
-    return new Caches(conceptsByCode, conceptTags);
   }
 
-  setCodeConcept(vocId: VocabularyId, codeId: CodeId, conceptIds: ConceptId[], caches: Caches) {
+  setCodeConcept(
+    vocId: VocabularyId,
+    codeId: CodeId,
+    conceptIds: ConceptId[],
+    caches: Caches
+  ) {
     for (const id of caches.getConceptsByCode(vocId, codeId)) {
       this.concepts[id].codes[vocId].delete(codeId);
     }
@@ -402,20 +438,6 @@ export class Mapping {
   }
 }
 
-export type ConceptsByCode = {
-  [key: VocabularyId]: { [key: CodeId]: Set<ConceptId> };
+export type Upgraded = {
+  [key: VocabularyId]: { [key: CodeId]: [ConceptId, Set<ConceptId>] | null };
 };
-export type ConceptTags = { [key: VocabularyId]: Tag | null };
-
-export class Caches {
-  constructor(
-    private conceptsByCode: ConceptsByCode,
-    private conceptTags: ConceptTags
-  ) {}
-  getConceptsByCode(vocId: VocabularyId, codeId: CodeId): ConceptId[] {
-    return Array.from(this.conceptsByCode[vocId]?.[codeId] ?? []);
-  }
-  getConceptTags(): ConceptTags {
-    return this.conceptTags;
-  }
-}
