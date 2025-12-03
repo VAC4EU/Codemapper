@@ -564,7 +564,7 @@ export class DeleteVocabularies extends Operation {
 export class Remap extends Operation {
   constructor(
     private umlsVersion: string,
-    private conceptsCodes: ConceptsCodes,
+    private remapConceptsCodes: ConceptsCodes,
     private vocabularies: Vocabularies
   ) {
     super({ saveRequired: true, noUndo: true });
@@ -575,7 +575,7 @@ export class Remap extends Operation {
   override run({ mapping, caches, messages }: Operand): Operation {
     mapping.remap(
       this.umlsVersion,
-      this.conceptsCodes,
+      this.remapConceptsCodes,
       this.vocabularies,
       caches,
       messages

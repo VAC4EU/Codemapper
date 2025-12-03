@@ -177,7 +177,7 @@ export class Mapping {
     let downgraded = Mapping.getDowngraded(this, remap);
 
     // write the details to the remap object
-    Object.assign(this.vocabularies, customVocabularies);
+    Object.assign(vocabularies, customVocabularies);
     if (customConcept) remap.concepts[customConcept.id] = customConcept;
     let upgraded = Mapping.setCustomCodes(remap, customCodes);
     Mapping.setCodesDisabled(remap.codes, disabled);
@@ -300,7 +300,10 @@ export class Mapping {
     for (let vocId of Object.keys(disabled)) {
       for (let codeId of disabled[vocId]) {
         let code = codes[vocId]?.[codeId];
-        if (code === undefined) continue;
+        if (code === undefined) {
+          console.warn("[remap] disabled code not found", vocId, codeId);
+          continue;
+        };
         code.enabled = false;
       }
     }
