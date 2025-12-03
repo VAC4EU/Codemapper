@@ -34,7 +34,9 @@ import {
   JSONObject,
   codesEqualExceptTag,
 } from './mapping-data';
-import { Mapping, Caches } from './mapping';
+import { Mapping } from './mapping';
+import { Messages } from './messages';
+import { Caches } from './caches';
 import { AllTopics } from './review';
 
 export class OpError extends Error {}
@@ -66,12 +68,18 @@ export interface Operand {
   mapping: Mapping;
   caches: Caches;
   allTopics: AllTopics;
+  messages: Messages; // output
 }
 
 export abstract class Operation {
   // run the operation, return the inverse operation if anything was changed,
   // and it can be undone, and raise Error if the operation could not be applied
-  public abstract run({ mapping, caches, allTopics }: Operand): Operation;
+  public abstract run({
+    mapping,
+    caches,
+    allTopics,
+    messages,
+  }: Operand): Operation;
   public abstract describe(): string;
   saveRequired: boolean;
   saveReviewRequired: boolean;
@@ -350,11 +358,11 @@ export class RemoveCustomCode extends Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
     expect(code !== undefined && code.custom);
     let conceptIds = caches.getConceptsByCode(this.vocId, this.codeId);
+    let conceptId = conceptIds.values().next().value!;
     expect(
-      conceptIds.length == 1,
+      conceptId != undefined,
       'custom code must be associated to one concept only'
     );
-    let conceptId = conceptIds[0];
     let concept = mapping.concepts[conceptId];
     expect(concept !== undefined);
     expect(concept.codes[this.vocId] !== undefined);
@@ -388,10 +396,11 @@ export class EditCustomCode extends Operation {
     let code = mapping.codes[this.vocId]?.[this.codeId];
     expect(code?.custom);
     let conceptIds = caches.getConceptsByCode(this.vocId, this.codeId);
-    expect(conceptIds.length == 1, 'custom code must have one concept');
+    let conceptId = conceptIds[Symbol.iterator]().next().value!;
+    expect(conceptId !== undefined, 'custom code must have one concept');
     mapping.codes[this.vocId][this.codeId] = this.code;
     mapping.setCodeConcept(this.vocId, this.codeId, [this.conceptId], caches);
-    return new EditCustomCode(this.vocId, this.codeId, code, conceptIds[0]);
+    return new EditCustomCode(this.vocId, this.codeId, code, conceptId);
   }
 }
 
@@ -436,7 +445,7 @@ export class CodesSetTag extends Operation {
 
 export class EditVocabulary extends Operation {
   constructor(readonly oldId: VocabularyId, readonly newVoc: Vocabulary) {
-    super({saveReviewRequired: true});
+    super({ saveReviewRequired: true });
   }
 
   override describe(): string {
@@ -563,13 +572,13 @@ export class Remap extends Operation {
   override describe(): string {
     return 'Remap concept codes';
   }
-  override run({ mapping, caches }: Operand): Operation {
+  override run({ mapping, caches, messages }: Operand): Operation {
     mapping.remap(
       this.umlsVersion,
-      this.conceptsCodes.concepts,
-      this.conceptsCodes.codes,
+      this.conceptsCodes,
       this.vocabularies,
-      caches
+      caches,
+      messages
     );
     return new NoUndoInversion(this.describe());
   }

@@ -54,6 +54,7 @@ import {
   SelectMappingsDialogComponent,
   SelectMappingsResult,
 } from '../select-mappings-dialog/select-mappings-dialog.component';
+import { Messages } from '../messages';
 
 @Component({
   selector: 'folder-mappings',
@@ -525,10 +526,16 @@ export class FolderMappingsComponent {
           info.version,
           mapping
         );
+        let warnings = new Messages();
         for (let op of operations) {
           console.log('BATCH OPERATION', shortkey, op);
-          state.run(op, allTopics);
+          state.run(op, allTopics, warnings);
           op.afterRunCallback();
+        }
+        if (warnings.isNonEmpty()) {
+          let message = warnings.toString();
+          alert(message);
+          summary += "\n\n" + message;
         }
         if (operations.some((op) => op.saveReviewRequired)) {
           await firstValueFrom(

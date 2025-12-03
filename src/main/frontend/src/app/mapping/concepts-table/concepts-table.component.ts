@@ -42,6 +42,7 @@ import {
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 import { MatPaginator } from '@angular/material/paginator';
+import { CacheConceptTags } from '../caches';
 
 const BASE_COLUMNS = ['concept', 'comments'];
 
@@ -67,7 +68,7 @@ export class ConceptsTableComponent {
   paginator = input<MatPaginator | null>(null);
   filter = input('');
 
-  @Input() conceptTags: { [key: ConceptId]: Tag | null } = {};
+  @Input() conceptTags: CacheConceptTags = new CacheConceptTags({});
   @Input() reviewData: ReviewData = new ReviewData();
   @Input() hideTagColumn: boolean = false;
   @Input() disabled: boolean = false;

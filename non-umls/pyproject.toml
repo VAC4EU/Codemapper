@@ -1,0 +1,9 @@
+[project]
+name = "non-umls-gen"
+version = "0.1.0"
+description = "Generate and align non-UMLS coding systems"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "polars>=1.31.0",
+]

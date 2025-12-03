@@ -26,6 +26,7 @@ import {
   Tag,
 } from './mapping-data';
 import { Mapping } from './mapping';
+import { Messages } from './messages';
 
 function mkVoc(
   id: string,
@@ -223,7 +224,7 @@ describe('remap mapping', () => {
     let codes = nonCustomCodes(mapping.codes);
     let concepts = nonCustomConcepts(mapping.concepts, mapping.codes);
     let caches = mapping.caches();
-    mapping.remap('2025AB', concepts, codes, mapping.vocabularies, caches);
+    mapping.remap('2025AB', {concepts, codes}, mapping.vocabularies, caches, new Messages());
     expect(mapping.toData()).toEqual(mapping.toData());
   });
   it('can keep removed codes as custom', () => {
@@ -240,7 +241,7 @@ describe('remap mapping', () => {
       })
     );
     let caches = mapping.caches();
-    mapping.remap('2025AB', concepts, codes, mapping.vocabularies, caches);
+    mapping.remap('2025AB', {concepts, codes}, mapping.vocabularies, caches, new Messages());
     expect(mapping.codes['V1']['x1'].custom).toBeTrue();
   });
 });
@@ -294,7 +295,7 @@ describe('mappings get lost', () => {
         y2: mkCode('y2'),
       },
     };
-    let lost = mapping.getLost(remapConcepts, remapCodes);
+    let lost = Mapping.getDowngraded(mapping, {concepts: remapConcepts, codes: remapCodes});
     let lostConcepts: Concepts = {
       C1: mkConcept('C1', {
         V1: new Set(['x2', 'x3']),
@@ -321,7 +322,7 @@ describe('mappings get lost', () => {
       remapConcepts,
       remapCodes
     );
-    mapping2.setLost(lost);
+    Mapping.setDowngraded(mapping2, lost);
     expect(mapping2.concepts).toEqual(mapping.concepts);
     expect(Object.keys(mapping2.codes)).toEqual(Object.keys(mapping.codes));
     for (let voc of Object.keys(mapping.codes)) {
