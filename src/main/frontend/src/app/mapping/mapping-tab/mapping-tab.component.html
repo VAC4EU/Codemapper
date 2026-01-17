@@ -2,10 +2,10 @@
 
   <mat-accordion>
 
-    <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Configuration</mat-panel-title>
-        <mat-panel-description>Configurations that change the codelist</mat-panel-description>
+        <mat-panel-description>Configurations that influence the codelist</mat-panel-description>
       </mat-expansion-panel-header>
 
       <section>
@@ -82,6 +82,15 @@
         <li *ngFor="let sty of mapping.meta.ignoreSemanticTypes">{{sty}}</li>
       </ul>
       -->
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Event definition form</mat-panel-title>
+        <mat-panel-description>Textual description of the event</mat-panel-description>
+      </mat-expansion-panel-header>
+      <app-crepe #description [hidden]="!info.description" [markdown]="info.description" [readonly]="true"></app-crepe>
+      <button mat-raised-button (click)="editDescription()">Edit</button>
     </mat-expansion-panel>
 
     <mat-expansion-panel>

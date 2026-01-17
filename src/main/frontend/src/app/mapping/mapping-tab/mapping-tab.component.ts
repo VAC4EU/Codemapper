@@ -3,6 +3,7 @@ import {
   EventEmitter,
   Input,
   Output,
+  viewChild,
 } from '@angular/core';
 import {
   CsvImport,
@@ -25,12 +26,14 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 import { MappingState } from '../mapping-state';
+import { EditDescriptionComponent } from '../edit-description/edit-description.component';
+import { CrepeComponent } from '../crepe/crepe.component';
 
 @Component({
-    selector: 'mapping-tab',
-    templateUrl: './mapping-tab.component.html',
-    styleUrls: ['./mapping-tab.component.scss'],
-    standalone: false
+  selector: 'mapping-tab',
+  templateUrl: './mapping-tab.component.html',
+  styleUrls: ['./mapping-tab.component.scss'],
+  standalone: false,
 })
 export class MappingTabComponent {
   @Input({ required: true }) projectName!: string;
@@ -45,6 +48,7 @@ export class MappingTabComponent {
   @Input() userCanDownload: boolean = false;
   @Input() userCanEdit: boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
+  description = viewChild.required<CrepeComponent>('description');
 
   constructor(
     private api: ApiService,
@@ -88,6 +92,33 @@ export class MappingTabComponent {
     } else {
       console.error('unknown UMLS version');
     }
+  }
+
+  editDescription() {
+    let mappingName = `${this.info.meta.system}_${this.info.mappingName}_${this.info.meta.type}`;
+    this.dialog
+      .open(EditDescriptionComponent, {
+        data: { description: this.info.description, mappingName },
+        width: '1000px',
+      })
+      .afterClosed()
+      .subscribe(async (description) => {
+        if (description == undefined) return;
+        this.info.description = description;
+        this.description().setMarkdown(description);
+        if (!this.shortkey) return;
+        try {
+          await EditDescriptionComponent.save(
+            this.persistency,
+            this.shortkey,
+            description
+          );
+        } catch (e) {
+          let msg = `Could not save description`;
+          console.error(msg, e);
+          alert(msg);
+        }
+      });
   }
 
   editMappingMeta() {

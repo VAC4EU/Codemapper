@@ -47,21 +47,39 @@ import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.rest.CodeMapperResource;
 
-public class PersistencyApi {
+public class PersistencyApi implements AutoCloseable {
 
-  private DataSource connectionPool;
+  public static class Config {
+    private DataSource connectionPool;
 
-  public PersistencyApi(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public PersistencyApi createApi() throws SQLException {
+      return new PersistencyApi(connectionPool.getConnection());
+    }
+  }
+
+  private Connection connection;
+
+  PersistencyApi(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
   }
 
   public List<String> getProjects() throws CodeMapperException {
     String query = "SELECT name FROM projects";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
-      ResultSet result = statement.executeQuery();
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       List<String> results = new LinkedList<>();
-      while (result.next()) results.add(result.getString(1));
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) results.add(result.getString(1));
+      }
       return results;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get projects", e);
@@ -70,23 +88,23 @@ public class PersistencyApi {
 
   private List<String> parameterizedStringListQuery(String query, String... arguments)
       throws SQLException {
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       for (int i = 0; i < arguments.length; i++) statement.setString(i + 1, arguments[i]);
-      ResultSet result = statement.executeQuery();
-      List<String> results = new LinkedList<>();
-      while (result.next()) results.add(result.getString(1));
-      return results;
+      try (ResultSet result = statement.executeQuery()) {
+        List<String> results = new LinkedList<>();
+        while (result.next()) results.add(result.getString(1));
+        return results;
+      }
     }
   }
 
   private String parameterizedStringQuery(String query, String... arguments) throws SQLException {
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       for (int i = 0; i < arguments.length; i++) statement.setString(i + 1, arguments[i]);
-      ResultSet result = statement.executeQuery();
-      if (result.next()) return result.getString(1);
-      else return null;
+      try (ResultSet result = statement.executeQuery()) {
+        if (result.next()) return result.getString(1);
+        else return null;
+      }
     }
   }
 
@@ -98,16 +116,16 @@ public class PersistencyApi {
             + "INNER JOIN users_projects ON users_projects.user_id = users.id "
             + "INNER JOIN projects ON projects.id = users_projects.project_id "
             + "WHERE users.username = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet result = statement.executeQuery();
       Map<String, ProjectPermission> permissions = new HashMap<>();
-      while (result.next()) {
-        String project = result.getString("project");
-        String role0 = result.getString("role");
-        ProjectPermission role = ProjectPermission.fromChar(role0);
-        permissions.put(project, role);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String project = result.getString("project");
+          String role0 = result.getString("role");
+          ProjectPermission role = ProjectPermission.fromChar(role0);
+          permissions.put(project, role);
+        }
       }
       return permissions;
     } catch (SQLException e) {
@@ -152,19 +170,19 @@ public class PersistencyApi {
             + "INNER JOIN users_projects up ON up.project_id = p.id "
             + "INNER JOIN users u ON u.id = up.user_id "
             + "WHERE p.name = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, projectName);
-      ResultSet result = statement.executeQuery();
       Collection<UserRole> users = new LinkedList<>();
-      while (result.next()) {
-        String username = result.getString(1);
-        String email = result.getString(2);
-        boolean isAdmin = result.getBoolean(3);
-        String role0 = result.getString(4);
-        ProjectPermission role = ProjectPermission.fromChar(role0);
-        User user = new User(username, email, isAdmin);
-        users.add(new UserRole(user, role));
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String username = result.getString(1);
+          String email = result.getString(2);
+          boolean isAdmin = result.getBoolean(3);
+          String role0 = result.getString(4);
+          ProjectPermission role = ProjectPermission.fromChar(role0);
+          User user = new User(username, email, isAdmin);
+          users.add(new UserRole(user, role));
+        }
       }
       return users;
     } catch (SQLException e) {
@@ -205,17 +223,17 @@ public class PersistencyApi {
             + "ORDER BY r.timestamp DESC "
             + "LIMIT 1";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
       statement.setInt(2, version);
-      ResultSet result = statement.executeQuery();
-      if (!result.next()) return null;
       Revision res = new Revision();
-      res.mappingJson = result.getString("mapping");
-      res.timestamp = result.getString("timestamp");
-      res.summary = result.getString("summary");
-      res.author = result.getString("user");
+      try (ResultSet result = statement.executeQuery()) {
+        if (!result.next()) return null;
+        res.mappingJson = result.getString("mapping");
+        res.timestamp = result.getString("timestamp");
+        res.summary = result.getString("summary");
+        res.author = result.getString("user");
+      }
       return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get revision", e);
@@ -250,18 +268,17 @@ public class PersistencyApi {
             + "WHERE cd.shortkey = ? "
             + "ORDER BY r.timestamp DESC "
             + "LIMIT 1";
-
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      ResultSet result = statement.executeQuery();
-      if (!result.next()) return null;
       Revision res = new Revision();
-      res.version = result.getInt("version");
-      res.mappingJson = result.getString("mapping");
-      res.summary = result.getString("summary");
-      res.timestamp = result.getString("timestamp");
-      res.author = result.getString("user");
+      try (ResultSet result = statement.executeQuery()) {
+        if (!result.next()) return null;
+        res.version = result.getInt("version");
+        res.mappingJson = result.getString("mapping");
+        res.summary = result.getString("summary");
+        res.timestamp = result.getString("timestamp");
+        res.author = result.getString("user");
+      }
       return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get latest revision", e);
@@ -279,17 +296,17 @@ public class PersistencyApi {
             + "WHERE cd.shortkey = ? "
             + "ORDER BY r.timestamp DESC";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      ResultSet result = statement.executeQuery();
       List<RevisionInfo> res = new LinkedList<>();
-      while (result.next()) {
-        int version = result.getInt("version");
-        String user = result.getString("user");
-        String timestamp = result.getString("timestamp");
-        String summary = result.getString("summary");
-        res.add(new RevisionInfo(version, user, timestamp, summary));
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          int version = result.getInt("version");
+          String user = result.getString("user");
+          String timestamp = result.getString("timestamp");
+          String summary = result.getString("summary");
+          res.add(new RevisionInfo(version, user, timestamp, summary));
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -306,20 +323,20 @@ public class PersistencyApi {
             + "FROM case_definitions cd, users u "
             + "WHERE u.username = ? AND cd.shortkey = ? "
             + "RETURNING version, timestamp";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setString(ix++, mappingJson);
       statement.setString(ix++, summary);
       statement.setString(ix++, username);
       statement.setString(ix++, shortkey);
-      ResultSet result = statement.executeQuery();
-      if (!result.next()) {
-        throw CodeMapperException.server("Save revision did not return an id");
+      try (ResultSet result = statement.executeQuery()) {
+        if (!result.next()) {
+          throw CodeMapperException.server("Save revision did not return an id");
+        }
+        int version = result.getInt("version");
+        String timestamp = result.getString("timestamp");
+        return new RevisionInfo(version, username, timestamp, summary);
       }
-      int version = result.getInt("version");
-      String timestamp = result.getString("timestamp");
-      return new RevisionInfo(version, username, timestamp, summary);
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to save revision", e);
     }
@@ -333,19 +350,19 @@ public class PersistencyApi {
             + "INNER JOIN case_definitions on comments.case_definition_id = case_definitions.id "
             + "WHERE case_definitions.shortkey = ? "
             + "ORDER BY full_timestamp";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      ResultSet result = statement.executeQuery();
       List<Comment> comments = new LinkedList<>();
-      while (result.next()) {
-        String author = result.getString("author");
-        Timestamp timestamp0 = result.getTimestamp("timestamp");
-        String timestamp = timestampToString(timestamp0);
-        String cui = result.getString("cui");
-        String content = result.getString("content");
-        Comment comment = new Comment(cui, author, timestamp, content);
-        comments.add(comment);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String author = result.getString("author");
+          Timestamp timestamp0 = result.getTimestamp("timestamp");
+          String timestamp = timestampToString(timestamp0);
+          String cui = result.getString("cui");
+          String content = result.getString("content");
+          Comment comment = new Comment(cui, author, timestamp, content);
+          comments.add(comment);
+        }
       }
       return comments;
     } catch (SQLException e) {
@@ -366,8 +383,7 @@ public class PersistencyApi {
             + "SELECT cd.id, ?, u.id, ? "
             + "FROM users u, case_definitions cd "
             + "WHERE cd.shortkey = ? AND users.username = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, cui);
       statement.setString(2, content);
       statement.setString(3, shortkey);
@@ -392,6 +408,7 @@ public class PersistencyApi {
     public String projectName;
     public String status;
     public MappingMeta meta;
+    public String description;
 
     public String slugify() {
       return String.format("%s-%s", slugifyName(), mappingShortkey);
@@ -454,24 +471,25 @@ public class PersistencyApi {
 
   public MappingInfo getMappingInfo(String shortkey) throws CodeMapperException {
     String query =
-        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT "
+        "SELECT mapping_name, project_name, mapping_status, mapping_meta::TEXT, mapping_description::TEXT "
             + "FROM projects_mappings_shortkey pm "
             + "WHERE mapping_shortkey = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      ResultSet res = statement.executeQuery();
-      if (!res.next()) {
-        throw CodeMapperException.user("No mapping info for shortkey " + shortkey);
-      }
-      ObjectMapper mapper = new ObjectMapper();
       MappingInfo mapping = new MappingInfo();
-      mapping.mappingShortkey = shortkey;
-      mapping.mappingName = res.getString(1);
-      mapping.projectName = res.getString(2);
-      mapping.status = res.getString(3);
-      mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
-      return mapping;
+      try (ResultSet res = statement.executeQuery()) {
+        if (!res.next()) {
+          throw CodeMapperException.user("No mapping info for shortkey " + shortkey);
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapping.mappingShortkey = shortkey;
+        mapping.mappingName = res.getString(1);
+        mapping.projectName = res.getString(2);
+        mapping.status = res.getString(3);
+        mapping.meta = mapper.readValue(res.getString(4), MappingMeta.class);
+        mapping.description = res.getString(5);
+        return mapping;
+      }
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query for mapping info", e);
@@ -491,19 +509,19 @@ public class PersistencyApi {
             + "FROM projects_mappings_shortkey "
             + "WHERE project_name = ? "
             + "AND mapping_old_name = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, projectName);
       statement.setString(2, mappingName);
-      ResultSet res = statement.executeQuery();
-      if (!res.next()) {
-        throw CodeMapperException.user(
-            "Invalid mapping shortkey " + projectName + "/" + mappingName);
-      }
       MappingInfo mapping = new MappingInfo();
-      mapping.mappingShortkey = res.getString(1);
-      mapping.mappingName = res.getString(2);
-      mapping.projectName = res.getString(3);
+      try (ResultSet res = statement.executeQuery()) {
+        if (!res.next()) {
+          throw CodeMapperException.user(
+              "Invalid mapping shortkey " + projectName + "/" + mappingName);
+        }
+        mapping.mappingShortkey = res.getString(1);
+        mapping.mappingName = res.getString(2);
+        mapping.projectName = res.getString(3);
+      }
       return mapping;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for mapping info", e);
@@ -524,16 +542,16 @@ public class PersistencyApi {
             + "INNER JOIN users_projects up ON up.user_id = users.id "
             + "INNER JOIN projects ON projects.id = up.project_id "
             + "WHERE users.username = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet result = statement.executeQuery();
       Map<String, ProjectPermission> permissions = new HashMap<>();
-      while (result.next()) {
-        String projectName = result.getString(1);
-        String role0 = result.getString(2);
-        ProjectPermission role = ProjectPermission.fromChar(role0);
-        permissions.put(projectName, role);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String projectName = result.getString(1);
+          String role0 = result.getString(2);
+          ProjectPermission role = ProjectPermission.fromChar(role0);
+          permissions.put(projectName, role);
+        }
       }
       return permissions.entrySet().stream()
           .map(
@@ -559,16 +577,16 @@ public class PersistencyApi {
             + "  WHERE u.username = ?"
             + ") up "
             + "ON up.project_id = p.id";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet result = statement.executeQuery();
       Map<String, ProjectPermission> permissions = new HashMap<>();
-      while (result.next()) {
-        String projectName = result.getString(1);
-        String role0 = result.getString(2);
-        ProjectPermission role = role0 == null ? null : ProjectPermission.fromChar(role0);
-        permissions.put(projectName, role);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String projectName = result.getString(1);
+          String role0 = result.getString(2);
+          ProjectPermission role = role0 == null ? null : ProjectPermission.fromChar(role0);
+          permissions.put(projectName, role);
+        }
       }
       return permissions.entrySet().stream()
           .map(
@@ -593,20 +611,20 @@ public class PersistencyApi {
             + "WHERE p.name = ? "
             + "AND (cd.status is null OR cd.status != 'DELETED')";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, project);
-      ResultSet set = statement.executeQuery();
       List<MappingInfo> mappings = new LinkedList<>();
       ObjectMapper mapper = new ObjectMapper();
-      while (set.next()) {
-        MappingInfo mapping = new MappingInfo();
-        mapping.projectName = project;
-        mapping.mappingShortkey = set.getString(1);
-        mapping.mappingName = set.getString(2);
-        mapping.status = set.getString(3);
-        mapping.meta = mapper.readValue(set.getString(4), MappingMeta.class);
-        mappings.add(mapping);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          MappingInfo mapping = new MappingInfo();
+          mapping.projectName = project;
+          mapping.mappingShortkey = set.getString(1);
+          mapping.mappingName = set.getString(2);
+          mapping.status = set.getString(3);
+          mapping.meta = mapper.readValue(set.getString(4), MappingMeta.class);
+          mappings.add(mapping);
+        }
       }
       return mappings;
     } catch (SQLException e) {
@@ -623,17 +641,16 @@ public class PersistencyApi {
 
   public MappingMeta getMappingMeta(String shortkey) throws CodeMapperException {
     String query = "SELECT meta::TEXT FROM case_definitions WHERE shortkey = ?";
-
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, shortkey);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        throw CodeMapperException.user("unknown mapping shortkey: " + shortkey);
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.user("unknown mapping shortkey: " + shortkey);
+        }
+        String metaJson = set.getString(1);
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(metaJson, MappingMeta.class);
       }
-      String metaJson = set.getString(1);
-      ObjectMapper mapper = new ObjectMapper();
-      return mapper.readValue(metaJson, MappingMeta.class);
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to get case definition meta", e);
@@ -649,8 +666,7 @@ public class PersistencyApi {
   public void setMappingMeta(String shortkey, MappingMeta meta) throws CodeMapperException {
     String query = "UPDATE case_definitions SET meta = ?::jsonb where shortkey = ?";
     ObjectMapper mapper = new ObjectMapper();
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, mapper.writeValueAsString(meta));
       statement.setString(2, shortkey);
       int num = statement.executeUpdate();
@@ -666,10 +682,43 @@ public class PersistencyApi {
     }
   }
 
+  public String getMappingDescription(String shortkey) throws CodeMapperException {
+    String query = "SELECT description FROM case_definitions WHERE shortkey = ?";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, shortkey);
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.user("unknown mapping shortkey: " + shortkey);
+        }
+        return set.getString(1);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server(
+          "Cannot execute query to get case definition description", e);
+    }
+  }
+
+  public void setMappingDescription(String shortkey, String description)
+      throws CodeMapperException {
+    String query = "UPDATE case_definitions SET description = ? where shortkey = ?";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, description);
+      statement.setString(2, shortkey);
+      int num = statement.executeUpdate();
+      if (num != 1) {
+        throw CodeMapperException.server("Updated not exactly one mapping description");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      throw CodeMapperException.server(
+          "Cannot execute query to set case definition description", e);
+    }
+  }
+
   public int deleteMappings(List<String> shortkeys) throws CodeMapperException {
     String query = "UPDATE case_definitions SET status = 'DELETED' where shortkey = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("varchar", shortkeys.toArray()));
       return statement.executeUpdate();
     } catch (SQLException e) {
@@ -686,16 +735,16 @@ public class PersistencyApi {
             + "FROM projects p WHERE p.name = ? "
             + "RETURNING shortkey";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, mappingName);
       statement.setString(2, status);
       statement.setString(3, projectName);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        throw CodeMapperException.server("no shortkey when creating a mapping");
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.server("no shortkey when creating a mapping");
+        }
+        return set.getString(1);
       }
-      return set.getString(1);
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to create mapping", e);
@@ -705,8 +754,7 @@ public class PersistencyApi {
   public void setName(String mappingShortkey, String name) throws CodeMapperException {
     String query = "UPDATE case_definitions SET name = ? WHERE shortkey = ?";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, name);
       statement.setString(2, mappingShortkey);
       statement.execute();
@@ -718,17 +766,16 @@ public class PersistencyApi {
 
   public Collection<User> getUsers() throws CodeMapperException {
     String query = "SELECT username, email, is_admin FROM users";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       Collection<User> res = new ArrayList<>();
-      ResultSet results = statement.executeQuery();
-      while (results.next()) {
-        String username = results.getString(1);
-        String email = results.getString(2);
-        boolean isAdmin = results.getBoolean(3);
-        User user = new User(username, email, isAdmin);
-        res.add(user);
+      try (ResultSet results = statement.executeQuery()) {
+        while (results.next()) {
+          String username = results.getString(1);
+          String email = results.getString(2);
+          boolean isAdmin = results.getBoolean(3);
+          User user = new User(username, email, isAdmin);
+          res.add(user);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -739,9 +786,7 @@ public class PersistencyApi {
   public void createUser(String username, String password, String email)
       throws CodeMapperException {
     String query = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       statement.setString(2, AuthentificationApi.hash(password));
       statement.setString(3, email);
@@ -753,9 +798,7 @@ public class PersistencyApi {
 
   public void setUserPassword(String username, String password) throws CodeMapperException {
     String query = "UPDATE users SET password = ? WHERE username = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, AuthentificationApi.hash(password));
       statement.setString(2, username);
       statement.execute();
@@ -766,9 +809,7 @@ public class PersistencyApi {
 
   public void setUserAdmin(String username, boolean isAdmin) throws CodeMapperException {
     String query = "UPDATE users SET is_admin = ? WHERE username = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setBoolean(1, isAdmin);
       statement.setString(2, username);
       statement.execute();
@@ -779,9 +820,7 @@ public class PersistencyApi {
 
   public void createProject(String name) throws CodeMapperException {
     String query = "INSERT INTO projects (name) VALUES (?)";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, name);
       statement.execute();
     } catch (SQLException e) {
@@ -797,9 +836,7 @@ public class PersistencyApi {
               + "WHERE project_id IN (SELECT id FROM projects WHERE name = ?) "
               + "AND user_id IN (SELECT id FROM users WHERE username = ?)";
 
-      try {
-        Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, projectName);
         statement.setString(2, username);
         statement.execute();
@@ -815,9 +852,7 @@ public class PersistencyApi {
               + "AND p.name = ? "
               + "ON CONFLICT (user_id, project_id) DO UPDATE "
               + "SET role = ?";
-      try {
-        Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, perm.toChar());
         statement.setString(2, username);
         statement.setString(3, projectName);
@@ -831,12 +866,11 @@ public class PersistencyApi {
 
   public boolean userExists(String username) throws CodeMapperException {
     String query = "SELECT id FROM users WHERE username = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet results = statement.executeQuery();
-      return results.next();
+      try (ResultSet results = statement.executeQuery()) {
+        return results.next();
+      }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to check user exists", e);
     }
@@ -848,12 +882,11 @@ public class PersistencyApi {
             + "JOIN users u ON u.id = up.user_id "
             + "WHERE u.username = ? "
             + "AND up.role = 'O'";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet results = statement.executeQuery();
-      return results.next();
+      try (ResultSet results = statement.executeQuery()) {
+        return results.next();
+      }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to check user exists", e);
     }
@@ -861,12 +894,11 @@ public class PersistencyApi {
 
   public boolean projectExists(String name) throws CodeMapperException {
     String query = "SELECT id FROM projects WHERE name = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, name);
-      ResultSet results = statement.executeQuery();
-      return results.next();
+      try (ResultSet results = statement.executeQuery()) {
+        return results.next();
+      }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to check project exists", e);
     }
@@ -874,9 +906,7 @@ public class PersistencyApi {
 
   public void setMappingStatus(String shortkey, String status) throws CodeMapperException {
     String query = "UPDATE case_definitions SET status = ? WHERE shortkey = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, status);
       statement.setString(2, shortkey);
       statement.execute();
@@ -896,19 +926,18 @@ public class PersistencyApi {
             + "INNER JOIN users u "
             + "ON u.id = r.user_id "
             + "WHERE pcd.project_name = ?";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, project);
-      ResultSet results = statement.executeQuery();
       Map<String, RevisionInfo> infos = new HashMap<>();
-      while (results.next()) {
-        String shortkey = results.getString(1);
-        int version = results.getInt(2);
-        String timestamp = results.getString(3);
-        String author = results.getString(4);
-        String summary = results.getString(5);
-        infos.put(shortkey, new RevisionInfo(version, author, timestamp, summary));
+      try (ResultSet results = statement.executeQuery()) {
+        while (results.next()) {
+          String shortkey = results.getString(1);
+          int version = results.getInt(2);
+          String timestamp = results.getString(3);
+          String author = results.getString(4);
+          String summary = results.getString(5);
+          infos.put(shortkey, new RevisionInfo(version, author, timestamp, summary));
+        }
       }
       return infos;
     } catch (SQLException e) {

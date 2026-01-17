@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
 
-public class UtsApi {
+public class UtsApi implements AutoCloseable {
 
   private static Logger logger = LogManager.getLogger(UtsApi.class);
 
@@ -56,6 +56,9 @@ public class UtsApi {
   public UtsApi(String apiKey) {
     this.apiKey = apiKey;
   }
+
+  @Override
+  public void close() throws Exception {}
 
   private void setTGT() throws CodeMapperException {
     tgt = null;
@@ -191,10 +194,12 @@ public class UtsApi {
     }
   }
 
-  public static void main(String[] args) throws CodeMapperException {
+  public static void main(String[] args) throws Exception {
     Configurator.setAllLevels(logger.getName(), Level.DEBUG);
     CodeMapperApplication.initialize();
-    UtsApi utsApi = CodeMapperApplication.getUtsApi();
-    System.out.println(utsApi.searchConcepts("pertussis", CodeMapperApplication.getUmlsVersion()));
+    try (UtsApi utsApi = CodeMapperApplication.getUtsApi()) {
+      System.out.println(
+          utsApi.searchConcepts("pertussis", CodeMapperApplication.getUmlsVersion()));
+    }
   }
 }

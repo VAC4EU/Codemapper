@@ -27,7 +27,12 @@ import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.SourceConcept;
 import org.biosemantics.codemapper.rest.NonUmlsTargets;
 
-public class DescendantsApi {
+public class DescendantsApi implements AutoCloseable {
+
+  public static DescendantsApi createApi(
+      NonUmlsTargets nonUmlsTargets, GeneralDescender generalDescender) {
+    return new DescendantsApi(generalDescender, nonUmlsTargets);
+  }
 
   public static interface SpecificDescender {
 
@@ -39,7 +44,7 @@ public class DescendantsApi {
         throws CodeMapperException;
   }
 
-  public static interface GeneralDescender {
+  public static interface GeneralDescender extends AutoCloseable {
 
     /** Returns a mapping of each of the argument codes to a collection of descendant codes. */
     public Map<String, Collection<SourceConcept>> getDescendants(
@@ -55,6 +60,9 @@ public class DescendantsApi {
     this.specificDescenders = new HashMap<>();
     this.nonUmls = nonUmls;
   }
+
+  @Override
+  public void close() throws Exception {}
 
   public void add(SpecificDescender specificDescender) {
     this.specificDescenders.put(specificDescender.getCodingSystem(), specificDescender);

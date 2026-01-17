@@ -57,9 +57,11 @@ create table case_definitions (
   project_id int not null references projects(id),
   state mediumtext,
   meta JSONB default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb,
+  description text not null default(""),
   primary key (id)
   unique (shortkey)
 );
+
 
 -- -- MIGRATION
 -- alter table case_definitions add column old_name char(255);
@@ -230,6 +232,8 @@ alter table users add column anonymous boolean default false;
 ALTER TABLE case_definitions
 ADD COLUMN meta JSONB not null default '{"system": null, "type": null, "definition": null, "projects": []}'::jsonb;
 
+ALTER TABLE case_definitions ADD COLUMN description TEXT NOT NULL DEFAULT '';
+
 drop view if exists projects_mappings_shortkey;
 create view projects_mappings_shortkey
 as
@@ -241,7 +245,8 @@ as
     cd.shortkey mapping_shortkey,
     cd.old_name mapping_old_name,
     cd.status mapping_status,
-    cd.meta mapping_meta
+    cd.meta mapping_meta,
+    cd.description mapping_description
   from projects p
   join case_definitions cd
   on p.id = cd.project_id

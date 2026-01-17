@@ -67,7 +67,7 @@ import org.biosemantics.codemapper.review.Topic.Action;
  *
  * @author benus
  */
-public class UmlsApi {
+public class UmlsApi implements AutoCloseable {
 
   private static final String CUSTOM_NAME = "Unassociated custom codes";
   private static final String CUSTOM_DESCRIPTION =
@@ -77,30 +77,69 @@ public class UmlsApi {
 
   private static Logger logger = LogManager.getLogger(UmlsApi.class);
 
-  private DataSource connectionPool;
-  private List<String> codingSystemsWithDefinition;
-  private List<String> availableCodingSystems;
-  private Set<String> ignoreTermTypes;
-  private ServerInfo serverInfo;
-  private NonUmlsTargets nonUmls;
+  public static class Config {
+    DataSource dataSource;
+    List<String> codingSystemsWithDefinition;
+    List<String> availableCodingSystems;
+    Set<String> ignoreTermTypes;
+    ServerInfo serverInfo;
 
-  public UmlsApi(
-      DataSource connectionPool,
-      List<String> availableCodingSystems,
-      List<String> codingSystemsWithDefinition,
-      Set<String> ignoreTermTypes,
-      ServerInfo serverInfo,
-      NonUmlsTargets nonUmls) {
-    this.connectionPool = connectionPool;
-    this.availableCodingSystems = availableCodingSystems;
-    this.codingSystemsWithDefinition = codingSystemsWithDefinition;
-    this.ignoreTermTypes = ignoreTermTypes;
-    this.serverInfo = serverInfo;
-    this.nonUmls = nonUmls;
+    public Config(
+        DataSource dataSource,
+        List<String> availableCodingSystems,
+        List<String> codingSystemsWithDefinition,
+        Set<String> ignoreTermTypes,
+        ServerInfo serverInfo) {
+      this.dataSource = dataSource;
+      this.codingSystemsWithDefinition = codingSystemsWithDefinition;
+      this.availableCodingSystems = availableCodingSystems;
+      this.ignoreTermTypes = ignoreTermTypes;
+      this.serverInfo = serverInfo;
+    }
+
+    public ServerInfo getServerInfo() {
+      return serverInfo;
+    }
+
+    @SuppressWarnings("resource")
+    public UmlsApi createApi(NonUmlsTargets nonUmlsTargets) throws SQLException {
+      return new UmlsApi(this, this.dataSource.getConnection(), nonUmlsTargets);
+    }
+  }
+
+  private Config config;
+  private Connection connection;
+  private NonUmlsTargets nonUmlsTargets;
+
+  UmlsApi(Config data, Connection connection, NonUmlsTargets nonUmlsTargets) throws SQLException {
+    this.config = data;
+    this.connection = connection;
+    this.nonUmlsTargets = nonUmlsTargets;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
+  }
+
+  private Set<String> getIgnoreTermTypes() {
+    return config.ignoreTermTypes;
+  }
+
+  private List<String> getAvailableCodingSystems() {
+    return config.availableCodingSystems;
+  }
+
+  private List<String> getCodingSystemsWithDefinition() {
+    return config.codingSystemsWithDefinition;
+  }
+
+  public ServerInfo getServerInfo() {
+    return config.serverInfo;
   }
 
   public Collection<CodingSystem> getCodingSystems() throws CodeMapperException {
-    Collection<CodingSystem> res = nonUmls.getVocabularies();
+    Collection<CodingSystem> res = nonUmlsTargets.getVocabularies();
     res.addAll(getUmlsCodingSystems());
     return res;
   }
@@ -108,16 +147,15 @@ public class UmlsApi {
   List<CodingSystem> getUmlsCodingSystems() throws CodeMapperException {
     List<CodingSystem> res = new LinkedList<>();
     String query = "SELECT DISTINCT rsab, son, sf, sver FROM MRSAB WHERE CURVER = 'Y'";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
-      ResultSet result = statement.executeQuery();
+    try (PreparedStatement statement = connection.prepareStatement(query);
+        ResultSet result = statement.executeQuery()) {
       while (result.next()) {
         int ix = 1;
         String rsab = result.getString(ix++);
         String name = result.getString(ix++);
         String family = result.getString(ix++);
         String version = result.getString(ix++);
-        if (availableCodingSystems == null || availableCodingSystems.contains(rsab)) {
+        if (getAvailableCodingSystems() == null || getAvailableCodingSystems().contains(rsab)) {
           CodingSystem codingSystem = new CodingSystem(rsab, name, family, version);
           res.add(codingSystem);
         }
@@ -140,26 +178,26 @@ public class UmlsApi {
             + "AND stt = 'PF'";
     String query = String.format(queryFmt, Utils.sqlPlaceholders(cuis.size()));
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
 
       int offset = 1;
       for (Iterator<String> iter = cuis.iterator(); iter.hasNext(); offset++)
         statement.setString(offset, iter.next());
 
-      ResultSet result = statement.executeQuery();
+      try (ResultSet result = statement.executeQuery()) {
 
-      Map<String, String> names = new TreeMap<>();
-      while (result.next()) {
-        String cui = result.getString(1);
-        String name = result.getString(2);
-        names.put(cui, name);
+        Map<String, String> names = new TreeMap<>();
+        while (result.next()) {
+          String cui = result.getString(1);
+          String name = result.getString(2);
+          names.put(cui, name);
+        }
+
+        Set<String> missings = new TreeSet<>(cuis);
+        missings.removeAll(names.keySet());
+        for (String missing : missings) logger.warn("No preferred name found for CUI " + missing);
+        return names;
       }
-
-      Set<String> missings = new TreeSet<>(cuis);
-      missings.removeAll(names.keySet());
-      for (String missing : missings) logger.warn("No preferred name found for CUI " + missing);
-      return names;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for preferred names", e);
     }
@@ -168,7 +206,7 @@ public class UmlsApi {
   public List<UmlsConcept> getCompletions(String q, List<String> codingSystems)
       throws CodeMapperException {
     if (q.length() < 3) throw CodeMapperException.user("Completions query too short");
-    Collection<String> nonUmlsCuis = nonUmls.getTermCompletionsCuis(q, codingSystems);
+    Collection<String> nonUmlsCuis = nonUmlsTargets.getTermCompletionsCuis(q, codingSystems);
 
     String query =
         ""
@@ -197,8 +235,7 @@ public class UmlsApi {
             + "LIMIT 100"
             + "";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int offset = 1;
       statement.setArray(offset++, connection.createArrayOf("char(8)", nonUmlsCuis.toArray()));
       statement.setString(offset++, q);
@@ -206,13 +243,14 @@ public class UmlsApi {
       if (codingSystems != null && !codingSystems.isEmpty())
         for (Iterator<String> iter = codingSystems.iterator(); iter.hasNext(); offset++)
           statement.setString(offset, iter.next());
-      ResultSet result = statement.executeQuery();
       List<UmlsConcept> completions = new LinkedList<>();
-      while (result.next()) {
-        String cui = result.getString(1);
-        String str = result.getString(2);
-        UmlsConcept concept = new UmlsConcept(cui, str);
-        completions.add(concept);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String cui = result.getString(1);
+          String str = result.getString(2);
+          UmlsConcept concept = new UmlsConcept(cui, str);
+          completions.add(concept);
+        }
       }
       return completions;
     } catch (SQLException e) {
@@ -224,10 +262,10 @@ public class UmlsApi {
       throws CodeMapperException {
     if (str == null || str.isEmpty()) return new LinkedList<>();
     Collection<UmlsConcept> res = new LinkedList<>();
-    if (codingSystem == null || nonUmls.is(codingSystem)) {
-      res.addAll(nonUmls.getCodeCompletions(str, codingSystem));
+    if (codingSystem == null || nonUmlsTargets.is(codingSystem)) {
+      res.addAll(nonUmlsTargets.getCodeCompletions(str, codingSystem));
     }
-    if (codingSystem == null || !nonUmls.is(codingSystem)) {
+    if (codingSystem == null || !nonUmlsTargets.is(codingSystem)) {
       res.addAll(getUmlsCodeCompletions(str, codingSystem));
     }
     return res;
@@ -242,25 +280,25 @@ public class UmlsApi {
             + "AND lat = 'ENG' "
             + "ORDER BY code "
             + "LIMIT 20";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, str);
       statement.setString(2, str + "%");
       statement.setString(3, codingSystem == null ? "%" : codingSystem);
-      ResultSet result = statement.executeQuery();
       Map<String, UmlsConcept> concepts = new TreeMap<>();
-      while (result.next()) {
-        String cui = result.getString(1);
-        String sab = result.getString(2);
-        String code = result.getString(3);
-        String str1 = result.getString(4);
-        String name;
-        if (str.equals(cui)) name = String.format("CUI %s: %s", cui, str1);
-        else name = String.format("%s in %s: %s", code, sab, str1);
-        concepts
-            .computeIfAbsent(cui, k -> new UmlsConcept(cui, name))
-            .getSourceConcepts()
-            .add(new SourceConcept(cui, sab, code));
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String cui = result.getString(1);
+          String sab = result.getString(2);
+          String code = result.getString(3);
+          String str1 = result.getString(4);
+          String name;
+          if (str.equals(cui)) name = String.format("CUI %s: %s", cui, str1);
+          else name = String.format("%s in %s: %s", code, sab, str1);
+          concepts
+              .computeIfAbsent(cui, k -> new UmlsConcept(cui, name))
+              .getSourceConcepts()
+              .add(new SourceConcept(cui, sab, code));
+        }
       }
       List<UmlsConcept> res = new LinkedList<>(concepts.values());
       res.sort(Comparator.comparing(c -> c.toString()));
@@ -278,22 +316,21 @@ public class UmlsApi {
           "SELECT DISTINCT cui, tui " + "FROM MRSTY " + "WHERE cui IN (%s) " + "ORDER BY cui, tui";
       String query = String.format(queryFmt, Utils.sqlPlaceholders(cuis.size()));
 
-      try (Connection connection = connectionPool.getConnection();
-          PreparedStatement statement = connection.prepareStatement(query)) {
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
 
         int offset = 1;
 
         for (Iterator<String> iter = cuis.iterator(); iter.hasNext(); offset++)
           statement.setString(offset, iter.next());
 
-        ResultSet result = statement.executeQuery();
-
         Map<String, List<String>> semanticTypes = new TreeMap<>();
-        while (result.next()) {
-          String cui = result.getString(1);
-          String tui = result.getString(2);
-          if (!semanticTypes.containsKey(cui)) semanticTypes.put(cui, new LinkedList<String>());
-          semanticTypes.get(cui).add(tui);
+        try (ResultSet result = statement.executeQuery()) {
+          while (result.next()) {
+            String cui = result.getString(1);
+            String tui = result.getString(2);
+            if (!semanticTypes.containsKey(cui)) semanticTypes.put(cui, new LinkedList<String>());
+            semanticTypes.get(cui).add(tui);
+          }
         }
         return semanticTypes;
       } catch (SQLException e) {
@@ -305,24 +342,24 @@ public class UmlsApi {
   public Collection<String> getCuisByCodes(Collection<String> codes, String codingSystem)
       throws CodeMapperException {
     if (codes == null || codes.isEmpty()) return new LinkedList<>();
-    if (nonUmls.is(codingSystem)) {
+    if (nonUmlsTargets.is(codingSystem)) {
       Collection<String> cuis = new HashSet<>();
-      nonUmls.getCuisForCodes(codingSystem, codes).values().forEach(cuis::addAll);
+      nonUmlsTargets.getCuisForCodes(codingSystem, codes).values().forEach(cuis::addAll);
       return cuis;
     } else {
       String queryFmt = "SELECT DISTINCT cui FROM mrconso WHERE code IN (%s) and SAB = ?";
       String query = String.format(queryFmt, Utils.sqlPlaceholders(codes.size()));
-      try (Connection connection = connectionPool.getConnection();
-          PreparedStatement statement = connection.prepareStatement(query)) {
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
         int offset = 1;
         for (Iterator<String> iter = codes.iterator(); iter.hasNext(); offset++)
           statement.setString(offset, iter.next());
         statement.setString(offset++, codingSystem);
-        ResultSet result = statement.executeQuery();
         Collection<String> cuis = new HashSet<>();
-        while (result.next()) {
-          String cui = result.getString(1);
-          cuis.add(cui);
+        try (ResultSet result = statement.executeQuery()) {
+          while (result.next()) {
+            String cui = result.getString(1);
+            cuis.add(cui);
+          }
         }
         return cuis;
       } catch (SQLException e) {
@@ -338,11 +375,11 @@ public class UmlsApi {
     if (cuis.isEmpty() || codingSystems.isEmpty()) return new TreeMap<>();
 
     if (ignoreTermTypes == null || ignoreTermTypes.isEmpty()) {
-      ignoreTermTypes = this.ignoreTermTypes;
+      ignoreTermTypes = this.getIgnoreTermTypes();
     }
 
     Map<String, List<SourceConcept>> sourceConcepts =
-        nonUmls.getSourceConcepts(cuis, codingSystems);
+        nonUmlsTargets.getSourceConcepts(cuis, codingSystems);
 
     String query =
         "SELECT DISTINCT cui, sab, code, str, tty "
@@ -353,37 +390,36 @@ public class UmlsApi {
             + "AND tty != ANY(?)"
             + "ORDER BY cui, sab, code, str";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", cuis.toArray()));
       statement.setArray(2, connection.createArrayOf("VARCHAR", codingSystems.toArray()));
       statement.setArray(3, connection.createArrayOf("VARCHAR", ignoreTermTypes.toArray()));
-      ResultSet result = statement.executeQuery();
       String lastCui = null, lastSab = null, lastCode = null;
       SourceConcept currentSourceConcept = null;
-      while (result.next()) {
-        String cui = result.getString(1);
-        String sab = result.getString(2);
-        String code = result.getString(3);
-        String str = result.getString(4);
-        String tty = result.getString(5);
-        if (!cui.equals(lastCui) || !sab.equals(lastSab) || !code.equals(lastCode)) {
-          currentSourceConcept = new SourceConcept();
-          currentSourceConcept.setCui(cui);
-          currentSourceConcept.setCodingSystem(sab);
-          currentSourceConcept.setId(code);
-          currentSourceConcept.setTty(tty);
-          currentSourceConcept.setPreferredTerm(str);
-          sourceConcepts
-              .computeIfAbsent(cui, key -> new LinkedList<SourceConcept>())
-              .add(currentSourceConcept);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String cui = result.getString(1);
+          String sab = result.getString(2);
+          String code = result.getString(3);
+          String str = result.getString(4);
+          String tty = result.getString(5);
+          if (!cui.equals(lastCui) || !sab.equals(lastSab) || !code.equals(lastCode)) {
+            currentSourceConcept = new SourceConcept();
+            currentSourceConcept.setCui(cui);
+            currentSourceConcept.setCodingSystem(sab);
+            currentSourceConcept.setId(code);
+            currentSourceConcept.setTty(tty);
+            currentSourceConcept.setPreferredTerm(str);
+            sourceConcepts
+                .computeIfAbsent(cui, key -> new LinkedList<SourceConcept>())
+                .add(currentSourceConcept);
+          }
+          if ("PT".equals(tty)) currentSourceConcept.setPreferredTerm(str);
+          lastCui = cui;
+          lastSab = sab;
+          lastCode = code;
         }
-        if ("PT".equals(tty)) currentSourceConcept.setPreferredTerm(str);
-        lastCui = cui;
-        lastSab = sab;
-        lastCode = code;
       }
-
       Set<String> missings = new TreeSet<>(cuis);
       missings.removeAll(sourceConcepts.keySet());
       for (String missing : missings) logger.warn("No UMLS concept found for CUI " + missing);
@@ -398,16 +434,16 @@ public class UmlsApi {
       Collection<String> sabs, Collection<String> cuis) throws CodeMapperException {
     String query = "SELECT DISTINCT cui, aui FROM mrconso WHERE sab = ANY(?) AND cui = ANY(?)";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", sabs.toArray()));
       statement.setArray(2, connection.createArrayOf("VARCHAR", cuis.toArray()));
-      ResultSet set = statement.executeQuery();
       Map<String, Collection<String>> res = new HashMap<>();
-      while (set.next()) {
-        String cui = set.getString(1);
-        String aui = set.getString(2);
-        res.computeIfAbsent(cui, key -> new HashSet<>()).add(aui);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String cui = set.getString(1);
+          String aui = set.getString(2);
+          res.computeIfAbsent(cui, key -> new HashSet<>()).add(aui);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -420,15 +456,15 @@ public class UmlsApi {
       throws CodeMapperException {
     String query = "SELECT DISTINCT aui, cui FROM mrconso WHERE aui = ANY(?)";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", auis.toArray()));
-      ResultSet set = statement.executeQuery();
       Map<String, Collection<String>> res = new HashMap<>();
-      while (set.next()) {
-        String aui = set.getString(1);
-        String cui = set.getString(2);
-        res.computeIfAbsent(aui, key -> new HashSet<>()).add(cui);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String aui = set.getString(1);
+          String cui = set.getString(2);
+          res.computeIfAbsent(aui, key -> new HashSet<>()).add(cui);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -438,15 +474,15 @@ public class UmlsApi {
 
   private Map<String, String> getParentAuis(Collection<String> auis) throws CodeMapperException {
     String query = "SELECT aui, paui FROM mrhier WHERE aui = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", auis.toArray()));
-      ResultSet set = statement.executeQuery();
       Map<String, String> res = new HashMap<>();
-      while (set.next()) {
-        String aui = set.getString(1);
-        String paui = set.getString(2);
-        res.put(aui, paui);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String aui = set.getString(1);
+          String paui = set.getString(2);
+          res.put(aui, paui);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -457,15 +493,15 @@ public class UmlsApi {
   private Map<String, Collection<String>> getChildAuis(Collection<String> auis)
       throws CodeMapperException {
     String query = "SELECT aui, paui FROM mrhier WHERE paui = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", auis.toArray()));
-      ResultSet set = statement.executeQuery();
       Map<String, Collection<String>> res = new HashMap<>();
-      while (set.next()) {
-        String aui = set.getString(1);
-        String paui = set.getString(2);
-        res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String aui = set.getString(1);
+          String paui = set.getString(2);
+          res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -555,8 +591,7 @@ public class UmlsApi {
               Utils.sqlPlaceholders(cuis.size()),
               Utils.sqlPlaceholders(invRelations.size()));
 
-      try (Connection connection = connectionPool.getConnection();
-          PreparedStatement statement = connection.prepareStatement(query)) {
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
         int offset = 1;
         for (int ix = 0; ix < cuis.size(); ix++, offset++)
           statement.setString(offset, cuis.get(ix));
@@ -567,36 +602,37 @@ public class UmlsApi {
         for (int ix = 0; ix < invRelations.size(); ix++, offset++)
           statement.setString(offset, invRelations.get(ix));
 
-        ResultSet sqlResults = statement.executeQuery();
+        try (ResultSet sqlResults = statement.executeQuery()) {
 
-        Map<String, Map<String, Set<String>>> related = new TreeMap<>();
-        while (sqlResults.next()) {
-          String cui1 = sqlResults.getString(1);
-          String rel = sqlResults.getString(2);
-          String cui2 = sqlResults.getString(3);
-          if (!related.containsKey(cui1)) related.put(cui1, new HashMap<String, Set<String>>());
-          if (!related.get(cui1).containsKey(rel))
-            related.get(cui1).put(rel, new HashSet<String>());
-          related.get(cui1).get(rel).add(cui2);
-        }
-
-        Set<String> relatedCuis = new TreeSet<>();
-        for (Map<String, Set<String>> rels : related.values())
-          for (Set<String> cs : rels.values()) relatedCuis.addAll(cs);
-
-        Map<String, UmlsConcept> relatedConcepts = getConcepts(relatedCuis, codingSystems, null);
-
-        Map<String, Map<String, List<UmlsConcept>>> result = new HashMap<>();
-        for (String cui1 : related.keySet()) {
-          result.put(cui1, new HashMap<String, List<UmlsConcept>>());
-          for (String rel : related.get(cui1).keySet()) {
-            result.get(cui1).put(rel, new LinkedList<UmlsConcept>());
-            for (String cui2 : related.get(cui1).get(rel))
-              result.get(cui1).get(rel).add(relatedConcepts.get(cui2));
+          Map<String, Map<String, Set<String>>> related = new TreeMap<>();
+          while (sqlResults.next()) {
+            String cui1 = sqlResults.getString(1);
+            String rel = sqlResults.getString(2);
+            String cui2 = sqlResults.getString(3);
+            if (!related.containsKey(cui1)) related.put(cui1, new HashMap<String, Set<String>>());
+            if (!related.get(cui1).containsKey(rel))
+              related.get(cui1).put(rel, new HashSet<String>());
+            related.get(cui1).get(rel).add(cui2);
           }
-        }
 
-        return result;
+          Set<String> relatedCuis = new TreeSet<>();
+          for (Map<String, Set<String>> rels : related.values())
+            for (Set<String> cs : rels.values()) relatedCuis.addAll(cs);
+
+          Map<String, UmlsConcept> relatedConcepts = getConcepts(relatedCuis, codingSystems, null);
+
+          Map<String, Map<String, List<UmlsConcept>>> result = new HashMap<>();
+          for (String cui1 : related.keySet()) {
+            result.put(cui1, new HashMap<String, List<UmlsConcept>>());
+            for (String rel : related.get(cui1).keySet()) {
+              result.get(cui1).put(rel, new LinkedList<UmlsConcept>());
+              for (String cui2 : related.get(cui1).get(rel))
+                result.get(cui1).get(rel).add(relatedConcepts.get(cui2));
+            }
+          }
+
+          return result;
+        }
       } catch (SQLException e) {
         throw CodeMapperException.server("Cannot execute query for related concepts 2", e);
       }
@@ -622,21 +658,20 @@ public class UmlsApi {
       String query =
           String.format(queryFmt, selection, selector, Utils.sqlPlaceholders(cuis.size()));
 
-      try (Connection connection = connectionPool.getConnection();
-          PreparedStatement statement = connection.prepareStatement(query)) {
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
 
         int offset = 1;
         for (int ix = 0; ix < cuis.size(); ix++, offset++)
           statement.setString(offset, cuis.get(ix));
 
-        ResultSet result = statement.executeQuery();
-
         Map<String, Set<String>> related = new TreeMap<>();
-        while (result.next()) {
-          String cui = result.getString(1);
-          String relatedCui = result.getString(2);
-          if (!related.containsKey(cui)) related.put(cui, new TreeSet<String>());
-          related.get(cui).add(relatedCui);
+        try (ResultSet result = statement.executeQuery()) {
+          while (result.next()) {
+            String cui = result.getString(1);
+            String relatedCui = result.getString(2);
+            if (!related.containsKey(cui)) related.put(cui, new TreeSet<String>());
+            related.get(cui).add(relatedCui);
+          }
         }
 
         Set<String> relatedCuis = new TreeSet<>();
@@ -668,30 +703,29 @@ public class UmlsApi {
       String queryFmt = "SELECT DISTINCT cui, sab, def FROM MRDEF WHERE cui IN (%s)";
       String query = String.format(queryFmt, Utils.sqlPlaceholders(cuis.size()));
 
-      try (Connection connection = connectionPool.getConnection();
-          PreparedStatement statement = connection.prepareStatement(query)) {
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
 
         int offset = 1;
         for (Iterator<String> iter = cuis.iterator(); iter.hasNext(); offset++)
           statement.setString(offset, iter.next());
 
-        ResultSet result = statement.executeQuery();
-
         Map<String, Map<String, String>> definitionsByVocabularies = new TreeMap<>();
-        while (result.next()) {
-          String cui = result.getString(1);
-          String sab = result.getString(2);
-          String def = result.getString(3);
-          if (!definitionsByVocabularies.containsKey(cui))
-            definitionsByVocabularies.put(cui, new TreeMap<String, String>());
-          definitionsByVocabularies.get(cui).put(sab, def);
+        try (ResultSet result = statement.executeQuery()) {
+          while (result.next()) {
+            String cui = result.getString(1);
+            String sab = result.getString(2);
+            String def = result.getString(3);
+            if (!definitionsByVocabularies.containsKey(cui))
+              definitionsByVocabularies.put(cui, new TreeMap<String, String>());
+            definitionsByVocabularies.get(cui).put(sab, def);
+          }
         }
 
         Map<String, String> definitions = new TreeMap<>();
         for (String cui : cuis)
           if (!definitionsByVocabularies.containsKey(cui)) definitions.put(cui, "");
           else
-            for (String voc : codingSystemsWithDefinition)
+            for (String voc : getCodingSystemsWithDefinition())
               if (definitionsByVocabularies.get(cui).containsKey(voc)) {
                 definitions.put(cui, definitionsByVocabularies.get(cui).get(voc));
                 break;
@@ -704,6 +738,7 @@ public class UmlsApi {
       }
     }
   }
+
   //
   //  /** Get a mapping from the retired CUIs to their replacement CUIs */
   //  private Map<String, Collection<String>> getRetiredConcepts(Collection<String> cuis)
@@ -788,10 +823,6 @@ public class UmlsApi {
     }
   }
 
-  public ServerInfo getServerInfo() {
-    return this.serverInfo;
-  }
-
   @XmlRootElement
   public class ImportedMapping {
     Collection<String> warnings;
@@ -822,24 +853,22 @@ public class UmlsApi {
         "SharePoint import"; // to detect comments generated by SharePoint deduplication
     String importDate =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
-    CSVReader reader =
-        new CSVReaderBuilder(csvContent)
-            .withRowProcessor(
-                new RowProcessor() {
-                  @Override
-                  public String processColumnItem(String column) {
-                    return column.trim();
-                  }
+    RowProcessor rowProcessor =
+        new RowProcessor() {
+          @Override
+          public String processColumnItem(String column) {
+            return column.trim();
+          }
 
-                  @Override
-                  public void processRow(String[] row) {
-                    for (int i = 0; i < row.length; i++) {
-                      row[i] = row[i].trim();
-                    }
-                  }
-                })
-            .build();
-    try {
+          @Override
+          public void processRow(String[] row) {
+            for (int i = 0; i < row.length; i++) {
+              row[i] = row[i].trim();
+            }
+          }
+        };
+    try (CSVReader reader =
+        new CSVReaderBuilder(csvContent).withRowProcessor(rowProcessor).build()) {
       // read CSV header
       List<String> header = Arrays.asList(reader.readNext());
       int conceptIx = header.indexOf("concept");
@@ -1047,10 +1076,10 @@ public class UmlsApi {
       MappingMeta meta =
           new MappingMeta(
               1,
-              serverInfo.getUmlsVersion(),
-              serverInfo.getDefaultAllowedTags().toArray(new String[] {}),
+              getServerInfo().getUmlsVersion(),
+              getServerInfo().getDefaultAllowedTags().toArray(new String[] {}),
               new String[] {},
-              serverInfo.getDefaultIgnoreSemanticTypes().toArray(new String[] {}),
+              getServerInfo().getDefaultIgnoreSemanticTypes().toArray(new String[] {}),
               false);
 
       Collection<String> allCodeConceptIds = new HashSet<>();

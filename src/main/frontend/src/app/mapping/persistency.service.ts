@@ -89,6 +89,7 @@ export interface MappingInfo {
   mappingName: string; // abbreviation
   status: string | null;
   meta: MappingMeta;
+  description: string;
 }
 
 export function emptyMappingInfo(): MappingInfo {
@@ -98,6 +99,7 @@ export function emptyMappingInfo(): MappingInfo {
     mappingName: '',
     status: null,
     meta: emptyMappingMeta(),
+    description: '',
   };
 }
 
@@ -182,6 +184,15 @@ export class PersistencyService {
   setMappingMeta(shortkey: string | null, meta: MappingMeta) {
     let url = `${this.url}/mapping/${shortkey}/meta`;
     return this.http.post<MappingMeta>(url, meta);
+  }
+
+  mappingDescription(shortkey: string) {
+    return this.http.get<string>(this.url + `/mapping/${shortkey}/description`);
+  }
+
+  setMappingDescription(shortkey: string | null, description: string) {
+    let url = `${this.url}/mapping/${shortkey}/description`;
+    return this.http.post(url, description);
   }
 
   mappingInfoByOldName(projectName: string, mappingName: string) {

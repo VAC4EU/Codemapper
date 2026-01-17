@@ -35,7 +35,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
-import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
 import org.biosemantics.codemapper.review.ReviewApi.AllTopics;
@@ -81,13 +80,12 @@ public class ReviewEndpoint {
     this.mappingShortkey = mappingShortkey;
     endpoints.getOrDefault(mappingShortkey, new HashSet<>()).add(this);
 
-    try {
-      AllTopics allTopics =
-          CodeMapperApplication.getReviewApi().getAll(mappingShortkey, this.user.getUsername());
+    try (ReviewApi review = CodeMapperApplication.createReviewApi()) {
+      AllTopics allTopics = review.getAll(mappingShortkey, this.user.getUsername());
       ObjectMapper mapper = new ObjectMapper();
       mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
       this.session.getBasicRemote().sendObject(new ServerMessage.CurrentThreads(allTopics));
-    } catch (IOException | EncodeException | CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
   }

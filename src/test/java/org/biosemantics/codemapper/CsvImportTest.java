@@ -3,7 +3,6 @@ package org.biosemantics.codemapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Set;
@@ -11,6 +10,7 @@ import jersey.repackaged.com.google.common.collect.Sets;
 import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.UmlsApi.ImportedMapping;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
+import org.biosemantics.codemapper.rest.NonUmlsTargets;
 import org.junit.jupiter.api.Test;
 
 /** */
@@ -39,74 +39,76 @@ class CsvImportTest {
           + "";
 
   @Test
-  void test() throws CodeMapperException, JsonProcessingException {
+  void test() throws Exception {
     new CodeMapperApplication();
-    UmlsApi api = CodeMapperApplication.getUmlsApi();
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi api = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
 
-    String dbProp = CodeMapperApplication.getProp("code-mapper-db-uri");
-    assertEquals(dbProp, "jdbc:postgresql://127.0.0.1/codemapper");
+      String dbProp = CodeMapperApplication.getProp("code-mapper-db-uri");
+      assertEquals(dbProp, "jdbc:postgresql://127.0.0.1/codemapper");
 
-    ImportedMapping imported =
-        api.importCompatCSV(
-            new StringReader(csvInput),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            null,
-            null,
-            null);
-    MappingData mapping = imported.mapping;
+      ImportedMapping imported =
+          api.importCompatCSV(
+              new StringReader(csvInput),
+              Collections.emptyList(),
+              Collections.emptyList(),
+              null,
+              null,
+              null);
+      MappingData mapping = imported.mapping;
 
-    //    ObjectMapper mapper = new ObjectMapper();
-    //    System.out.println(mapper.writeValueAsString(mapping));
-    //    System.out.println(mapper.writeValueAsString(imported.allTopics));
+      //    ObjectMapper mapper = new ObjectMapper();
+      //    System.out.println(mapper.writeValueAsString(mapping));
+      //    System.out.println(mapper.writeValueAsString(imported.allTopics));
 
-    assertEquals(mapping.codes.keySet(), Collections.singleton("MEDCODEID"));
-    Set<String> csvCodes =
-        Sets.newHashSet(
-            "309384013 309391011 312574017 7662811000006112 14168691000006114".split(" "));
-    Set<String> csvCustoms = Sets.newHashSet("7662811000006112 14168691000006114".split(" "));
-    for (Code code : mapping.codes.get("MEDCODEID").values()) {
-      assertEquals(code.enabled, csvCodes.contains(code.id));
-      assertEquals(code.custom, csvCustoms.contains(code.id));
+      assertEquals(mapping.codes.keySet(), Collections.singleton("MEDCODEID"));
+      Set<String> csvCodes =
+          Sets.newHashSet(
+              "309384013 309391011 312574017 7662811000006112 14168691000006114".split(" "));
+      Set<String> csvCustoms = Sets.newHashSet("7662811000006112 14168691000006114".split(" "));
+      for (Code code : mapping.codes.get("MEDCODEID").values()) {
+        assertEquals(code.enabled, csvCodes.contains(code.id));
+        assertEquals(code.custom, csvCustoms.contains(code.id));
+      }
+      assertEquals(mapping.concepts.keySet(), Sets.newHashSet("C0009782", "C0000000"));
+      assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("309384013"));
+      assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("309391011"));
+      assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("312574017"));
+      assertTrue(
+          mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("14168691000006114"));
+
+      assertTrue(
+          mapping.concepts.get("C0000000").codes.get("MEDCODEID").contains("7662811000006112"));
+
+      String message2 =
+          imported
+              .allTopics
+              .byCode
+              .get("MEDCODEID")
+              .get("312574017")
+              .values()
+              .iterator()
+              .next()
+              .messages
+              .iterator()
+              .next()
+              .getContent();
+      assertEquals(message2, "changed concept from C0036981 to C0009782");
+      String message3 = imported.warnings.iterator().next();
+      assertEquals(
+          message3,
+          "1 codes with invalid concept were associated to a custom concept called Unassociated custom codes");
+
+      ImportedMapping imported0 =
+          api.importCompatCSV(
+              new StringReader(csvInput),
+              Collections.emptyList(),
+              Collections.emptyList(),
+              "A",
+              "B",
+              "C");
+      assertTrue(imported0.mapping.concepts.isEmpty());
+      assertTrue(imported0.mapping.codes.isEmpty());
     }
-    assertEquals(mapping.concepts.keySet(), Sets.newHashSet("C0009782", "C0000000"));
-    assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("309384013"));
-    assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("309391011"));
-    assertTrue(mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("312574017"));
-    assertTrue(
-        mapping.concepts.get("C0009782").codes.get("MEDCODEID").contains("14168691000006114"));
-
-    assertTrue(
-        mapping.concepts.get("C0000000").codes.get("MEDCODEID").contains("7662811000006112"));
-
-    String message2 =
-        imported
-            .allTopics
-            .byCode
-            .get("MEDCODEID")
-            .get("312574017")
-            .values()
-            .iterator()
-            .next()
-            .messages
-            .iterator()
-            .next()
-            .getContent();
-    assertEquals(message2, "changed concept from C0036981 to C0009782");
-    String message3 = imported.warnings.iterator().next();
-    assertEquals(
-        message3,
-        "1 codes with invalid concept were associated to a custom concept called Unassociated custom codes");
-
-    ImportedMapping imported0 =
-        api.importCompatCSV(
-            new StringReader(csvInput),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            "A",
-            "B",
-            "C");
-    assertTrue(imported0.mapping.concepts.isEmpty());
-    assertTrue(imported0.mapping.codes.isEmpty());
   }
 }

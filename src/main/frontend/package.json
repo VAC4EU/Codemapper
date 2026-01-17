@@ -20,6 +20,8 @@
     "@angular/platform-browser-dynamic": "^20.3.2",
     "@angular/router": "^20.3.2",
     "@material-design-icons/font": "^0.14.13",
+    "@milkdown/crepe": "^7.17.3",
+    "marked": "^17.0.1",
     "roboto-fontface": "^0.10.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

@@ -36,11 +36,14 @@ import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 
 public class UmlsFunctionDescender implements GeneralDescender {
 
-  private DataSource connectionPool;
+  private Connection connection;
 
-  public UmlsFunctionDescender(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+  public UmlsFunctionDescender(Connection connection) {
+    this.connection = connection;
   }
+
+  @Override
+  public void close() throws Exception {}
 
   public Map<String, Collection<SourceConcept>> getDescendants(
       Collection<String> codes, String codingSystem) throws CodeMapperException {
@@ -50,29 +53,29 @@ public class UmlsFunctionDescender implements GeneralDescender {
     // SQL function defined in src/main/resources/umls-functions.sql
     String query = "SELECT code0, code, str FROM descendant_codes(?, ?)";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       Array array = connection.createArrayOf("VARCHAR", codes.toArray());
 
       int offset = 1;
       statement.setString(offset++, codingSystem);
       statement.setArray(offset++, array);
 
-      ResultSet set = statement.executeQuery();
-      while (set.next()) {
-        String code0 = set.getString(1);
-        String code = set.getString(2);
-        String str = set.getString(3);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String code0 = set.getString(1);
+          String code = set.getString(2);
+          String str = set.getString(3);
 
-        SourceConcept concept = new SourceConcept();
-        concept.setId(code);
-        concept.setPreferredTerm(str);
-        concept.setCodingSystem(codingSystem);
+          SourceConcept concept = new SourceConcept();
+          concept.setId(code);
+          concept.setPreferredTerm(str);
+          concept.setCodingSystem(codingSystem);
 
-        if (!result.containsKey(code0)) {
-          result.put(code0, new HashSet<SourceConcept>());
+          if (!result.containsKey(code0)) {
+            result.put(code0, new HashSet<SourceConcept>());
+          }
+          result.get(code0).add(concept);
         }
-        result.get(code0).add(concept);
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for descendents", e);
@@ -80,16 +83,18 @@ public class UmlsFunctionDescender implements GeneralDescender {
     return result;
   }
 
-  public static void main(String[] args) throws SQLException, CodeMapperException {
+  public static void main(String[] args) throws Exception {
     DataSource connectionPool =
         DataSources.unpooledDataSource(
             "jdbc:postgresql://127.0.0.1/umls2021aa", "codemapper", "codemapper");
-    UmlsFunctionDescender descender = new UmlsFunctionDescender(connectionPool);
-    Map<String, Collection<SourceConcept>> map =
-        descender.getDescendants(Arrays.asList("U07"), "ICD10CM");
-    for (Collection<SourceConcept> set : map.values()) {
-      for (SourceConcept c : set) {
-        System.out.println("- " + c);
+    try (Connection connection = connectionPool.getConnection();
+        UmlsFunctionDescender descender = new UmlsFunctionDescender(connection)) {
+      Map<String, Collection<SourceConcept>> map =
+          descender.getDescendants(Arrays.asList("U07"), "ICD10CM");
+      for (Collection<SourceConcept> set : map.values()) {
+        for (SourceConcept c : set) {
+          System.out.println("- " + c);
+        }
       }
     }
   }

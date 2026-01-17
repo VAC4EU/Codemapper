@@ -45,14 +45,33 @@ import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 
 public class UmlsDescender implements GeneralDescender {
 
-  private static final int AUIS_BATCH_SIZE = 20;
+  private static final int AUIS_BATCH_SIZE = 50;
 
   private static Logger logger = LogManager.getLogger(UmlsDescender.class);
 
-  private DataSource connectionPool;
+  public static class Config {
 
-  public UmlsDescender(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+    private DataSource connectionPool;
+
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public UmlsDescender createApi() throws SQLException {
+      return new UmlsDescender(connectionPool.getConnection());
+    }
+  }
+
+  private Connection connection;
+
+  UmlsDescender(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws SQLException {
+    connection.close();
   }
 
   public static Collection<String> concat(Collection<Collection<String>> sss) {
@@ -73,8 +92,7 @@ public class UmlsDescender implements GeneralDescender {
         getDescendantAuis(codingSystem, concat(auis.values()), true);
 
     // {aui -> SourceConcept}
-    Map<String, SourceConcept> concepts =
-        getConcepts(connectionPool, concat(descendantAuis.values()));
+    Map<String, SourceConcept> concepts = getConcepts(concat(descendantAuis.values()));
 
     // {code -> {SourceConcept}}
     Map<String, Collection<SourceConcept>> res = new HashMap<>();
@@ -105,19 +123,19 @@ public class UmlsDescender implements GeneralDescender {
       throws CodeMapperException {
     String query = "SELECT DISTINCT code, aui FROM mrconso WHERE sab = ? AND code = ANY(?)";
 
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, codingSystem);
       statement.setArray(2, connection.createArrayOf("VARCHAR", codes.toArray()));
 
       Map<String, Collection<String>> res = new HashMap<>();
-      ResultSet set = statement.executeQuery();
-      while (set.next()) {
-        String code = set.getString(1);
-        String aui = set.getString(2);
-        res.computeIfAbsent(code, key -> new HashSet<>()).add(aui);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String code = set.getString(1);
+          String aui = set.getString(2);
+          res.computeIfAbsent(code, key -> new HashSet<>()).add(aui);
+        }
+        return res;
       }
-      return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for decendant auis", e);
     }
@@ -143,22 +161,23 @@ public class UmlsDescender implements GeneralDescender {
     }
     String query = "SELECT aui, ptra FROM mrhier WHERE sab = ? AND ptra && ?";
     try {
-      Connection connection = connectionPool.getConnection();
       Map<String, Collection<String>> res = new HashMap<>();
       for (List<String> auiBatch : partitionList(new ArrayList<>(auis), AUIS_BATCH_SIZE)) {
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, sab);
-        statement.setArray(2, connection.createArrayOf("VARCHAR", auiBatch.toArray()));
-        ResultSet set = statement.executeQuery();
-        while (set.next()) {
-          String aui = set.getString(1);
-          String[] ptra = (String[]) set.getArray(2).getArray();
-          for (int i = 0; i < ptra.length; i++) {
-            String paui = ptra[i];
-            if (!auis.contains(paui)) {
-              continue;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+          statement.setString(1, sab);
+          statement.setArray(2, connection.createArrayOf("VARCHAR", auiBatch.toArray()));
+          try (ResultSet set = statement.executeQuery()) {
+            while (set.next()) {
+              String aui = set.getString(1);
+              String[] ptra = (String[]) set.getArray(2).getArray();
+              for (int i = 0; i < ptra.length; i++) {
+                String paui = ptra[i];
+                if (!auis.contains(paui)) {
+                  continue;
+                }
+                res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
+              }
             }
-            res.computeIfAbsent(paui, key -> new HashSet<>()).add(aui);
           }
         }
       }
@@ -170,42 +189,42 @@ public class UmlsDescender implements GeneralDescender {
     }
   }
 
-  static Map<String, SourceConcept> getConcepts(DataSource connectionPool, Collection<String> auis)
-      throws CodeMapperException {
+  Map<String, SourceConcept> getConcepts(Collection<String> auis) throws CodeMapperException {
     String query = "SELECT DISTINCT aui, code, str, ispref FROM mrconso WHERE aui = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", auis.toArray()));
-      ResultSet set = statement.executeQuery();
-      Map<String, SourceConcept> res = new HashMap<>();
-      while (set.next()) {
-        String aui = set.getString(1);
-        String code = set.getString(2);
-        String str = set.getString(3);
-        boolean ispref = set.getString(4).equals("Y");
-        if (!res.containsKey(aui) || ispref) {
-          SourceConcept concept = new SourceConcept();
-          concept.setId(code);
-          concept.setPreferredTerm(str);
-          res.put(aui, concept);
+      try (ResultSet set = statement.executeQuery()) {
+        Map<String, SourceConcept> res = new HashMap<>();
+        while (set.next()) {
+          String aui = set.getString(1);
+          String code = set.getString(2);
+          String str = set.getString(3);
+          boolean ispref = set.getString(4).equals("Y");
+          if (!res.containsKey(aui) || ispref) {
+            SourceConcept concept = new SourceConcept();
+            concept.setId(code);
+            concept.setPreferredTerm(str);
+            res.put(aui, concept);
+          }
         }
+        return res;
       }
-      return res;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for descendant concepts", e);
     }
   }
 
-  public static void main(String[] args) throws SQLException, CodeMapperException {
+  public static void main(String[] args) throws Exception {
     DataSource connectionPool =
         DataSources.unpooledDataSource(
             "jdbc:postgresql://127.0.0.1/umls2021aa", "codemapper", "codemapper");
-    UmlsDescender descender = new UmlsDescender(connectionPool);
-    Map<String, Collection<SourceConcept>> map =
-        descender.getDescendants(Arrays.asList("U07"), "ICD10CM");
-    for (Collection<SourceConcept> set : map.values()) {
-      for (SourceConcept c : set) {
-        System.out.println("- " + c);
+    try (UmlsDescender descender = new UmlsDescender.Config(connectionPool).createApi()) {
+      Map<String, Collection<SourceConcept>> map =
+          descender.getDescendants(Arrays.asList("U07"), "ICD10CM");
+      for (Collection<SourceConcept> set : map.values()) {
+        for (SourceConcept c : set) {
+          System.out.println("- " + c);
+        }
       }
     }
   }

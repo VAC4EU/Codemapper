@@ -40,16 +40,34 @@ import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.review.Topic.Action;
 
-public class ReviewApi {
+public class ReviewApi implements AutoCloseable {
 
   private static Logger logger = LogManager.getLogger(ReviewApi.class);
 
   private static final String EPOCH = "1970-01-01T00:00:00Z";
 
-  private DataSource connectionPool;
+  public static class Config {
+    private DataSource connectionPool;
 
-  public ReviewApi(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public ReviewApi createApi() throws SQLException {
+      return new ReviewApi(connectionPool.getConnection());
+    }
+  }
+
+  private Connection connection;
+
+  ReviewApi(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
   }
 
   static String now() {
@@ -63,13 +81,7 @@ public class ReviewApi {
   public void newMessage(
       String mappingShortkey, int topicId, String content, String user, String timestamp)
       throws CodeMapperException {
-    Connection connection;
-    try {
-      connection = connectionPool.getConnection();
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot get connection to create message", e);
-    }
-    newMessage(connection, mappingShortkey, topicId, content, user, timestamp);
+    newMessage(mappingShortkey, topicId, content, user, timestamp);
   }
 
   private void newMessage(
@@ -92,9 +104,10 @@ public class ReviewApi {
       statement.setString(ix++, content);
       statement.setString(ix++, user);
       statement.setString(ix++, timestamp);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        throw CodeMapperException.server("could not save message");
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.server("could not save message");
+        }
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create message", e);
@@ -104,15 +117,15 @@ public class ReviewApi {
   public void editMessage(int messageId, String username, String content)
       throws CodeMapperException {
     String query = "SELECT review_edit_user_message(?, ?, ?)";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int ix = 1;
       statement.setInt(ix++, messageId);
       statement.setString(ix++, username);
       statement.setString(ix++, content);
-      if (!statement.executeQuery().next()) {
-        throw CodeMapperException.user("No such message");
+      try (ResultSet res = statement.executeQuery()) {
+        if (!res.next()) {
+          throw CodeMapperException.user("No such message");
+        }
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to edit message", e);
@@ -128,14 +141,7 @@ public class ReviewApi {
       String user,
       String timestamp)
       throws CodeMapperException {
-
-    Connection connection;
-    try {
-      connection = connectionPool.getConnection();
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot get connection to create message", e);
-    }
-    return newTopic(connection, mappingShortkey, cui, sab, code, heading, user, timestamp);
+    return newTopic(mappingShortkey, cui, sab, code, heading, user, timestamp);
   }
 
   private int newTopic(
@@ -165,11 +171,12 @@ public class ReviewApi {
       statement.setString(ix++, heading);
       statement.setString(ix++, user);
       statement.setString(ix++, timestamp);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        throw CodeMapperException.server("Could not create new topic");
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.server("Could not create new topic");
+        }
+        return set.getInt(1);
       }
-      return set.getInt(1);
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to create topic", e);
     }
@@ -223,65 +230,65 @@ public class ReviewApi {
 
   public AllTopics getAll(String mappingShortkey, String user) throws CodeMapperException {
     String query = "SELECT * FROM review_all_messages_shortkey(?, ?::TEXT)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, mappingShortkey);
       statement.setString(2, user);
       AllTopics allTopics = new AllTopics();
-      ResultSet result = statement.executeQuery();
-      while (result.next()) {
-        int ix = 1;
-        String cui = result.getString(ix++);
-        String sab = result.getString(ix++);
-        String code = result.getString(ix++);
-        int topicID = result.getInt(ix++);
-        String topicHeading = result.getString(ix++);
-        String createdBy = result.getString(ix++);
-        Timestamp createdAt = result.getTimestamp(ix++);
-        boolean isResolved = result.getBoolean(ix++);
-        String resolvedUser = result.getString(ix++);
-        Timestamp resolvedTime = result.getTimestamp(ix++);
-        int messageId = result.getInt(ix++);
-        String messageAuthor = result.getString(ix++);
-        Timestamp messageTime = result.getTimestamp(ix++);
-        String messageContent = result.getString(ix++);
-        boolean messageIsRead = result.getBoolean(ix++);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          int ix = 1;
+          String cui = result.getString(ix++);
+          String sab = result.getString(ix++);
+          String code = result.getString(ix++);
+          int topicID = result.getInt(ix++);
+          String topicHeading = result.getString(ix++);
+          String createdBy = result.getString(ix++);
+          Timestamp createdAt = result.getTimestamp(ix++);
+          boolean isResolved = result.getBoolean(ix++);
+          String resolvedUser = result.getString(ix++);
+          Timestamp resolvedTime = result.getTimestamp(ix++);
+          int messageId = result.getInt(ix++);
+          String messageAuthor = result.getString(ix++);
+          Timestamp messageTime = result.getTimestamp(ix++);
+          String messageContent = result.getString(ix++);
+          boolean messageIsRead = result.getBoolean(ix++);
 
-        Action created = new Action(createdBy, timestampToString(createdAt));
-        Action resolved;
-        if (isResolved) {
-          assert (resolvedUser != null && resolvedTime != null);
-          resolved = new Action(resolvedUser, timestampToString(resolvedTime));
-        } else {
-          resolved = null;
+          Action created = new Action(createdBy, timestampToString(createdAt));
+          Action resolved;
+          if (isResolved) {
+            assert (resolvedUser != null && resolvedTime != null);
+            resolved = new Action(resolvedUser, timestampToString(resolvedTime));
+          } else {
+            resolved = null;
+          }
+          Topics topics;
+          if (cui != null) {
+            topics = allTopics.byConcept.computeIfAbsent(cui, key -> new Topics());
+          } else if (sab != null && code != null) {
+            topics =
+                allTopics
+                    .byCode
+                    .computeIfAbsent(sab, key -> new HashMap<>())
+                    .computeIfAbsent(code, key -> new Topics());
+          } else {
+            topics = allTopics.general;
+          }
+          Topic topic =
+              topics.computeIfAbsent(
+                  topicID, key -> new Topic(topicID, topicHeading, created, resolved));
+          if (messageId != 0) {
+            Message message =
+                new Message(
+                    messageId,
+                    messageAuthor,
+                    timestampToString(messageTime),
+                    messageContent,
+                    messageIsRead);
+            topic.messages.add(message);
+          }
         }
-        Topics topics;
-        if (cui != null) {
-          topics = allTopics.byConcept.computeIfAbsent(cui, key -> new Topics());
-        } else if (sab != null && code != null) {
-          topics =
-              allTopics
-                  .byCode
-                  .computeIfAbsent(sab, key -> new HashMap<>())
-                  .computeIfAbsent(code, key -> new Topics());
-        } else {
-          topics = allTopics.general;
-        }
-        Topic topic =
-            topics.computeIfAbsent(
-                topicID, key -> new Topic(topicID, topicHeading, created, resolved));
-        if (messageId != 0) {
-          Message message =
-              new Message(
-                  messageId,
-                  messageAuthor,
-                  timestampToString(messageTime),
-                  messageContent,
-                  messageIsRead);
-          topic.messages.add(message);
-        }
+        return allTopics;
       }
-      return allTopics;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to get all review messages", e);
     }
@@ -289,14 +296,7 @@ public class ReviewApi {
 
   public void resolveTopic(int topicId, String username, String timestamp)
       throws CodeMapperException {
-
-    Connection connection;
-    try {
-      connection = connectionPool.getConnection();
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot get connection to create message", e);
-    }
-    resolveTopic(connection, topicId, username, timestamp);
+    resolveTopic(topicId, username, timestamp);
   }
 
   private void resolveTopic(Connection connection, int topicId, String username, String timestamp)
@@ -324,8 +324,7 @@ public class ReviewApi {
       throw CodeMapperException.user("invalid parameters to reset read markers");
     }
     String query = "SELECT * FROM review_reset_mark_read(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setInt(1, topicId);
       statement.execute();
     } catch (SQLException e) {
@@ -335,8 +334,7 @@ public class ReviewApi {
 
   public void markRead(int topicId, String username) throws CodeMapperException {
     String query = "SELECT * FROM review_mark_topic_read(?, ?::TEXT)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setInt(1, topicId);
       statement.setString(2, username);
       statement.execute();
@@ -355,17 +353,17 @@ public class ReviewApi {
         "SELECT cd.shortkey, t.resolved FROM review_topic t "
             + "INNER JOIN case_definitions cd ON cd.id = t.case_definition_id "
             + "WHERE t.id = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setInt(1, topicId);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        throw CodeMapperException.user("No such topic: " + topicId);
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          throw CodeMapperException.user("No such topic: " + topicId);
+        }
+        TopicInfo info = new TopicInfo();
+        info.mappingShortkey = set.getString(1);
+        info.isResolved = set.getBoolean(2);
+        return info;
       }
-      TopicInfo info = new TopicInfo();
-      info.mappingShortkey = set.getString(1);
-      info.isResolved = set.getBoolean(2);
-      return info;
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to get topic info", e);
@@ -374,14 +372,14 @@ public class ReviewApi {
 
   public String getTopicCreatedBy(int topicId) throws CodeMapperException {
     String query = "SELECT * FROM review_topic_created_by(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setInt(1, topicId);
-      ResultSet set = statement.executeQuery();
-      if (!set.next()) {
-        return null;
+      try (ResultSet set = statement.executeQuery()) {
+        if (!set.next()) {
+          return null;
+        }
+        return set.getString(1);
       }
-      return set.getString(1);
     } catch (SQLException e) {
       e.printStackTrace();
       throw CodeMapperException.server("Cannot execute query to get topic creator", e);
@@ -389,13 +387,6 @@ public class ReviewApi {
   }
 
   public void saveReviews(String mappingShortkey, AllTopics allTopics) throws CodeMapperException {
-
-    Connection connection;
-    try {
-      connection = connectionPool.getConnection();
-    } catch (SQLException e) {
-      throw CodeMapperException.server("Cannot get connection to create message", e);
-    }
     for (String cui : allTopics.byConcept.keySet()) {
       for (Topic top : allTopics.byConcept.get(cui).values()) {
         saveTopic(connection, mappingShortkey, cui, null, null, top);

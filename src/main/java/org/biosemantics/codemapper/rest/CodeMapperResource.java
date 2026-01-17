@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -49,11 +50,13 @@ import org.biosemantics.codemapper.CodingSystem;
 import org.biosemantics.codemapper.UmlsApi;
 import org.biosemantics.codemapper.UmlsApi.ImportedMapping;
 import org.biosemantics.codemapper.UmlsConcept;
+import org.biosemantics.codemapper.UtsApi;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
 import org.biosemantics.codemapper.descendants.DescendantsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
+import org.biosemantics.codemapper.descendants.DescendantsApi.GeneralDescender;
 import org.biosemantics.codemapper.descendants.DescendantsCache;
 import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.rest.WriteCsvApi.Mapping;
@@ -64,8 +67,6 @@ public class CodeMapperResource {
   private static Logger logger = LogManager.getLogger(CodeMapperResource.class);
 
   private static final String VERSION = "$Revision$";
-
-  private UmlsApi api = CodeMapperApplication.getUmlsApi();
 
   @GET
   @Path("version")
@@ -78,7 +79,14 @@ public class CodeMapperResource {
   @GET
   @Path("server-info")
   public ServerInfo versionInfo(@Context User user) {
-    return api.getServerInfo();
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getServerInfo();
+    } catch (CodeMapperException e) {
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
+    }
   }
 
   @GET
@@ -89,10 +97,13 @@ public class CodeMapperResource {
       @QueryParam("str") String str,
       @QueryParam("codingSystems") List<String> codingSystems) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getCompletions(str, codingSystems);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getCompletions(str, codingSystems);
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -104,10 +115,13 @@ public class CodeMapperResource {
       @QueryParam("str") String str,
       @QueryParam("codingSystem") String codingSystem) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getCodeCompletions(str, codingSystem);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getCodeCompletions(str, codingSystem);
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -116,10 +130,13 @@ public class CodeMapperResource {
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<CodingSystem> getCodingSystems(@Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getCodingSystems();
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getCodingSystems();
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -131,10 +148,13 @@ public class CodeMapperResource {
       @FormParam("codingSystem") String codingSystem,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getCuisByCodes(codes, codingSystem);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getCuisByCodes(codes, codingSystem);
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -147,11 +167,14 @@ public class CodeMapperResource {
       @FormParam("ignoreTermTypes") List<String> ignoreTermTypes,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      Map<String, UmlsConcept> concepts = api.getConcepts(cuis, codingSystems, ignoreTermTypes);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      Map<String, UmlsConcept> concepts = umls.getConcepts(cuis, codingSystems, ignoreTermTypes);
       return new LinkedList<>(concepts.values());
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -173,10 +196,13 @@ public class CodeMapperResource {
       @FormParam("codingSystems") List<String> codingSystems,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getNarrower(cuis, codingSystems);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getNarrower(cuis, codingSystems);
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -188,10 +214,13 @@ public class CodeMapperResource {
       @FormParam("codingSystems") List<String> codingSystems,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return api.getBroader(cuis, codingSystems);
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
+      return umls.getBroader(cuis, codingSystems);
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -200,11 +229,12 @@ public class CodeMapperResource {
   @Produces(MediaType.APPLICATION_JSON)
   public List<String> searchConcepts(@FormParam("query") String query, @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
-      return CodeMapperApplication.getUtsApi()
-          .searchConcepts(query, CodeMapperApplication.getUmlsVersion());
+    try (UtsApi uts = CodeMapperApplication.getUtsApi()) {
+      return uts.searchConcepts(query, CodeMapperApplication.getUmlsVersion());
     } catch (CodeMapperException e) {
       throw e.asWebApplicationException();
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -236,10 +266,11 @@ public class CodeMapperResource {
       @FormParam("filterType") String type,
       @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        UmlsApi umls = CodeMapperApplication.createUmlsApi(nonUmlsTargets)) {
       if (format == null || format.isEmpty() || format.equals("csv_compat")) {
         ImportedMapping imported =
-            api.importCompatCSV(
+            umls.importCompatCSV(
                 new StringReader(csvContent),
                 commentColumns,
                 ignoreTermTypes,
@@ -252,6 +283,8 @@ public class CodeMapperResource {
       }
     } catch (CodeMapperException e) {
       return new ImportResult(false, null, e.getMessage());
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -302,9 +335,13 @@ public class CodeMapperResource {
       @FormParam("project") final String projectName,
       @FormParam("mappings") final List<String> rawMappingConfigs,
       @FormParam("content") final String content) {
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
-      logger.debug(String.format("Download code lists as CSV %s", projectName));
+    try (PersistencyApi persistencyApi = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Reviewer, persistencyApi);
+      logger.info(
+          String.format(
+              "Download code lists as CSV %s: %s",
+              projectName, String.join(", ", rawMappingConfigs)));
       OutputStream output = new ByteArrayOutputStream();
       List<MappingConfig> mappingConfigs = new LinkedList<>();
       for (String rawMappingConfig : rawMappingConfigs) {
@@ -319,15 +356,19 @@ public class CodeMapperResource {
             throw CodeMapperException.user("could not parse mapping config: " + rawMappingConfig);
           }
         }
-        System.out.println("CONFIG " + config.shortkey + " - " + config.version);
         mappingConfigs.add(config);
       }
-      Collection<Mapping> mappings = getMappings(projectName, mappingConfigs);
-      try {
+      Collection<Mapping> mappings = getMappings(projectName, mappingConfigs, persistencyApi);
+      try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+          GeneralDescender generalDescender = CodeMapperApplication.createGeneralDescender();
+          DescendantsApi descendantsApi =
+              CodeMapperApplication.createDescendantsApi(nonUmlsTargets, generalDescender);
+          DescendantsCache descendantsCacheApi = CodeMapperApplication.createDescendantsCacheApi();
+          UmlsApi umlsApi = CodeMapperApplication.createUmlsApi(nonUmlsTargets); ) {
         switch (content) {
           case "codelist":
             {
-              addDescendants(mappings);
+              addDescendants(mappings, descendantsApi, descendantsCacheApi, umlsApi);
               new WriteCsvApi().writeProjectCSV(output, projectName, mappings, true);
               break;
             }
@@ -349,8 +390,10 @@ public class CodeMapperResource {
       }
       return output.toString();
     } catch (CodeMapperException e) {
-      System.out.println("ERROR " + e.getMessage());
       throw e.asWebApplicationException();
+    } catch (Exception e1) {
+      e1.printStackTrace();
+      return null;
     }
   }
 
@@ -362,9 +405,9 @@ public class CodeMapperResource {
         .replaceAll("^-|-$", "");
   }
 
-  Collection<Mapping> getMappings(String projectName, Collection<MappingConfig> mappingConfigs)
+  Collection<Mapping> getMappings(
+      String projectName, Collection<MappingConfig> mappingConfigs, PersistencyApi persistencyApi)
       throws CodeMapperException {
-    PersistencyApi persistencyApi = CodeMapperApplication.getPersistencyApi();
     List<Mapping> mappings = new LinkedList<>();
     for (MappingConfig config : mappingConfigs) {
       Mapping mapping = new Mapping();
@@ -396,9 +439,12 @@ public class CodeMapperResource {
     return mappings;
   }
 
-  void addDescendants(Collection<Mapping> mappings) throws CodeMapperException {
-    DescendantsApi descendantsApi = CodeMapperApplication.getDescendantsApi();
-    DescendantsCache descendantsCacheApi = CodeMapperApplication.getDescendantsCacheApi();
+  void addDescendants(
+      Collection<Mapping> mappings,
+      DescendantsApi descendantsApi,
+      DescendantsCache descendantsCacheApi,
+      UmlsApi api)
+      throws CodeMapperException {
     for (Mapping mapping : mappings) {
       if (mapping.includeDescendants) {
         Map<String, Collection<String>> codes = mapping.data.getCodesByVoc();
@@ -424,13 +470,16 @@ public class CodeMapperResource {
     AuthentificationApi.assertAuthentificated(user);
     Map<String, Collection<String>> codesByVoc = new HashMap<>();
     codesByVoc.put(codingSystem, codes);
-    try {
-      return CodeMapperApplication.getDescendantsApi()
+    try (NonUmlsTargets nonUmlsTargets = CodeMapperApplication.createNonUmlsTargets();
+        GeneralDescender generalDescender = CodeMapperApplication.createGeneralDescender();
+        DescendantsApi descendants =
+            CodeMapperApplication.createDescendantsApi(nonUmlsTargets, generalDescender)) {
+      return descendants
           .getDescendantCodes(codesByVoc)
           .getOrDefault(codingSystem, new Descendants());
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       logger.error("Cannot get descendants", e);
-      throw e.asWebApplicationException();
+      throw new InternalServerErrorException(e);
     }
   }
 }

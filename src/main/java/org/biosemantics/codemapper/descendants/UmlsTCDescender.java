@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import javax.sql.DataSource;
 import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.SourceConcept;
 import org.biosemantics.codemapper.descendants.DescendantsApi.SpecificDescender;
@@ -37,11 +36,13 @@ import org.biosemantics.codemapper.descendants.DescendantsApi.SpecificDescender;
 public class UmlsTCDescender implements SpecificDescender {
 
   private final String codingSystem;
-  private final DataSource dataSource;
+  private final Connection connection;
+  private final UmlsDescender umlsDescender;
 
-  public UmlsTCDescender(String codingSystem, DataSource dataSource) {
+  public UmlsTCDescender(String codingSystem, Connection connection, UmlsDescender umlsDescender) {
     this.codingSystem = codingSystem;
-    this.dataSource = dataSource;
+    this.connection = connection;
+    this.umlsDescender = umlsDescender;
   }
 
   @Override
@@ -60,7 +61,7 @@ public class UmlsTCDescender implements SpecificDescender {
           getDescendantAuis(UmlsDescender.concat(auis.values()));
       // {aui -> SourceConcept}
       Map<String, SourceConcept> sourceConcepts =
-          UmlsDescender.getConcepts(dataSource, UmlsDescender.concat(subAuis.values()));
+          umlsDescender.getConcepts(UmlsDescender.concat(subAuis.values()));
       // {code -> {SourceConcept}}
       Map<String, Collection<SourceConcept>> res = new HashMap<>();
       for (String code : codes) {
@@ -81,43 +82,44 @@ public class UmlsTCDescender implements SpecificDescender {
   private Map<String, Collection<String>> getAuis(Collection<String> codes) throws SQLException {
     String query = "SELECT code, aui FROM mrconso WHERE sab = ? AND code = ANY(?)";
 
-    Connection connection = dataSource.getConnection();
-    PreparedStatement statement = connection.prepareStatement(query);
-    statement.setString(1, codingSystem);
-    Array codesArray = connection.createArrayOf("VARCHAR", codes.toArray());
-    statement.setArray(2, codesArray);
-
-    Map<String, Collection<String>> res = new HashMap<>();
-    ResultSet resultSet = statement.executeQuery();
-    while (resultSet.next()) {
-      String code = resultSet.getString(1);
-      String aui = resultSet.getString(2);
-      if (!res.containsKey(code)) {
-        res.put(code, new HashSet<>());
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, codingSystem);
+      Array codesArray = connection.createArrayOf("VARCHAR", codes.toArray());
+      statement.setArray(2, codesArray);
+      Map<String, Collection<String>> res = new HashMap<>();
+      try (ResultSet resultSet = statement.executeQuery()) {
+        while (resultSet.next()) {
+          String code = resultSet.getString(1);
+          String aui = resultSet.getString(2);
+          if (!res.containsKey(code)) {
+            res.put(code, new HashSet<>());
+          }
+          res.get(code).add(aui);
+        }
       }
-      res.get(code).add(aui);
+      return res;
     }
-    return res;
   }
 
   private Map<String, Collection<String>> getDescendantAuis(Collection<String> auis)
       throws SQLException {
     String query = "SELECT sup, sub FROM transitiveclosure WHERE sup = ANY(?)";
-    Connection connection = dataSource.getConnection();
-    PreparedStatement statement = connection.prepareStatement(query);
-    Array codesArray = connection.createArrayOf("VARCHAR", auis.toArray());
-    statement.setArray(1, codesArray);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      Array codesArray = connection.createArrayOf("VARCHAR", auis.toArray());
+      statement.setArray(1, codesArray);
 
-    Map<String, Collection<String>> res = new HashMap<>();
-    ResultSet resultSet = statement.executeQuery();
-    while (resultSet.next()) {
-      String sup = resultSet.getString(1);
-      String sub = resultSet.getString(2);
-      if (!res.containsKey(sup)) {
-        res.put(sup, new HashSet<>());
+      Map<String, Collection<String>> res = new HashMap<>();
+      try (ResultSet resultSet = statement.executeQuery()) {
+        while (resultSet.next()) {
+          String sup = resultSet.getString(1);
+          String sub = resultSet.getString(2);
+          if (!res.containsKey(sup)) {
+            res.put(sup, new HashSet<>());
+          }
+          res.get(sup).add(sub);
+        }
       }
-      res.get(sup).add(sub);
+      return res;
     }
-    return res;
   }
 }

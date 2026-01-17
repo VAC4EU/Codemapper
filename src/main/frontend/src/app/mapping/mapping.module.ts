@@ -99,6 +99,8 @@ import { EditMetasComponent } from './edit-metas/edit-metas.component';
 import { StartMappingComponent } from './start-mapping/start-mapping.component';
 import { SelectMappingsDialogComponent } from './select-mappings-dialog/select-mappings-dialog.component';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { EditDescriptionComponent } from './edit-description/edit-description.component';
+import { CrepeComponent } from "./crepe/crepe.component";
 
 const matSnackbarDefaultConfig: MatSnackBarConfig = {
   verticalPosition: 'top',
@@ -152,6 +154,7 @@ const matSnackbarDefaultConfig: MatSnackBarConfig = {
     EditMetasComponent,
     StartMappingComponent,
     SelectMappingsDialogComponent,
+    EditDescriptionComponent,
   ],
   imports: [
     AppRoutingModule,
@@ -187,7 +190,8 @@ const matSnackbarDefaultConfig: MatSnackBarConfig = {
     NoopAnimationsModule,
     ReactiveFormsModule,
     RouterModule,
-  ],
+    CrepeComponent
+],
   providers: [
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,

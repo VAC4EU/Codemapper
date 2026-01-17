@@ -20,6 +20,7 @@ package org.biosemantics.codemapper.rest;
 
 import com.mchange.v2.c3p0.DataSources;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -83,26 +84,28 @@ public class CodeMapperApplication extends ResourceConfig {
   private static Properties propertiesConfig;
   private static String peregrineResourceUrl;
   private static String umlsVersion;
-  private static UmlsApi umlsApi;
-  private static PersistencyApi persistencyApi;
-  private static AuthentificationApi authentificationApi;
+  private static UmlsApi.Config umlsApi;
+  private static PersistencyApi.Config persistencyApi;
+  private static AuthentificationApi.Config authentificationApi;
   private static UtsApi utsApi;
-  private static DescendantsApi descendersApi;
-  private static ReviewApi reviewApi;
-  private static DescendantsCache descendantsCacheApi;
+  private static ReviewApi.Config reviewApi;
+  private static DescendantsCache.Config descendantsCacheApi;
+  private static NonUmlsTargets.Config nonUmlsTargets;
+  private static UmlsDescender.Config umlsDescender;
 
   static {
     properties = new Properties();
-    try {
-      properties.load(CodeMapperApplication.class.getResourceAsStream(CODE_MAPPER_PROPERTIES));
+    try (InputStream stream =
+        CodeMapperApplication.class.getResourceAsStream(CODE_MAPPER_PROPERTIES)) {
+      properties.load(stream);
     } catch (IOException e) {
       logger.error("Cannot load " + CODE_MAPPER_PROPERTIES);
       e.printStackTrace();
     }
     propertiesConfig = new Properties();
-    try {
-      propertiesConfig.load(
-          CodeMapperApplication.class.getResourceAsStream(CODE_MAPPER_CONFIG_PROPERTIES));
+    try (InputStream stream =
+        CodeMapperApplication.class.getResourceAsStream(CODE_MAPPER_CONFIG_PROPERTIES)) {
+      propertiesConfig.load(stream);
     } catch (IOException e) {
       logger.error("Cannot load " + CODE_MAPPER_CONFIG_PROPERTIES);
       e.printStackTrace();
@@ -128,7 +131,6 @@ public class CodeMapperApplication extends ResourceConfig {
 
   public static void initialize() {
     DataSource umlsConnectionPool, codeMapperConnectionPool;
-    NonUmlsTargets nonUmls;
 
     // Try loading the database driver. Necessary, otherwise database connections
     // will fail with exception java.sql.SQLException: No suitable driver
@@ -143,8 +145,8 @@ public class CodeMapperApplication extends ResourceConfig {
     try {
       umlsConnectionPool = getConnectionPool(UMLS_DB);
       codeMapperConnectionPool = getCodeMapperConnectionPool();
-      nonUmls = new NonUmlsTargets(codeMapperConnectionPool);
-    } catch (SQLException | CodeMapperException e) {
+      nonUmlsTargets = new NonUmlsTargets.Config(codeMapperConnectionPool);
+    } catch (SQLException e) {
       logger.error("Cannot create pooled data source");
       e.printStackTrace();
       return;
@@ -194,26 +196,24 @@ public class CodeMapperApplication extends ResourceConfig {
             defaultIgnoreSemanticTypes);
 
     umlsApi =
-        new UmlsApi(
+        new UmlsApi.Config(
             umlsConnectionPool,
             availableCodingSystems,
             codingSystemsWithDefinition,
             defaultIgnoreTermTypes,
-            versionInfo,
-            nonUmls);
+            versionInfo);
 
-    persistencyApi = new PersistencyApi(codeMapperConnectionPool);
-    authentificationApi = new AuthentificationApi(codeMapperConnectionPool);
+    persistencyApi = new PersistencyApi.Config(codeMapperConnectionPool);
+    authentificationApi = new AuthentificationApi.Config(codeMapperConnectionPool);
 
     String utsApiKey = propertiesConfig.getProperty(UTS_API_KEY);
     utsApi = new UtsApi(utsApiKey);
 
-    reviewApi = new ReviewApi(codeMapperConnectionPool);
+    reviewApi = new ReviewApi.Config(codeMapperConnectionPool);
 
-    descendantsCacheApi = new DescendantsCache(codeMapperConnectionPool);
+    descendantsCacheApi = new DescendantsCache.Config(codeMapperConnectionPool);
 
-    GeneralDescender umlsDescender = new UmlsDescender(umlsConnectionPool);
-    descendersApi = new DescendantsApi(umlsDescender, nonUmls);
+    umlsDescender = new UmlsDescender.Config(umlsConnectionPool);
   }
 
   public static String getCodeMapperURL() {
@@ -229,7 +229,8 @@ public class CodeMapperApplication extends ResourceConfig {
     String username = properties.getProperty(prefix + DB_USERNAME_SUFFIX);
     String password = properties.getProperty(prefix + DB_PASSWORD_SUFFIX);
     logger.info("Get connection pool " + prefix);
-    return DataSources.unpooledDataSource(uri, username, password);
+    DataSource dataSource = DataSources.unpooledDataSource(uri, username, password);
+    return DataSources.pooledDataSource(dataSource);
   }
 
   public static DataSource getCodeMapperConnectionPool() throws SQLException {
@@ -252,32 +253,16 @@ public class CodeMapperApplication extends ResourceConfig {
     return umlsVersion;
   }
 
-  public static UmlsApi getUmlsApi() {
-    return umlsApi;
-  }
-
-  public static ReviewApi getReviewApi() {
-    return reviewApi;
-  }
-
-  public static PersistencyApi getPersistencyApi() {
-    return persistencyApi;
-  }
-
-  public static AuthentificationApi getAuthentificationApi() {
-    return authentificationApi;
+  public static UmlsApi createUmlsApi(NonUmlsTargets nonUmlsTargets) throws CodeMapperException {
+    try {
+      return umlsApi.createApi(nonUmlsTargets);
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create UMLS API", e);
+    }
   }
 
   public static UtsApi getUtsApi() {
     return utsApi;
-  }
-
-  public static DescendantsApi getDescendantsApi() {
-    return descendersApi;
-  }
-
-  public static DescendantsCache getDescendantsCacheApi() {
-    return descendantsCacheApi;
   }
 
   public static void reconfigureLog4j2(Level level) {
@@ -292,5 +277,58 @@ public class CodeMapperApplication extends ResourceConfig {
                     .addAttribute("pattern", "%level: %logger{1} - %msg%n%throwable")));
     builder.add(builder.newRootLogger(level).add(builder.newAppenderRef("stdout")));
     Configurator.reconfigure(builder.build());
+  }
+
+  public static DescendantsApi createDescendantsApi(
+      NonUmlsTargets nonUmls, GeneralDescender generalDescender) throws CodeMapperException {
+    return DescendantsApi.createApi(nonUmls, generalDescender);
+  }
+
+  public static PersistencyApi createPersistencyApi() throws CodeMapperException {
+    try {
+      return persistencyApi.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create persistency API", e);
+    }
+  }
+
+  public static DescendantsCache createDescendantsCacheApi() throws CodeMapperException {
+    try {
+      return descendantsCacheApi.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create descendants cache API", e);
+    }
+  }
+
+  public static ReviewApi createReviewApi() throws CodeMapperException {
+    try {
+      return reviewApi.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create review API", e);
+    }
+  }
+
+  public static AuthentificationApi createAuthentificationApi() throws CodeMapperException {
+    try {
+      return authentificationApi.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create authentification API", e);
+    }
+  }
+
+  public static NonUmlsTargets createNonUmlsTargets() throws CodeMapperException {
+    try {
+      return nonUmlsTargets.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create non umls targets API", e);
+    }
+  }
+
+  public static GeneralDescender createGeneralDescender() throws CodeMapperException {
+    try {
+      return umlsDescender.createApi();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("create UMLS descender API", e);
+    }
   }
 }

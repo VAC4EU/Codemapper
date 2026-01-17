@@ -254,6 +254,7 @@ export class MappingViewComponent implements HasPendingChanges {
       mappingName: initial.mappingName,
       status: null,
       meta: initial.meta,
+      description: "",
     };
   }
 
@@ -282,6 +283,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.initial.folderName,
       meta: this.initial.meta as MappingMeta,
       status: null,
+      description: "",
     };
     this.initial = null;
     this.state = new MappingState(

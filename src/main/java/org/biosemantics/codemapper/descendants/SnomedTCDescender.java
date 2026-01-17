@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import javax.sql.DataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
@@ -39,11 +38,11 @@ public class SnomedTCDescender implements SpecificDescender {
   private static Logger logger = LogManager.getLogger(SnomedTCDescender.class);
 
   private final String codingSystem;
-  private final DataSource dataSource;
+  private final Connection connection;
 
-  public SnomedTCDescender(String codingSystem, DataSource dataSource) {
+  public SnomedTCDescender(String codingSystem, Connection connection) {
     this.codingSystem = codingSystem;
-    this.dataSource = dataSource;
+    this.connection = connection;
   }
 
   @Override
@@ -62,29 +61,29 @@ public class SnomedTCDescender implements SpecificDescender {
             + "WHERE c.supertypeid IN (%s)";
     String query = String.format(queryFmt, Utils.sqlPlaceholders(codes.size()));
 
-    try (Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       int offset = 1;
       for (String code : codes) {
         statement.setObject(offset++, code, java.sql.Types.BIGINT);
       }
       Map<String, Collection<SourceConcept>> descendants = new HashMap<>();
       logger.debug(statement);
-      ResultSet resultSet = statement.executeQuery();
-      while (resultSet.next()) {
-        String supertypeid = resultSet.getString(1);
-        String subtypeid = resultSet.getString(2);
-        String preferredName = resultSet.getString(3);
+      try (ResultSet resultSet = statement.executeQuery()) {
+        while (resultSet.next()) {
+          String supertypeid = resultSet.getString(1);
+          String subtypeid = resultSet.getString(2);
+          String preferredName = resultSet.getString(3);
 
-        SourceConcept concept = new SourceConcept();
-        concept.setId(subtypeid);
-        concept.setPreferredTerm(preferredName);
-        concept.setCodingSystem(codingSystem);
+          SourceConcept concept = new SourceConcept();
+          concept.setId(subtypeid);
+          concept.setPreferredTerm(preferredName);
+          concept.setCodingSystem(codingSystem);
 
-        if (!descendants.containsKey(supertypeid)) {
-          descendants.put(supertypeid, new HashSet<>());
+          if (!descendants.containsKey(supertypeid)) {
+            descendants.put(supertypeid, new HashSet<>());
+          }
+          descendants.get(supertypeid).add(concept);
         }
-        descendants.get(supertypeid).add(concept);
       }
       return descendants;
     } catch (SQLException e) {
