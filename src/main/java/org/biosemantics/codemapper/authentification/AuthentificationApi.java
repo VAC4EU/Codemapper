@@ -33,19 +33,37 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.biosemantics.codemapper.CodeMapperException;
+import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
-import org.biosemantics.codemapper.rest.CodeMapperApplication;
 
-public class AuthentificationApi {
+public class AuthentificationApi implements AutoCloseable {
 
   public static final String SESSION_ATTRIBUTE_USER = "user";
 
-  private DataSource connectionPool;
+  private Connection connection;
 
   private static Logger logger = LogManager.getLogger(AuthentificationApi.class);
 
-  public AuthentificationApi(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+  public static class Config {
+    DataSource connectionPool;
+
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public AuthentificationApi createApi() throws SQLException {
+      return new AuthentificationApi(connectionPool.getConnection());
+    }
+  }
+
+  AuthentificationApi(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
   }
 
   public static String hash(String string) throws CodeMapperException {
@@ -118,22 +136,22 @@ public class AuthentificationApi {
       throws CodeMapperException {
 
     String query = "SELECT password, email, is_admin FROM users WHERE username = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
-      ResultSet result = statement.executeQuery();
-      if (result.next()) {
-        String passwordHash = result.getString(1);
-        String email = result.getString(2);
-        boolean isAdmin = result.getBoolean(3);
-        if (passwordHash.equals(hash(password))) {
-          User user = new User(username, email, isAdmin);
-          request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
-          logger.info("Authentificated " + username);
-          return LoginResult.createSuccess(user);
-        } else return LoginResult.createError("Wrong password");
-      } else {
-        return LoginResult.createError("No such user");
+      try (ResultSet result = statement.executeQuery()) {
+        if (result.next()) {
+          String passwordHash = result.getString(1);
+          String email = result.getString(2);
+          boolean isAdmin = result.getBoolean(3);
+          if (passwordHash.equals(hash(password))) {
+            User user = new User(username, email, isAdmin);
+            request.getSession().setAttribute(SESSION_ATTRIBUTE_USER, user);
+            logger.info("Authentificated " + username);
+            return LoginResult.createSuccess(user);
+          } else return LoginResult.createError("Wrong password");
+        } else {
+          return LoginResult.createError("No such user");
+        }
       }
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to login", e);
@@ -182,8 +200,7 @@ public class AuthentificationApi {
     logger.info("Change password " + username);
 
     String query = "UPDATE users SET password = ? WHERE username = ? AND password = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, hash(newPassword));
       statement.setString(2, username);
       statement.setString(3, hash(password));
@@ -206,8 +223,7 @@ public class AuthentificationApi {
     logger.info("Change password " + username);
 
     String query = "UPDATE users SET email = ? WHERE username = ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, email);
       statement.setString(2, username);
       int result = statement.executeUpdate();
@@ -235,13 +251,14 @@ public class AuthentificationApi {
    * @throws CodeMapperException
    */
   public static void assertProjectRolesImplies(
-      User user, String project, ProjectPermission requiredPerm) throws CodeMapperException {
+      User user, String project, ProjectPermission requiredPerm, PersistencyApi persistency)
+      throws CodeMapperException {
     assertAuthentificated(user);
     if (user.isAdmin()) {
       return;
     }
     Map<String, ProjectPermission> projectPermissions =
-        CodeMapperApplication.getPersistencyApi().getProjectPermissions(user.getUsername());
+        persistency.getProjectPermissions(user.getUsername());
     ProjectPermission perm = projectPermissions.get(project);
     if (perm != null) {
       if (perm.implies(requiredPerm)) {
@@ -252,9 +269,10 @@ public class AuthentificationApi {
   }
 
   public static MappingInfo assertMappingProjectRolesImplies(
-      User user, String mappingShortkey, ProjectPermission perm) throws CodeMapperException {
-    MappingInfo mapping = CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
-    assertProjectRolesImplies(user, mapping.projectName, perm);
+      User user, String mappingShortkey, ProjectPermission perm, PersistencyApi persistency)
+      throws CodeMapperException {
+    MappingInfo mapping = persistency.getMappingInfo(mappingShortkey);
+    assertProjectRolesImplies(user, mapping.projectName, perm, persistency);
     return mapping;
   }
 

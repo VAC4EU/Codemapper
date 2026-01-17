@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import java.io.IOException;
 import javax.xml.bind.annotation.XmlRootElement;
-import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.rest.CodeMapperApplication;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.PROPERTY, property = "type")
@@ -42,10 +41,9 @@ public abstract class ClientMessage {
     String token;
 
     public void process(ReviewEndpoint endpoint, String user) throws IOException {
-      try {
-        CodeMapperApplication.getReviewApi()
-            .newMessage(endpoint.mappingShortkey, topicId, message.content, user, null);
-      } catch (CodeMapperException e) {
+      try (ReviewApi review = CodeMapperApplication.createReviewApi()) {
+        review.newMessage(endpoint.mappingShortkey, topicId, message.content, user, null);
+      } catch (Exception e) {
         throw new IOException(e);
       }
     }
@@ -61,10 +59,9 @@ public abstract class ClientMessage {
 
     @Override
     public void process(ReviewEndpoint endpoint, String user) throws IOException {
-      try {
-        CodeMapperApplication.getReviewApi()
-            .newTopic(endpoint.mappingShortkey, cui, sab, code, message.content, user, null);
-      } catch (CodeMapperException e) {
+      try (ReviewApi review = CodeMapperApplication.createReviewApi()) {
+        review.newTopic(endpoint.mappingShortkey, cui, sab, code, message.content, user, null);
+      } catch (Exception e) {
         throw new IOException(e);
       }
     }

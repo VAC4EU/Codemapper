@@ -22,7 +22,7 @@ import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
 import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { environment } from 'src/environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
     selector: 'app-welcome-view',

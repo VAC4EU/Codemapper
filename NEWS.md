@@ -9,24 +9,29 @@
 
 <section class="center-content">
 
-December 3, 2026
+December 31, 2025
+---
+
+- fixes for batch download
+
+December 3, 2025
 ---
 
 - vocabulary updates: UMLS 2025AB + MEDCODEID 202506
 - messages about changed custom-status of codes in remap
 
-October 7, 2026
+October 7, 2025
 ---
 
 - copy mappings from other folders
 
-September 28, 2026
+September 28, 2025
 ---
 
 - edit custom vocabularies
 - bulk add/remove projects in metadata 
 
-September 17, 2026
+September 17, 2025
 ---
 
 - import codelists into existing mappings

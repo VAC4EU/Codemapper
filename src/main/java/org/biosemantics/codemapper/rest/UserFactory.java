@@ -20,10 +20,15 @@ package org.biosemantics.codemapper.rest;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.User;
 import org.glassfish.hk2.api.Factory;
 
 public class UserFactory implements Factory<User> {
+
+  private static Logger logger = LogManager.getLogger(UserFactory.class);
 
   private final HttpServletRequest request;
 
@@ -34,7 +39,12 @@ public class UserFactory implements Factory<User> {
 
   @Override
   public User provide() {
-    return CodeMapperApplication.getAuthentificationApi().getUser(request);
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      return auth.getUser(request);
+    } catch (Exception e) {
+      logger.error("could not create authentification api", e);
+      return null;
+    }
   }
 
   @Override

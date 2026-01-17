@@ -18,7 +18,6 @@
 
 package org.biosemantics.codemapper.rest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -39,7 +38,9 @@ import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.ProjectPermission;
 import org.biosemantics.codemapper.authentification.User;
+import org.biosemantics.codemapper.persistency.PersistencyApi;
 import org.biosemantics.codemapper.persistency.PersistencyApi.MappingInfo;
+import org.biosemantics.codemapper.review.ReviewApi;
 import org.biosemantics.codemapper.review.ReviewApi.AllTopics;
 import org.biosemantics.codemapper.review.ReviewApi.TopicInfo;
 
@@ -52,12 +53,15 @@ public class ReviewResource {
       @Context HttpServletRequest request,
       @Context User user,
       @PathParam("mappingShortkey") String mappingShortkey) {
-    try {
+    try (PersistencyApi persistency = CodeMapperApplication.createPersistencyApi();
+        ReviewApi review = CodeMapperApplication.createReviewApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-      return CodeMapperApplication.getReviewApi().getAll(mappingShortkey, user.getUsername());
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
+      return review.getAll(mappingShortkey, user.getUsername());
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -73,13 +77,15 @@ public class ReviewResource {
       @QueryParam("sab") String sab,
       @QueryParam("code") String code,
       @FormParam("heading") String heading) {
-    try {
+    try (PersistencyApi persistency = CodeMapperApplication.createPersistencyApi();
+        ReviewApi review = CodeMapperApplication.createReviewApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-      return CodeMapperApplication.getReviewApi()
-          .newTopic(mappingShortkey, cui, sab, code, heading, user.getUsername(), null);
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
+      return review.newTopic(mappingShortkey, cui, sab, code, heading, user.getUsername(), null);
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -93,20 +99,22 @@ public class ReviewResource {
       @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId,
       @FormParam("content") String content) {
-    try {
+    try (PersistencyApi persistency = CodeMapperApplication.createPersistencyApi();
+        ReviewApi review = CodeMapperApplication.createReviewApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-      TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
+      TopicInfo topic = review.getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
       if (topic.isResolved) {
         throw CodeMapperException.user("cannot create message on resolved topic");
       }
-      CodeMapperApplication.getReviewApi()
-          .newMessage(mappingShortkey, topicId, content, user.getUsername(), null);
+      review.newMessage(mappingShortkey, topicId, content, user.getUsername(), null);
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -121,19 +129,22 @@ public class ReviewResource {
       @PathParam("topicId") int topicId,
       @FormParam("messageId") int messageId,
       @FormParam("content") String content) {
-    try {
+    try (PersistencyApi persistency = CodeMapperApplication.createPersistencyApi();
+        ReviewApi review = CodeMapperApplication.createReviewApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-      TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
+      TopicInfo topic = review.getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
       if (topic.isResolved) {
         throw CodeMapperException.user("cannot edit message on resolved topic");
       }
-      CodeMapperApplication.getReviewApi().editMessage(messageId, user.getUsername(), content);
+      review.editMessage(messageId, user.getUsername(), content);
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -146,26 +157,28 @@ public class ReviewResource {
       @Context User user,
       @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId) {
-    try {
-      TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
+    try (ReviewApi review = CodeMapperApplication.createReviewApi();
+        PersistencyApi persistencyApi = CodeMapperApplication.createPersistencyApi(); ) {
+      TopicInfo topic = review.getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
-      MappingInfo mapping =
-          CodeMapperApplication.getPersistencyApi().getMappingInfo(mappingShortkey);
+      MappingInfo mapping = persistencyApi.getMappingInfo(mappingShortkey);
       Map<String, ProjectPermission> permissions =
-          CodeMapperApplication.getPersistencyApi().getProjectPermissions(user.getUsername());
+          persistencyApi.getProjectPermissions(user.getUsername());
       ProjectPermission perm = permissions.get(mapping.projectName);
-      String createdBy = CodeMapperApplication.getReviewApi().getTopicCreatedBy(topicId);
+      String createdBy = review.getTopicCreatedBy(topicId);
       if (!perm.implies(ProjectPermission.Reviewer)
           && createdBy != null
           && !user.getUsername().equals(createdBy)) {
         throw new ForbiddenException();
       }
-      CodeMapperApplication.getReviewApi().resolveTopic(topicId, user.getUsername(), null);
-      CodeMapperApplication.getReviewApi().resetReadMarkers(topicId);
+      review.resolveTopic(topicId, user.getUsername(), null);
+      review.resetReadMarkers(topicId);
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -178,16 +191,19 @@ public class ReviewResource {
       @Context User user,
       @PathParam("mappingShortkey") String mappingShortkey,
       @PathParam("topicId") int topicId) {
-    try {
+    try (PersistencyApi persistency = CodeMapperApplication.createPersistencyApi();
+        ReviewApi review = CodeMapperApplication.createReviewApi(); ) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-      TopicInfo topic = CodeMapperApplication.getReviewApi().getTopicInfo(topicId);
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
+      TopicInfo topic = review.getTopicInfo(topicId);
       if (!topic.mappingShortkey.equals(mappingShortkey)) {
         throw CodeMapperException.user("mapping does not belong to topic");
       }
-      CodeMapperApplication.getReviewApi().markRead(topicId, user.getUsername());
+      review.markRead(topicId, user.getUsername());
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -200,15 +216,18 @@ public class ReviewResource {
       @Context User user,
       @PathParam("mappingShortkey") String mappingShortkey,
       @FormParam("allTopics") String allTopicsJson) {
-    try {
+    try (ReviewApi review = CodeMapperApplication.createReviewApi();
+        PersistencyApi persistency = CodeMapperApplication.createPersistencyApi(); ) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
+          user, mappingShortkey, ProjectPermission.Reviewer, persistency);
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       AllTopics allTopics = mapper.readValue(allTopicsJson, AllTopics.class);
-      CodeMapperApplication.getReviewApi().saveReviews(mappingShortkey, allTopics);
-    } catch (CodeMapperException | JsonProcessingException e) {
+      review.saveReviews(mappingShortkey, allTopics);
+    } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw e.asWebApplicationException();
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }

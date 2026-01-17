@@ -1,8 +1,8 @@
-import { Component, HostListener, Inject } from '@angular/core';
+import { Component, Inject, signal } from '@angular/core';
 import { ApiService } from '../api.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MappingMeta } from '../mapping-data';
-import { AppComponent } from 'src/app/app.component';
+import { AppComponent } from '../../app.component';
 import { firstValueFrom, map, race, Subject, takeUntil } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -26,6 +26,7 @@ export function includeDescendants(value: boolean) {
 export class DownloadDialogComponent {
   IncludeDescendants = IncludeDescendants;
   numMappings: number = 0;
+  done = {codelist: signal(false), metadata: signal(false)};
   constructor(
     private api: ApiService,
     private snackbar: MatSnackBar,
@@ -59,6 +60,7 @@ export class DownloadDialogComponent {
   }
 
   async download(content: 'codelist' | 'metadata', filename: string) {
+    this.done[content].set(false);
     let csvContent: string;
     let suffix = '';
     switch (content) {
@@ -91,7 +93,7 @@ export class DownloadDialogComponent {
                     map((csvContent) => ({
                       type: 'csvContent' as 'csvContent',
                       csvContent,
-                    }))
+                    })),
                   ),
                   AppComponent.instance!.espapePressed.asObservable().pipe(
                     map(() => ({ type: 'canceled' as 'canceled' }))
@@ -108,7 +110,7 @@ export class DownloadDialogComponent {
                   return;
               }
             } catch (error) {
-              let errorMsg = (error as HttpErrorResponse).error;
+              let errorMsg = (error as HttpErrorResponse).message;
               let msg = `Could not download ${name}. ${errorMsg}`;
               console.error(msg, error);
               alert(msg);
@@ -135,6 +137,7 @@ export class DownloadDialogComponent {
       }
     }
     openCsv(csvContent, filename + suffix + '.csv', content);
+    this.done[content].set(true);
   }
 
   close() {

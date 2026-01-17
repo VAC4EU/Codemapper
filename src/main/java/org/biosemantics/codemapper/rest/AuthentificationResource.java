@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,7 +30,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.biosemantics.codemapper.CodeMapperException;
 import org.biosemantics.codemapper.authentification.AuthentificationApi;
 import org.biosemantics.codemapper.authentification.AuthentificationApi.LoginResult;
 import org.biosemantics.codemapper.authentification.User;
@@ -39,13 +39,15 @@ public class AuthentificationResource {
 
   private static Logger logger = LogManager.getLogger(AuthentificationResource.class);
 
-  AuthentificationApi api = CodeMapperApplication.getAuthentificationApi();
-
   @GET
   @Path("user")
   @Produces(MediaType.APPLICATION_JSON)
   public User getUser(@Context HttpServletRequest request) {
-    return api.getUser(request);
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      return auth.getUser(request);
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
+    }
   }
 
   @POST
@@ -56,11 +58,11 @@ public class AuthentificationResource {
       @FormParam("password") String password,
       @Context HttpServletRequest request) {
     logger.info("Try log in " + username);
-    try {
-      return api.login(username, password, request);
-    } catch (CodeMapperException e) {
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      return auth.login(username, password, request);
+    } catch (Exception e) {
       e.printStackTrace();
-      throw e.asWebApplicationException();
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -68,7 +70,12 @@ public class AuthentificationResource {
   @Path("logout")
   @Produces(MediaType.APPLICATION_JSON)
   public void logout(@Context HttpServletRequest request) {
-    api.logout(request);
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      auth.logout(request);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
   }
 
   @POST
@@ -81,11 +88,11 @@ public class AuthentificationResource {
     if (user == null) {
       throw new ForbiddenException();
     }
-    try {
-      api.changePassword(user.getUsername(), oldPassword, newPassword);
-    } catch (CodeMapperException e) {
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      auth.changePassword(user.getUsername(), oldPassword, newPassword);
+    } catch (Exception e) {
       e.printStackTrace();
-      throw e.asWebApplicationException();
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -96,12 +103,12 @@ public class AuthentificationResource {
     if (user == null) {
       throw new ForbiddenException();
     }
-    try {
-      api.changeEmail(user.getUsername(), email);
+    try (AuthentificationApi auth = CodeMapperApplication.createAuthentificationApi()) {
+      auth.changeEmail(user.getUsername(), email);
       user.setEmail(email); // update session
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
-      throw e.asWebApplicationException();
+      throw new InternalServerErrorException(e);
     }
   }
 }

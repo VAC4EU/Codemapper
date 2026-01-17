@@ -44,6 +44,23 @@
   </mat-card>
 
   <mat-card appearance="outlined">
+    <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
+      Modify {{selectedFilteredMappings.length}} mapping@if (selectedFilteredMappings.length != 1) {s}
+    </mat-card-header>
+    <mat-card-actions>
+      <span matTooltip="Edit the properties of the mapping (only for owners)">
+        <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0"
+          (click)="openMetaDataDialog(selectedFilteredMappings)" mat-raised-button>Edit</button>
+      </span>
+    <!-- <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
+      <button (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
+    </span> -->
+      <button class="tool-delete" (click)="deleteSelectedMappings()"
+        [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined">
     <mat-card-header>
       New mapping
     </mat-card-header>
@@ -58,26 +75,6 @@
           Copy
         </button>
       </span>
-    </mat-card-actions>
-  </mat-card>
-
-  <mat-card appearance="outlined">
-    <mat-card-header matTooltip="Select mappings using the checkboxes on the left to edit">
-      Modify {{selectedFilteredMappings.length}} mapping@if (selectedFilteredMappings.length != 1) {s}
-    </mat-card-header>
-    <mat-card-actions>
-      <span matTooltip="Edit the properties of the mapping (only for owners)">
-        <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0"
-          (click)="openMetaDataDialog(selectedFilteredMappings)" mat-raised-button>Edit</button>
-      </span>
-      <!--
-    <span matTooltip="Batch process the selected mappings (only for owners, only for mappings without status)">
-      <button [disabled]="!userCanRename || selectedFilteredMappings.length == 0 || !allDefaultStatus(selectedFilteredMappings)"
-      (click)="operations = []; openDialog(batchProcessDialog)" mat-raised-button>Batch process</button>
-    </span>
-    -->
-      <button class="tool-delete" (click)="deleteSelectedMappings()"
-        [disabled]="!userCanCreate || selectedFilteredMappings.length == 0" mat-raised-button>Delete</button>
     </mat-card-actions>
   </mat-card>
 </div>

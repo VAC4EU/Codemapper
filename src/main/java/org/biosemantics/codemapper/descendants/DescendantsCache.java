@@ -22,7 +22,7 @@ import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.UmlsApi;
 import org.biosemantics.codemapper.descendants.DescendantsApi.Descendants;
 
-public class DescendantsCache {
+public class DescendantsCache implements AutoCloseable {
 
   private static Logger logger = LogManager.getLogger(DescendantsCache.class);
 
@@ -61,33 +61,51 @@ public class DescendantsCache {
     }
   }
 
-  DataSource connectionPool;
+  public static class Config {
 
-  public DescendantsCache(DataSource connectionPool) {
-    this.connectionPool = connectionPool;
+    DataSource connectionPool;
+
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public DescendantsCache createApi() throws SQLException {
+      return new DescendantsCache(connectionPool.getConnection());
+    }
+  }
+
+  Connection connection;
+
+  DescendantsCache(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
   }
 
   public Descendants getDescendants(String voc, String vocVersion, Collection<String> codes)
       throws CodeMapperException {
-    try {
-      String query = "SELECT code, descendants FROM get_cached_descendants(?, ?, ?)";
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
+    String query = "SELECT code, descendants FROM get_cached_descendants(?, ?, ?)";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, voc);
       statement.setString(2, vocVersion);
       statement.setArray(3, connection.createArrayOf("varchar", codes.toArray()));
       Descendants result = new Descendants();
-      ResultSet results = statement.executeQuery();
-      while (results.next()) {
-        String code = results.getString(1);
-        String descendantsJson = results.getString(2);
-        ObjectMapper mapper = new ObjectMapper();
-        Collection<Code> cachedCodes =
-            mapper.readValue(descendantsJson, new TypeReference<Collection<CachedCode>>() {})
-                .stream()
-                .map(CachedCode::toCode)
-                .collect(Collectors.toList());
-        result.put(code, cachedCodes);
+      try (ResultSet results = statement.executeQuery()) {
+        while (results.next()) {
+          String code = results.getString(1);
+          String descendantsJson = results.getString(2);
+          ObjectMapper mapper = new ObjectMapper();
+          Collection<Code> cachedCodes =
+              mapper.readValue(descendantsJson, new TypeReference<Collection<CachedCode>>() {})
+                  .stream()
+                  .map(CachedCode::toCode)
+                  .collect(Collectors.toList());
+          result.put(code, cachedCodes);
+        }
       }
       return result;
     } catch (SQLException | JsonProcessingException e) {
@@ -108,23 +126,22 @@ public class DescendantsCache {
     try {
       ObjectMapper mapper = new ObjectMapper();
       String descendendsJson = mapper.writeValueAsString(cachedCodes);
-      PreparedStatement statement = connection.prepareStatement(query);
-      statement.setString(1, voc);
-      statement.setString(2, vocVersion);
-      statement.setString(3, code);
-      statement.setString(4, descendendsJson);
-      statement.execute();
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, voc);
+        statement.setString(2, vocVersion);
+        statement.setString(3, code);
+        statement.setString(4, descendendsJson);
+        statement.execute();
+      }
     } catch (SQLException | JsonProcessingException e) {
       throw CodeMapperException.server("could not cache descendants", e);
     }
   }
 
-  public void evict(int n) throws CodeMapperException {
+  public void evict(int keep) throws CodeMapperException {
     String query = "SELECT evict_cached_descendants(?)";
-    try {
-      Connection connection = connectionPool.getConnection();
-      PreparedStatement statement = connection.prepareStatement(query);
-      statement.setInt(1, n);
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setInt(1, keep);
       statement.execute();
     } catch (SQLException e) {
       throw CodeMapperException.server("could not evict cached descendants", e);
@@ -138,13 +155,6 @@ public class DescendantsCache {
       UmlsApi umlsApi)
       throws CodeMapperException {
     Map<String, Descendants> res = new HashMap<>();
-    Connection connection;
-    try {
-      connection = connectionPool.getConnection();
-    } catch (SQLException e) {
-      throw CodeMapperException.server("could not get connection to get and cache descendants", e);
-    }
-
     for (String voc : codesByVoc.keySet()) {
       CodingSystem vocabulary = codingSystems.get(voc);
       if (vocabulary == null) {

@@ -39,30 +39,49 @@ import org.biosemantics.codemapper.MappingData.Code;
 import org.biosemantics.codemapper.SourceConcept;
 import org.biosemantics.codemapper.UmlsConcept;
 
-public class NonUmlsTargets {
+public class NonUmlsTargets implements AutoCloseable {
 
   private static final List<String> LEXICOGRAPHICAL_CODING_SYSTEMS = Arrays.asList("ICD10DA");
-  private DataSource connectionPool;
 
-  public NonUmlsTargets(DataSource connectionPool) throws CodeMapperException {
-    this.connectionPool = connectionPool;
+  public static class Config {
+    private DataSource connectionPool;
+
+    public Config(DataSource connectionPool) {
+      this.connectionPool = connectionPool;
+    }
+
+    @SuppressWarnings("resource")
+    public NonUmlsTargets createApi() throws SQLException {
+      return new NonUmlsTargets(connectionPool.getConnection());
+    }
+  }
+
+  private Connection connection;
+
+  NonUmlsTargets(Connection connection) {
+    this.connection = connection;
+  }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
   }
 
   public Collection<CodingSystem> getVocabularies() throws CodeMapperException {
     String query = "SELECT DISTINCT abbr, full_name, ver FROM non_umls_latest_vocs";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       Collection<CodingSystem> vocs = new LinkedList<>();
-      ResultSet result = statement.executeQuery();
-      while (result.next()) {
-        CodingSystem voc = new CodingSystem();
-        int ix = 1;
-        voc.setAbbreviation(result.getString(ix++));
-        voc.setName(result.getString(ix++));
-        voc.setVersion(result.getString(ix++));
-        vocs.add(voc);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          CodingSystem voc = new CodingSystem();
+          int ix = 1;
+          voc.setAbbreviation(result.getString(ix++));
+          voc.setName(result.getString(ix++));
+          voc.setVersion(result.getString(ix++));
+          vocs.add(voc);
+        }
+        return vocs;
       }
-      return vocs;
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query for non umls coding systems", e);
     }
@@ -80,16 +99,16 @@ public class NonUmlsTargets {
             + "FROM non_umls_latest_codes "
             + "WHERE voc_abbr = ? "
             + "AND code = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, abbr);
       statement.setArray(2, connection.createArrayOf("VARCHAR", codes.toArray()));
       Map<String, Collection<String>> res = new HashMap<>();
-      ResultSet result = statement.executeQuery();
-      while (result.next()) {
-        String code = result.getString(1);
-        String cui = result.getString(2);
-        res.computeIfAbsent(code, (key) -> new HashSet<>()).add(cui);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String code = result.getString(1);
+          String cui = result.getString(2);
+          res.computeIfAbsent(code, (key) -> new HashSet<>()).add(cui);
+        }
       }
       return res;
     } catch (SQLException e) {
@@ -105,24 +124,24 @@ public class NonUmlsTargets {
             + "FROM non_umls_latest_codes "
             + "WHERE cui = ANY(?) "
             + "AND voc_abbr = ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", cuis.toArray()));
       statement.setArray(2, connection.createArrayOf("VARCHAR", vocs.toArray()));
       Map<String, List<SourceConcept>> sourceConcepts = new TreeMap<>();
-      ResultSet result = statement.executeQuery();
-      while (result.next()) {
-        int ix = 1;
-        String cui = result.getString(ix++);
-        String voc = result.getString(ix++);
-        String code = result.getString(ix++);
-        String term = result.getString(ix++);
-        SourceConcept sourceConcept = new SourceConcept();
-        sourceConcept.setCui(cui);
-        sourceConcept.setCodingSystem(voc);
-        sourceConcept.setId(code);
-        sourceConcept.setPreferredTerm(term);
-        sourceConcepts.computeIfAbsent(cui, (key) -> new LinkedList<>()).add(sourceConcept);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          int ix = 1;
+          String cui = result.getString(ix++);
+          String voc = result.getString(ix++);
+          String code = result.getString(ix++);
+          String term = result.getString(ix++);
+          SourceConcept sourceConcept = new SourceConcept();
+          sourceConcept.setCui(cui);
+          sourceConcept.setCodingSystem(voc);
+          sourceConcept.setId(code);
+          sourceConcept.setPreferredTerm(term);
+          sourceConcepts.computeIfAbsent(cui, (key) -> new LinkedList<>()).add(sourceConcept);
+        }
       }
       return sourceConcepts;
     } catch (SQLException e) {
@@ -139,15 +158,15 @@ public class NonUmlsTargets {
             + "FROM non_umls_latest_codes "
             + "WHERE voc_abbr = ANY(?) "
             + "AND term LIKE ?";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setArray(1, connection.createArrayOf("VARCHAR", vocs.toArray()));
       statement.setString(2, q + "%");
-      ResultSet result = statement.executeQuery();
       HashSet<String> cuis = new HashSet<>();
-      while (result.next()) {
-        String cui = result.getString(1);
-        cuis.add(cui);
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String cui = result.getString(1);
+          cuis.add(cui);
+        }
       }
       return cuis;
     } catch (SQLException e) {
@@ -163,25 +182,25 @@ public class NonUmlsTargets {
             + "FROM non_umls_latest_codes WHERE "
             + "((code = ? AND voc_abbr LIKE ?) OR cui = ?) "
             + "LIMIT 20";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, q);
       statement.setString(2, codingSystem == null ? "%" : (codingSystem + "%"));
       statement.setString(3, q);
-      ResultSet result = statement.executeQuery();
       Map<String, UmlsConcept> concepts = new TreeMap<>();
-      while (result.next()) {
-        String cui = result.getString(1);
-        String voc = result.getString(2);
-        String code = result.getString(3);
-        String term = result.getString(4);
-        String name;
-        if (q.equals(cui)) name = String.format("CUI %s: %s", cui, term);
-        else name = String.format("%s in %s: %s", code, voc, term);
-        concepts
-            .computeIfAbsent(cui, key -> new UmlsConcept(cui, name))
-            .getSourceConcepts()
-            .add(new SourceConcept(cui, voc, code));
+      try (ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          String cui = result.getString(1);
+          String voc = result.getString(2);
+          String code = result.getString(3);
+          String term = result.getString(4);
+          String name;
+          if (q.equals(cui)) name = String.format("CUI %s: %s", cui, term);
+          else name = String.format("%s in %s: %s", code, voc, term);
+          concepts
+              .computeIfAbsent(cui, key -> new UmlsConcept(cui, name))
+              .getSourceConcepts()
+              .add(new SourceConcept(cui, voc, code));
+        }
       }
       return new LinkedList<UmlsConcept>(concepts.values());
     } catch (SQLException e) {
@@ -215,24 +234,24 @@ public class NonUmlsTargets {
             + "FROM non_umls_latest_codes "
             + "WHERE voc_abbr = ? "
             + "AND code LIKE ANY(?)";
-    try (Connection connection = connectionPool.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query)) {
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
       Object[] prefixesArray = prefixes.stream().map(s -> s + "%").toArray();
       statement.setString(1, voc);
       statement.setArray(2, connection.createArrayOf("varchar", prefixesArray));
       Map<String, Collection<Code>> result = new HashMap<>();
-      ResultSet set = statement.executeQuery();
-      while (set.next()) {
-        String id = set.getString(1);
-        String term = set.getString(2);
-        Code code = new Code(id, term, false, true, null);
-        for (String code1 : codes1) {
-          if (code.getId().startsWith(code1)) {
-            result.computeIfAbsent(code1, key -> new LinkedList<Code>()).add(code);
+      try (ResultSet set = statement.executeQuery()) {
+        while (set.next()) {
+          String id = set.getString(1);
+          String term = set.getString(2);
+          Code code = new Code(id, term, false, true, null);
+          for (String code1 : codes1) {
+            if (code.getId().startsWith(code1)) {
+              result.computeIfAbsent(code1, key -> new LinkedList<Code>()).add(code);
+            }
           }
         }
+        return result;
       }
-      return result;
     } catch (SQLException e) {
       throw CodeMapperException.server(
           "Cannot execute query for get non-umls lexicographical descendants", e);

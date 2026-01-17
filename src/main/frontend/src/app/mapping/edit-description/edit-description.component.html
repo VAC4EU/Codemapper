@@ -1,0 +1,11 @@
+<div class="title">
+  <h2 mat-dialog-title>{{mappingName}}: Edit event definition form</h2>
+  <button mat-icon-button (click)="onCancel()"><mat-icon>close</mat-icon></button>
+</div>
+<mat-dialog-content>
+  <p>Edit the EDF here and use the button below to save it. Use the button <mat-icon>add</mat-icon> to insert text content.</p>
+  <app-crepe #editor [(markdown)]="description"></app-crepe>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton="filled" color="primary" (click)="onSavePlainText()" cdkFocusInitial>Save</button>
+</mat-dialog-actions>

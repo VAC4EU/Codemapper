@@ -1,0 +1,14 @@
+@import "@milkdown/crepe/theme/common/style.css";
+@import "@milkdown/crepe/theme/frame.css";
+
+.readonly .milkdown > div:first-child {
+  padding: 10px;
+  max-height: 30em;
+  overflow-y: scroll;
+  border-left: 2px solid #acacac;
+}
+
+.milkdown > div:first-child {
+  padding: 10px;
+  padding-left: 60px;
+}

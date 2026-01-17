@@ -13,7 +13,10 @@
   <p>
     <button mat-raised-button enabled="enabled" (click)="download('codelist', filename.value)"
       color="primary"><mat-icon>download</mat-icon>Codelist</button>
-      <br />
+      @if (done.codelist()) {
+        <mat-icon fontIcon="download_done"></mat-icon> (Finished download)
+      }
+      <br /><br />
       The codelist generated from the selected mappings.
       @if (data.includeDescendants == IncludeDescendants.PerMapping) {
         <span>
@@ -36,8 +39,11 @@
     <p>
       <button mat-raised-button enabled="enabled" (click)="download('metadata', filename.value)"
         color="primary"><mat-icon>download</mat-icon>Mappings metadata</button>
-        <br />
-        Versions, configurations, coding systems, and links of the selected mappings.
+      @if (done.metadata()) {
+        <mat-icon fontIcon="download_done"></mat-icon> (Finished download)
+      }
+      <br /><br />
+      Versions, configurations, coding systems, and links of the selected mappings.
       </p>
       <!--
       <p>

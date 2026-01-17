@@ -60,21 +60,19 @@ public class PersistencyResource {
 
   private @Context SecurityContext sc;
 
-  private PersistencyApi api = CodeMapperApplication.getPersistencyApi();
-
   @GET
   @Path("projects")
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<ProjectInfo> getProjectPermissions(
       @Context HttpServletRequest request, @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       if (user.isAdmin()) {
         return api.getAllProjectInfos(user.getUsername());
       } else {
         return api.getProjectInfos(user.getUsername());
       }
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get projects");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -88,10 +86,11 @@ public class PersistencyResource {
       @PathParam("projectName") String projectName,
       @Context HttpServletRequest request,
       @Context User user) {
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Reviewer, api);
       return api.getUserRoles(projectName);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definitions");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -103,10 +102,10 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public List<MappingInfo> getCaseDefinitionNames(
       @PathParam("project") String project, @Context User user) {
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer, api);
       return api.getLatestMappingInfos(project);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definitions");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -119,10 +118,10 @@ public class PersistencyResource {
   public Map<String, RevisionInfo> getLatestMappingRevision(
       @PathParam("project") String project, @Context User user) {
     logger.info(String.format("Get latest mapping revisions for folder %s (%s)", project, user));
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(user, project, ProjectPermission.Reviewer, api);
       return api.getLatestFolderMappingRevisions(project);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definition");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -134,14 +133,14 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public String getCaseDefinition(
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
+          user, mappingShortkey, ProjectPermission.Reviewer, api);
       String stateJson = api.getCaseDefinition(mappingShortkey);
       if (stateJson == null) throw new NotFoundException();
       if (stateJson.isEmpty()) throw new InternalServerErrorException("invalid mapping state");
       return stateJson;
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definition");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -152,10 +151,11 @@ public class PersistencyResource {
   @Path("mapping/{shortkey}")
   @Produces(MediaType.APPLICATION_JSON)
   public void deleteMapping(@PathParam("shortkey") String shortkey, @Context User user) {
-    try {
-      AuthentificationApi.assertMappingProjectRolesImplies(user, shortkey, ProjectPermission.Owner);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Owner, api);
       api.deleteMappings(Collections.singletonList(shortkey));
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -166,10 +166,10 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public MappingInfo getMappingInfo(
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       return AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
-    } catch (CodeMapperException e) {
+          user, mappingShortkey, ProjectPermission.Reviewer, api);
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -181,10 +181,11 @@ public class PersistencyResource {
       @PathParam("projectName") String projectName,
       @PathParam("mappingName") String mappingName,
       @Context User user) {
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Reviewer);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Reviewer, api);
       return api.getMappingInfoByOldName(projectName, mappingName);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -195,11 +196,11 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public PersistencyApi.MappingMeta getMappingMeta(
       @PathParam("shortkey") String shortkey, @Context User user) {
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, shortkey, ProjectPermission.Reviewer);
+          user, shortkey, ProjectPermission.Reviewer, api);
       return api.getMappingMeta(shortkey);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -210,11 +211,44 @@ public class PersistencyResource {
   @Consumes(MediaType.APPLICATION_JSON)
   public void setMappingMeta(
       @PathParam("shortkey") String shortkey, @Context User user, PersistencyApi.MappingMeta meta) {
-    try {
-      AuthentificationApi.assertMappingProjectRolesImplies(user, shortkey, ProjectPermission.Owner);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Owner, api);
       api.setMappingMeta(shortkey, meta);
     } catch (CodeMapperException e) {
       e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    } catch (Exception e) {
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @GET
+  @Path("mapping/{shortkey}/description")
+  @Produces(MediaType.APPLICATION_JSON)
+  public String getMappingDescription(@PathParam("shortkey") String shortkey, @Context User user) {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Reviewer, api);
+      return api.getMappingDescription(shortkey);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
+  @Path("mapping/{shortkey}/description")
+  public void setMappingDescription(
+      @PathParam("shortkey") String shortkey, @Context User user, String description) {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertMappingProjectRolesImplies(
+          user, shortkey, ProjectPermission.Editor, api);
+      api.setMappingDescription(shortkey, description);
+    } catch (CodeMapperException e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    } catch (Exception e) {
       throw new InternalServerErrorException(e);
     }
   }
@@ -225,13 +259,13 @@ public class PersistencyResource {
   public Revision getLatestRevision(
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     logger.info(String.format("Get latest revision %s (%s)", mappingShortkey, user));
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
+          user, mappingShortkey, ProjectPermission.Reviewer, api);
       Revision mappingJson = api.getLatestRevision(mappingShortkey);
       if (mappingJson == null) throw new NotFoundException();
       return mappingJson;
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definition");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -245,11 +279,11 @@ public class PersistencyResource {
       @PathParam("mappingShortkey") String mappingShortkey, @Context User user) {
     logger.info(String.format("Get revisions %s (%s)", mappingShortkey, user));
 
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Reviewer);
+          user, mappingShortkey, ProjectPermission.Reviewer, api);
       return api.getRevisions(mappingShortkey);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't get case definition revisions");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -264,11 +298,12 @@ public class PersistencyResource {
       @FormParam("mappingName") String mappingName,
       @Context User user) {
     logger.info(String.format("Create mapping %s/%s (%s)", projectName, mappingName, user));
-    try {
-      AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      AuthentificationApi.assertProjectRolesImplies(
+          user, projectName, ProjectPermission.Owner, api);
       String status = user.getUsername().equals(IMPORT_USER) ? "IMPORTED" : null;
       return api.createMapping(projectName, mappingName, status);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -283,14 +318,14 @@ public class PersistencyResource {
       @FormParam("summary") String summary,
       @Context User user) {
     logger.info(String.format("Save case definition revision %s (%s)", mappingShortkey, user));
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Editor);
+          user, mappingShortkey, ProjectPermission.Editor, api);
       if (!user.getUsername().equals(IMPORT_USER)) {
         api.setMappingStatus(mappingShortkey, null);
       }
       return api.saveRevision(mappingShortkey, user.getUsername(), summary, mappingJson);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't save case definition revision");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -305,11 +340,11 @@ public class PersistencyResource {
       @FormParam("name") String name,
       @Context User user) {
     logger.info(String.format("Set mapping name %s (%s)", mappingShortkey, user));
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Owner);
+          user, mappingShortkey, ProjectPermission.Owner, api);
       api.setName(mappingShortkey, name);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       System.err.println("Couldn't save case definition revision");
       e.printStackTrace();
       throw new InternalServerErrorException(e);
@@ -320,13 +355,13 @@ public class PersistencyResource {
   @Path("users")
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<User> getUsers(@Context User user) {
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       // Allowed for all project owners and admins
       if (!api.isOwner(user.getUsername())) {
         AuthentificationApi.assertAdmin(user);
       }
       return api.getUsers();
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -341,12 +376,12 @@ public class PersistencyResource {
       @FormParam("email") String email,
       @Context User user) {
     AuthentificationApi.assertAdmin(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       if (api.userExists(username)) {
         throw new ClientErrorException("user already exists", 409);
       }
       api.createUser(username, password, email);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -357,9 +392,9 @@ public class PersistencyResource {
   @Produces(MediaType.APPLICATION_JSON)
   public Map<String, ProjectPermission> getProjectPermissions(@Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       return api.getProjectPermissions(user.getUsername());
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -371,9 +406,9 @@ public class PersistencyResource {
   public ProjectPermission getProjectPermissions(
       @PathParam("projectName") String projectName, @Context User user) {
     AuthentificationApi.assertAuthentificated(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       return api.getProjectPermissions(user.getUsername()).get(projectName);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -387,9 +422,9 @@ public class PersistencyResource {
       @FormParam("password") String password,
       @Context User user) {
     AuthentificationApi.assertAdmin(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi(); ) {
       api.setUserPassword(username, password);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -403,9 +438,9 @@ public class PersistencyResource {
       @FormParam("isAdmin") boolean isAdmin,
       @Context User user) {
     AuthentificationApi.assertAdmin(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       api.setUserAdmin(username, isAdmin);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -415,12 +450,12 @@ public class PersistencyResource {
   @Path("project")
   public void createProject(@FormParam("name") String name, @Context User user) {
     AuthentificationApi.assertAdmin(user);
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       if (api.projectExists(name)) {
         throw new ClientErrorException("project already exists", 409);
       }
       api.createProject(name);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
@@ -433,12 +468,13 @@ public class PersistencyResource {
       @FormParam("username") String username,
       @FormParam("role") String roleString,
       @Context User user) {
-    try {
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       // admins and project owners
       try {
         AuthentificationApi.assertAdmin(user);
       } catch (ForbiddenException e) {
-        AuthentificationApi.assertProjectRolesImplies(user, projectName, ProjectPermission.Owner);
+        AuthentificationApi.assertProjectRolesImplies(
+            user, projectName, ProjectPermission.Owner, api);
       }
       ProjectPermission role = null;
       if (roleString != null) {
@@ -448,7 +484,7 @@ public class PersistencyResource {
         }
       }
       api.addProjectUser(projectName, username, role);
-    } catch (CodeMapperException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       throw new InternalServerErrorException(e);
     }
