@@ -9,6 +9,11 @@
 
 <section class="center-content">
 
+January 16, 2026
+---
+
+- editor for event definition form (purely descriptive)
+
 December 31, 2025
 ---
 

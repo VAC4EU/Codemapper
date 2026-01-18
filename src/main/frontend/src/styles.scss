@@ -138,3 +138,9 @@ mat-form-field {
     font-family: 'Courier New', Courier, monospace;
     background-color: lightgray;
 }
+
+.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

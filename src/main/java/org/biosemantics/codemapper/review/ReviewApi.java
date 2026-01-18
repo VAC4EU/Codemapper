@@ -81,17 +81,6 @@ public class ReviewApi implements AutoCloseable {
   public void newMessage(
       String mappingShortkey, int topicId, String content, String user, String timestamp)
       throws CodeMapperException {
-    newMessage(mappingShortkey, topicId, content, user, timestamp);
-  }
-
-  private void newMessage(
-      Connection connection,
-      String mappingShortkey,
-      int topicId,
-      String content,
-      String user,
-      String timestamp)
-      throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
@@ -141,19 +130,6 @@ public class ReviewApi implements AutoCloseable {
       String user,
       String timestamp)
       throws CodeMapperException {
-    return newTopic(mappingShortkey, cui, sab, code, heading, user, timestamp);
-  }
-
-  private int newTopic(
-      Connection connection,
-      String mappingShortkey,
-      String cui,
-      String sab,
-      String code,
-      String heading,
-      String user,
-      String timestamp)
-      throws CodeMapperException {
     if (timestamp == null) {
       timestamp = now();
     }
@@ -184,7 +160,6 @@ public class ReviewApi implements AutoCloseable {
 
   @XmlRootElement
   public static class Topics extends HashMap<Integer, Topic> {
-
     private static final long serialVersionUID = 1L;
   }
 
@@ -296,11 +271,6 @@ public class ReviewApi implements AutoCloseable {
 
   public void resolveTopic(int topicId, String username, String timestamp)
       throws CodeMapperException {
-    resolveTopic(topicId, username, timestamp);
-  }
-
-  private void resolveTopic(Connection connection, int topicId, String username, String timestamp)
-      throws CodeMapperException {
     if (topicId == 0 || username == "") {
       throw CodeMapperException.user("invalid parameters to resolve topic");
     }
@@ -389,37 +359,34 @@ public class ReviewApi implements AutoCloseable {
   public void saveReviews(String mappingShortkey, AllTopics allTopics) throws CodeMapperException {
     for (String cui : allTopics.byConcept.keySet()) {
       for (Topic top : allTopics.byConcept.get(cui).values()) {
-        saveTopic(connection, mappingShortkey, cui, null, null, top);
+        saveTopic(mappingShortkey, cui, null, null, top);
       }
     }
     for (String sab : allTopics.byCode.keySet()) {
       for (String code : allTopics.byCode.get(sab).keySet()) {
         for (Topic top : allTopics.byCode.get(sab).get(code).values()) {
-          saveTopic(connection, mappingShortkey, null, sab, code, top);
+          saveTopic(mappingShortkey, null, sab, code, top);
         }
       }
     }
     for (Topic top : allTopics.general.values()) {
-      saveTopic(connection, mappingShortkey, null, null, null, top);
+      saveTopic(mappingShortkey, null, null, null, top);
     }
   }
 
-  private void saveTopic(
-      Connection connection, String mappingShortkey, String cui, String sab, String code, Topic top)
+  private void saveTopic(String mappingShortkey, String cui, String sab, String code, Topic top)
       throws CodeMapperException {
 
     String timestamp = top.created.timestamp;
     if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-    int id =
-        newTopic(
-            connection, mappingShortkey, cui, sab, code, top.heading, top.created.user, timestamp);
+    int id = newTopic(mappingShortkey, cui, sab, code, top.heading, top.created.user, timestamp);
     for (Message msg : top.messages) {
       timestamp = msg.timestamp;
       if (timestamp == null || timestamp.length() < 10) timestamp = EPOCH;
-      newMessage(connection, mappingShortkey, id, msg.content, msg.username, timestamp);
+      newMessage(mappingShortkey, id, msg.content, msg.username, timestamp);
     }
     if (top.resolved != null) {
-      resolveTopic(connection, id, top.resolved.user, top.resolved.timestamp);
+      resolveTopic(id, top.resolved.user, top.resolved.timestamp);
     }
   }
 }

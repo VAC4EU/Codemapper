@@ -5,7 +5,7 @@
   matTooltip="{{tooltipContent()}}"
   matTooltipPosition="right">
   <span class="code-id">{{code.id}}@if (code.custom) {
-    *
+    <span class="custom-marker">*</span>
   }</span>@if (showTagIndication && code.tag != null) {
   <mat-icon class="tag-indicator tag-{{code.tag}}" fontIcon="label"></mat-icon>
   }@if (showTerm) {

@@ -1,9 +1,10 @@
-<h2 mat-dialog-title>
-  <span class="heading">{{data.heading}}</span>
+<div class="title">
+  <h2 class="heading" mat-dialog-title>{{data.heading}}</h2>
   <button (click)="close()" mat-icon-button color="primary" align="end" matTooltip="Close review dialog">
     <mat-icon>close</mat-icon>
   </button>
-</h2>
+</div>
+
 <mat-dialog-content class="form-fields">
   @if (getTopics(); as topics) {
     <reviews
