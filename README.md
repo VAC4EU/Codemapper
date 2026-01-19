@@ -2,9 +2,7 @@
 
 CodeMapper assists in the creation of code sets from case definitions, for
 several coding systems simultaneously while keeping a record of the complete
-mapping process. A
-[presentation](https://docs.google.com/presentation/d/1vo94NxADoJAMTQDbzK7QRDy9IvfMHZdBiyzdsqecJA0/edit?usp=sharing)
-describes the concepts, and shows the user interface with a walk-through. More
+mapping process. More
 details about the background, implementation, and effectiveness of the approach
 are documented in our article:
 
@@ -12,6 +10,10 @@ are documented in our article:
 > CodeMapper: Semi-automatic coding of case definitions. A contribution from the ADVANCE
 > project. Pharmacoepidemiology and Drug Safety 2017. doi:10.1002/pds.4245
 > ([link](http://onlinelibrary.wiley.com/doi/10.1002/pds.4245/full))
+
+## Deployment
+
+CodeMapper is available at <https://app.vac4eu.org/codemapper/>.
 
 ## Components
 
