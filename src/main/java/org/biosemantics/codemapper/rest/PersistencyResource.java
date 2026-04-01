@@ -213,7 +213,7 @@ public class PersistencyResource {
       @PathParam("shortkey") String shortkey, @Context User user, PersistencyApi.MappingMeta meta) {
     try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, shortkey, ProjectPermission.Owner, api);
+          user, shortkey, ProjectPermission.Editor, api);
       api.setMappingMeta(shortkey, meta);
     } catch (CodeMapperException e) {
       e.printStackTrace();
@@ -342,7 +342,7 @@ public class PersistencyResource {
     logger.info(String.format("Set mapping name %s (%s)", mappingShortkey, user));
     try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertMappingProjectRolesImplies(
-          user, mappingShortkey, ProjectPermission.Owner, api);
+          user, mappingShortkey, ProjectPermission.Editor, api);
       api.setName(mappingShortkey, name);
     } catch (Exception e) {
       System.err.println("Couldn't save case definition revision");

@@ -19,6 +19,7 @@ import * as ops from '../operations';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   MappingInfo,
+  mappingNameFromInfo,
   PersistencyService,
   ProjectRole,
   RevisionInfo,
@@ -95,7 +96,7 @@ export class MappingTabComponent {
   }
 
   editDescription() {
-    let mappingName = `${this.info.meta.system}_${this.info.mappingName}_${this.info.meta.type}`;
+    let mappingName = mappingNameFromInfo(this.info);
     this.dialog
       .open(EditDescriptionComponent, {
         data: { description: this.info.description, mappingName },

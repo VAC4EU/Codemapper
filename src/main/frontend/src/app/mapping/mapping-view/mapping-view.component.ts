@@ -117,7 +117,7 @@ export class MappingViewComponent implements HasPendingChanges {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private auth: AuthService,
-    private location: Location
+    private location: Location,
   ) {}
 
   get hasPendingChanges(): boolean {
@@ -146,12 +146,12 @@ export class MappingViewComponent implements HasPendingChanges {
       await this.setInitialMapping(initial);
       this.setTitle();
       this.projectRole = await firstValueFrom(
-        this.persistency.getProjectRole(this.info.projectName)
+        this.persistency.getProjectRole(this.info.projectName),
       );
       if (this.projectRole != ProjectRole.Owner)
         this.snackBar.open(
           'You are not owner of the project, you will not be able to save this new mapping',
-          'Ok'
+          'Ok',
         );
     } else if (nameParam) {
       this.shortkey = parseNameShortkey(nameParam);
@@ -161,24 +161,24 @@ export class MappingViewComponent implements HasPendingChanges {
       }
       try {
         this.info = await firstValueFrom(
-          this.persistency.mappingInfo(this.shortkey)
+          this.persistency.mappingInfo(this.shortkey),
         );
         if (slugifyMappingInfo(this.info) != nameParam) {
           this.location.go(mappingInfoLink(this.info).join('/'));
         }
         this.setTitle();
         this.info.meta = await firstValueFrom(
-          this.persistency.mappingMeta(this.shortkey)
+          this.persistency.mappingMeta(this.shortkey),
         );
         if (this.info.status == 'IMPORTED') {
           this.snackBar.open(
             'This mapping was automatically imported, please review carefully and save it, or report any issues.',
             'Ok',
-            { duration: undefined }
+            { duration: undefined },
           );
         }
         this.projectRole = await firstValueFrom(
-          this.persistency.getProjectRole(this.info.projectName)
+          this.persistency.getProjectRole(this.info.projectName),
         );
         let postOp: null | ops.Operation = null,
           mapping;
@@ -186,8 +186,8 @@ export class MappingViewComponent implements HasPendingChanges {
           ({ info: this.latest, mapping } = await firstValueFrom(
             this.persistency.loadLatestRevisionMapping(
               this.shortkey!,
-              this.serverInfo
-            )
+              this.serverInfo,
+            ),
           ));
           this.state = new MappingState(Mapping.fromData(mapping));
         } catch (err) {
@@ -195,7 +195,7 @@ export class MappingViewComponent implements HasPendingChanges {
             try {
               let messages, mapping;
               ({ mapping, postOp, messages } = await this.loadLegacyMapping(
-                this.shortkey
+                this.shortkey,
               ));
               this.state = new MappingState(Mapping.fromData(mapping));
               this.latest = {
@@ -205,7 +205,7 @@ export class MappingViewComponent implements HasPendingChanges {
                 summary: '?',
               };
               messages.unshift(
-                `The mapping was automatically imported from the old version of CodeMapper and remapped. Please review and save.`
+                `The mapping was automatically imported from the old version of CodeMapper and remapped. Please review and save.`,
               );
               this.snackBar.open(messages.join('\n\n'), 'Ok', {
                 panelClass: 'remap-snackbar',
@@ -254,7 +254,7 @@ export class MappingViewComponent implements HasPendingChanges {
       mappingName: initial.mappingName,
       status: null,
       meta: initial.meta,
-      description: "",
+      description: '',
     };
   }
 
@@ -263,7 +263,7 @@ export class MappingViewComponent implements HasPendingChanges {
       this.serverInfo.defaultVocabularies.map((id) => [
         id,
         this.vocabularies[id],
-      ])
+      ]),
     );
   }
 
@@ -283,7 +283,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.initial.folderName,
       meta: this.initial.meta as MappingMeta,
       status: null,
-      description: "",
+      description: '',
     };
     this.initial = null;
     this.state = new MappingState(
@@ -293,7 +293,7 @@ export class MappingViewComponent implements HasPendingChanges {
         vocabularies: data.vocabularies ?? this.defaultVocabularies(),
         concepts: data.concepts ?? {},
         codes: data.codes ?? {},
-      })
+      }),
     );
     this.latest = null;
     this.saveRequired = true;
@@ -306,7 +306,7 @@ export class MappingViewComponent implements HasPendingChanges {
 
   async loadLegacyMapping(mappingShortkey: string) {
     let mapping = await firstValueFrom(
-      this.persistency.loadLegacyMapping(mappingShortkey, this.serverInfo)
+      this.persistency.loadLegacyMapping(mappingShortkey, this.serverInfo),
     );
     let { conceptsCodes, vocabularies, messages } =
       await this.apiService.remapData(mapping, this.vocabularies, mapping.meta);
@@ -318,7 +318,7 @@ export class MappingViewComponent implements HasPendingChanges {
   async reloadReviews() {
     if (this.state && this.shortkey) {
       let allTopics0 = await firstValueFrom(
-        this.apiService.allTopics(this.shortkey)
+        this.apiService.allTopics(this.shortkey),
       );
       let user = await this.auth.user;
       let me = user?.username ?? 'anonymous';
@@ -330,7 +330,7 @@ export class MappingViewComponent implements HasPendingChanges {
   async reloadRevisions() {
     if (this.shortkey) {
       this.revisions = await firstValueFrom(
-        this.persistency.getRevisions(this.shortkey)
+        this.persistency.getRevisions(this.shortkey),
       );
     }
   }
@@ -353,7 +353,7 @@ export class MappingViewComponent implements HasPendingChanges {
 
   setSaveWarning(messages: Messages) {
     if (messages.isNonEmpty()) {
-      console.log({messages});
+      console.log({ messages });
       alert(messages.allToString());
       if (messages.hasWarnings()) {
         let message = messages.warningsToString();
@@ -409,7 +409,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.info.projectName,
       mappingConfigs: [this.shortkey],
       includeDescendants: includeDescendants(
-        this.state?.mapping.meta.includeDescendants ?? false
+        this.state?.mapping.meta.includeDescendants ?? false,
       ),
       mappings: {
         [this.shortkey]: {
@@ -430,15 +430,15 @@ export class MappingViewComponent implements HasPendingChanges {
         (await this.persistency.createMapping(
           this.info.projectName,
           this.info.mappingName,
-          this.info.meta
+          this.info.meta,
         ));
       this.latest = await firstValueFrom(
-        this.persistency.saveRevision(shortkey, this.state.mapping, summary)
+        this.persistency.saveRevision(shortkey, this.state.mapping, summary),
       );
       if (this.saveReviewRequired) {
         try {
           await firstValueFrom(
-            this.apiService.saveAllTopics(shortkey, this.allTopics.toRaw())
+            this.apiService.saveAllTopics(shortkey, this.allTopics.toRaw()),
           );
           this.saveReviewRequired = false;
         } catch (err) {
@@ -461,7 +461,7 @@ export class MappingViewComponent implements HasPendingChanges {
       console.error('Could not save mapping', err);
       this.snackBar.open(
         'Could not save mapping: ' + (err as any).message,
-        'Close'
+        'Close',
       );
     }
   }
@@ -477,11 +477,8 @@ export class MappingViewComponent implements HasPendingChanges {
     if (this.info.meta?.type) {
       snippets.push(`type: ${this.info.meta.type}`);
     }
-    snippets.push(
-      `${
-        this.state?.mapping.meta.includeDescendants ? 'include' : 'exclude'
-      } descendant codes`
-    );
+    let yesNo = this.state?.mapping.meta.includeDescendants ? 'yes' : 'no';
+    snippets.push(`include descendant codes: ${yesNo}`);
     let res = snippets.join(', ') + '.';
     res = res[0].toUpperCase() + res.slice(1);
     if (this.saveRequired) {

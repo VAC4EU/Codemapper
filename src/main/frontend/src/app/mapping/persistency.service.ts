@@ -92,6 +92,11 @@ export interface MappingInfo {
   description: string;
 }
 
+export function mappingNameFromInfo(info: MappingInfo): string {
+  let parts = [info.meta.system, info.mappingName, info.meta.type].filter((p) => p != null);
+  return parts.join('_');
+}
+
 export function emptyMappingInfo(): MappingInfo {
   return {
     mappingShortkey: null,

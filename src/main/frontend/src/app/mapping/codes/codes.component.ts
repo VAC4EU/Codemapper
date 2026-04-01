@@ -183,7 +183,7 @@ export class CodesComponent {
           term: selected.term,
           concept: concepts.values().next().value,
         },
-        operation: "Edit custom code",
+        operation: "Save",
         concepts: Object.values(this.state().mapping.concepts),
         codeIds: Object.keys(this.state().mapping.codes[this.vocabularyId]),
         idEditable: false,

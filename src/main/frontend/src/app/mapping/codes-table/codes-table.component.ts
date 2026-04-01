@@ -81,7 +81,16 @@ export class CodesTableComponent {
       setTimeout(() => this.selection.clear());
     }
     if (changes['codes']) {
-      this.dataSource.data = changes['codes'].currentValue;
+      const newCodes = changes['codes'].currentValue as Code[];
+      const selectedIds = new Set(this.selection.selected.map(c => c.id));
+      this.dataSource.data = newCodes;
+      if (selectedIds.size > 0) {
+        const toReselect = newCodes.filter(c => selectedIds.has(c.id));
+        this.selection.clear();
+        if (toReselect.length > 0) {
+          this.selection.select(...toReselect);
+        }
+      }
     }
     let tag = this.showTags ? ["tag"] : [];
     let parents = this.codeParents == null ? [] : ["parents"];
