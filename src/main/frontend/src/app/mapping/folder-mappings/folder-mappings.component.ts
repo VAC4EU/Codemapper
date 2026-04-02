@@ -14,6 +14,7 @@ import {
   RevisionInfos,
   userCanCreate,
   userCanDownload,
+  userCanEdit,
   userCanRename,
 } from '../persistency.service';
 import {
@@ -487,6 +488,10 @@ export class FolderMappingsComponent {
 
   get userCanRename() {
     return userCanRename(this.role);
+  }
+
+  get userCanEdit() {
+    return userCanEdit(this.role);
   }
 
   get userCanCreate() {

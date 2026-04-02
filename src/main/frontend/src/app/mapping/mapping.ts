@@ -94,7 +94,7 @@ export class Mapping {
         );
       }
       if (voc1.version != voc.version) {
-        throw new Error(`the vocabulary versions do not match`);
+        throw new Error(`the versions of vocabulary ${vocId} do not match: mapping has ${voc1.version}, added codes have ${voc.version}`);
       }
     }
     // check that only custom codes are added to existing concepts
