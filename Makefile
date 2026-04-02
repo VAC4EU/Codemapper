@@ -52,3 +52,7 @@ deploy-testing-all:
 	  $(FRONTEND)/dist-testing \
 	  $(SERVER):/tmp/
 	ssh -t $(SERVER) sudo sh -c "'sudo -u tomcat8 cp /tmp/codemapper-testing.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-testing/ /var/www/codemapper-frontend-testing'"
+
+.PHONY: news
+news:
+	pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html
