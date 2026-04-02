@@ -316,6 +316,13 @@ export class PersistencyService {
     return this.http.get<ProjectInfo[]>(this.url + '/projects');
   }
 
+  renameProject(projectName: string, newName: string): Observable<void> {
+    let url = this.url + `/project/${projectName}/name`;
+    let body = new URLSearchParams();
+    body.append('name', newName);
+    return this.http.post<void>(url, body, urlEncodedOptions);
+  }
+
   allUsers() {
     return this.http.get<User[]>(this.url + '/users');
   }
