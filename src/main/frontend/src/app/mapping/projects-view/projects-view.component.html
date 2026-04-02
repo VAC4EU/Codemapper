@@ -5,18 +5,24 @@
 
 <div class="center-content">
   <div class="toolbox">
-
-    @if (user?.admin) {
       <mat-card appearance="outlined">
         <mat-card-actions>
-          <button (click)="openDialog(newProjectDialog)" mat-button>Create new folder</button>
+          <span matTooltip="Create new folder (only administrators)">
+          <button (click)="openDialog(newProjectDialog)" [disabled]="!isAdmin" mat-button>Create new folder</button>
+          </span>
         </mat-card-actions>
       </mat-card>
-    }
       <mat-card appearance="outlined">
         <mat-card-actions>
-          <span matTooltip="Select one folder to rename it">
-          <button (click)="openDialog(renameProjectDialog)" mat-button [disabled]="selection.selected.length !== 1">Rename folder</button>
+          <span matTooltip="Select one folder to rename it (only administrators)">
+          <button (click)="openDialog(renameProjectDialog)" mat-button [disabled]="!isAdmin || selection.selected.length !== 1">Rename folder</button>
+          </span>
+        </mat-card-actions>
+      </mat-card>
+      <mat-card appearance="outlined">
+        <mat-card-actions>
+          <span matTooltip="Select one folder to delete it (only administrators)">
+          <button (click)="openDialog(deleteProjectDialog)" mat-button [disabled]="!isAdmin || selection.selected.length !== 1">Delete folder</button>
           </span>
         </mat-card-actions>
       </mat-card>
@@ -60,13 +66,13 @@
       <mat-label>Name</mat-label>
       <input #projectName matInput>
     </mat-form-field>
-    @if (createProjectError) {
-      <p>{{createProjectError}}</p>
+    @if (projectDialogError) {
+      <p>{{projectDialogError}}</p>
     }
   </mat-dialog-content>
   <mat-dialog-actions align="end">
-    <button mat-button (click)="closeCreateProject()" matDialogClose>Cancel</button>
-    <button mat-raised-button (click)="createProject(projectName.value)" color="primary">Create</button>
+    <button mat-button (click)="closeProjectDialog()" matDialogClose>Cancel</button>
+    <button mat-raised-button (click)="createProject(projectName.value)" color="primary">Ok</button>
   </mat-dialog-actions>
 </ng-template>
 
@@ -77,15 +83,28 @@
       <mat-label>New name</mat-label>
       <input #newFolderName matInput  [value]="selection.selected[0]?.name">
     </mat-form-field>
-    @if (renameProjectError) {
-      <p>{{renameProjectError}}</p>
+    @if (projectDialogError) {
+      <p>{{projectDialogError}}</p>
     }
     <p>
     Careful: Renaming will change the URL of the folder, existing links will no longer work.
     </p>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
-    <button mat-button (click)="closeRenameProject()" matDialogClose>Cancel</button>
-    <button mat-raised-button (click)="renameProject(newFolderName.value)" color="primary">Rename</button>
+    <button mat-button (click)="closeProjectDialog()" matDialogClose>Cancel</button>
+    <button mat-raised-button (click)="renameProject(newFolderName.value)" color="primary">Ok</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #deleteProjectDialog>
+  <h2 matDialogTitle>Delete folder "{{selection.selected[0]?.name}}"</h2>
+  <mat-dialog-content>
+    @if (projectDialogError) {
+      <p>{{projectDialogError}}</p>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="closeProjectDialog()" matDialogClose>Cancel</button>
+    <button mat-raised-button (click)="deleteProject()" color="primary">Ok</button>
   </mat-dialog-actions>
 </ng-template>

@@ -461,6 +461,21 @@ public class PersistencyResource {
     }
   }
 
+  @DELETE
+  @Path("project/{projectName}")
+  public void deleteProject(
+      @PathParam("projectName") String projectName,
+      @Context HttpServletRequest request,
+      @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      api.deleteProject(projectName);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
   @POST
   @Path("project/{projectName}/name")
   public void renameProject(

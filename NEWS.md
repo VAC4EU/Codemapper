@@ -12,7 +12,7 @@
 April 1, 2026
 ---
 
-- rename folders (administrators only)
+- rename and delete folders (administrators only)
 - bug fixes: #72, #78, #80, #81
 
 January 16, 2026

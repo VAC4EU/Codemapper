@@ -36,10 +36,13 @@ export class ProjectsViewComponent {
   user : User | null = null;
   dialogRef : MatDialogRef<any, any> | null = null;
   roles : ProjectsRole = {};
-  createProjectError : string | null = null;
-  renameProjectError : string | null = null;
+  projectDialogError : string | null = null;
   projects : ProjectInfo[] = [];
   selection = new SelectionModel<ProjectInfo>(false, []);
+
+  get isAdmin() {
+    return this.user?.admin
+  }
 
   constructor(
     private persistency : PersistencyService,
@@ -67,12 +70,12 @@ export class ProjectsViewComponent {
           this.dialogRef.close();
         }
       },
-      error: err => this.createProjectError = err.error,
+      error: err => this.projectDialogError = err.error,
     })
   }
 
-  closeCreateProject() {
-    this.createProjectError = null;
+  closeProjectDialog() {
+    this.projectDialogError = null;
   }
 
   renameProject(newName : string) {
@@ -85,12 +88,22 @@ export class ProjectsViewComponent {
           this.dialogRef.close();
         }
       },
-      error: err => this.renameProjectError = err.error,
+      error: err => this.projectDialogError = err.error,
     });
   }
 
-  closeRenameProject() {
-    this.renameProjectError = null;
+  deleteProject() {
+    const project = this.selection.selected[0];
+    this.persistency.deleteProject(project.name).subscribe({
+      next: _ => {
+        this.reloadProjects();
+        this.snackbar.open(`Deleted folder "${project.name}"`, "Ok", { duration: 2000 });
+        if (this.dialogRef != null) {
+          this.dialogRef.close();
+        }
+      },
+      error: err => this.projectDialogError = err.error,
+    });
   }
 
   openDialog(templateRef : TemplateRef<any>) {

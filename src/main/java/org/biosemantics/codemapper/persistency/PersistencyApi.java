@@ -541,7 +541,8 @@ public class PersistencyApi implements AutoCloseable {
             + "FROM users "
             + "INNER JOIN users_projects up ON up.user_id = users.id "
             + "INNER JOIN projects ON projects.id = up.project_id "
-            + "WHERE users.username = ?";
+            + "WHERE users.username = ? "
+            + "AND projects.status IS DISTINCT FROM 'DELETED'";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       Map<String, ProjectPermission> permissions = new HashMap<>();
@@ -576,7 +577,8 @@ public class PersistencyApi implements AutoCloseable {
             + "  JOIN users u ON u.id = up.user_id "
             + "  WHERE u.username = ?"
             + ") up "
-            + "ON up.project_id = p.id";
+            + "ON up.project_id = p.id "
+            + "WHERE p.status IS DISTINCT FROM 'DELETED'";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, username);
       Map<String, ProjectPermission> permissions = new HashMap<>();
@@ -823,6 +825,16 @@ public class PersistencyApi implements AutoCloseable {
     try (PreparedStatement statement = connection.prepareStatement(query)) {
       statement.setString(1, newName);
       statement.setString(2, name);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to rename project", e);
+    }
+  }
+
+  public void deleteProject(String name) throws CodeMapperException {
+    String query = "UPDATE projects SET status = 'DELETED' WHERE name = ?";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, name);
       statement.execute();
     } catch (SQLException e) {
       throw CodeMapperException.server("Cannot execute query to rename project", e);

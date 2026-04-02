@@ -323,6 +323,11 @@ export class PersistencyService {
     return this.http.post<void>(url, body, urlEncodedOptions);
   }
 
+  deleteProject(projectName: string): Observable<void> {
+    let url = this.url + `/project/${projectName}`;
+    return this.http.delete<void>(url);
+  }
+
   allUsers() {
     return this.http.get<User[]>(this.url + '/users');
   }
