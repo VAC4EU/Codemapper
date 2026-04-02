@@ -13,11 +13,27 @@
         </mat-card-actions>
       </mat-card>
     }
+      <mat-card appearance="outlined">
+        <mat-card-actions>
+          <span matTooltip="Select one folder to rename it">
+          <button (click)="openDialog(renameProjectDialog)" mat-button [disabled]="selection.selected.length !== 1">Rename folder</button>
+          </span>
+        </mat-card-actions>
+      </mat-card>
   </div>
 
   <table mat-table [dataSource]="projects">
-    <tr mat-header-row *matHeaderRowDef="['name', 'role']"></tr>
-    <tr mat-row *matRowDef="let project; columns: ['name', 'role'];"></tr>
+    <tr mat-header-row *matHeaderRowDef="['select', 'name', 'role']"></tr>
+    <tr mat-row *matRowDef="let project; columns: ['select', 'name', 'role'];"></tr>
+
+    <ng-container matColumnDef="select">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let project">
+        <mat-checkbox (change)="selection.toggle(project)"
+                      [checked]="selection.isSelected(project)">
+        </mat-checkbox>
+      </td>
+    </ng-container>
 
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef>Folder</th>
@@ -51,5 +67,25 @@
   <mat-dialog-actions align="end">
     <button mat-button (click)="closeCreateProject()" matDialogClose>Cancel</button>
     <button mat-raised-button (click)="createProject(projectName.value)" color="primary">Create</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #renameProjectDialog>
+  <h2 matDialogTitle>Rename folder "{{selection.selected[0]?.name}}"</h2>
+  <mat-dialog-content>
+    <mat-form-field>
+      <mat-label>New name</mat-label>
+      <input #newFolderName matInput  [value]="selection.selected[0]?.name">
+    </mat-form-field>
+    @if (renameProjectError) {
+      <p>{{renameProjectError}}</p>
+    }
+    <p>
+    Careful: Renaming will change the URL of the folder, existing links will no longer work.
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="closeRenameProject()" matDialogClose>Cancel</button>
+    <button mat-raised-button (click)="renameProject(newFolderName.value)" color="primary">Rename</button>
   </mat-dialog-actions>
 </ng-template>

@@ -21,6 +21,7 @@ import { PersistencyService, ProjectInfo, ProjectRole, ProjectsRole } from '../p
 import { AuthService, User } from '../auth.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SelectionModel } from '@angular/cdk/collections';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -36,7 +37,9 @@ export class ProjectsViewComponent {
   dialogRef : MatDialogRef<any, any> | null = null;
   roles : ProjectsRole = {};
   createProjectError : string | null = null;
+  renameProjectError : string | null = null;
   projects : ProjectInfo[] = [];
+  selection = new SelectionModel<ProjectInfo>(false, []);
 
   constructor(
     private persistency : PersistencyService,
@@ -52,6 +55,7 @@ export class ProjectsViewComponent {
     this.roles = await this.auth.roles;
     this.projects = await firstValueFrom(this.persistency.getProjects());
     this.projects.sort((a, b) => a.name.localeCompare(b.name));
+    this.selection.clear();
   }
 
   createProject(name : string) {
@@ -69,6 +73,24 @@ export class ProjectsViewComponent {
 
   closeCreateProject() {
     this.createProjectError = null;
+  }
+
+  renameProject(newName : string) {
+    const project = this.selection.selected[0];
+    this.persistency.renameProject(project.name, newName).subscribe({
+      next: _ => {
+        this.reloadProjects();
+        this.snackbar.open(`Renamed folder "${project.name}" to "${newName}"`, "Ok", { duration: 2000 });
+        if (this.dialogRef != null) {
+          this.dialogRef.close();
+        }
+      },
+      error: err => this.renameProjectError = err.error,
+    });
+  }
+
+  closeRenameProject() {
+    this.renameProjectError = null;
   }
 
   openDialog(templateRef : TemplateRef<any>) {

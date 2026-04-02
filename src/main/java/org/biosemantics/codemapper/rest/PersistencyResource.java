@@ -462,6 +462,21 @@ public class PersistencyResource {
   }
 
   @POST
+  @Path("project/{projectName}/name")
+  public void renameProject(
+      @PathParam("projectName") String projectName,
+      @FormParam("name") String name,
+      @Context User user) {
+    AuthentificationApi.assertAdmin(user);
+    try (PersistencyApi api = CodeMapperApplication.createPersistencyApi()) {
+      api.renameProject(projectName, name);
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  @POST
   @Path("project/{projectName}/user-role")
   public void addProjectUser(
       @PathParam("projectName") String projectName,

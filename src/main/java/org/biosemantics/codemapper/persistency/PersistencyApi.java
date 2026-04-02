@@ -818,6 +818,17 @@ public class PersistencyApi implements AutoCloseable {
     }
   }
 
+  public void renameProject(String name, String newName) throws CodeMapperException {
+    String query = "UPDATE projects SET name = ? WHERE name = ?";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+      statement.setString(1, newName);
+      statement.setString(2, name);
+      statement.execute();
+    } catch (SQLException e) {
+      throw CodeMapperException.server("Cannot execute query to rename project", e);
+    }
+  }
+
   public void createProject(String name) throws CodeMapperException {
     String query = "INSERT INTO projects (name) VALUES (?)";
     try (PreparedStatement statement = connection.prepareStatement(query)) {
