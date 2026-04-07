@@ -184,7 +184,7 @@ describe('adding mappings', () => {
       mappingData.vocabularies['V1'] = mkVoc('V1', '2');
       let mapping = mkMapping();
       expect(() => mapping.addMapping(mappingData)).toThrowError(
-        'the vocabulary versions do not match'
+        'the versions of vocabulary V1 do not match: mapping has 1, added codes have 2'
       );
     }
   });
