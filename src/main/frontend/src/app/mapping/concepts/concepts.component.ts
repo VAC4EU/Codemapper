@@ -303,14 +303,15 @@ export class ConceptsComponent implements OnInit {
           if (Object.keys(conflicts).length > 0) {
             let infos: string[] = [];
             for (let [vocId, forVoc] of Object.entries(conflicts)) {
-              for (let [codeId, {tag}] of Object.entries(forVoc)) {
-                let tagInfo = tag ? `tagged "${tag}"` : 'not tagged';
-                infos.push(`\n- ${vocId}/${codeId} is ${tagInfo}`);
+              for (let [codeId, tag] of Object.entries(forVoc)) {
+                let tagInfo = tag ? `tagged as "${tag}"` : 'not tagged';
+                infos.push(`- ${vocId} in ${codeId} is ${tagInfo}`);
               }
             }
+            let [s1, s2] = tag ? ["to tag", ` as "${tag}"`] : ["to remove the tag from", ""];
             if (
               !confirm(
-                `You are about to tag the codes associated to the selected concepts as "${tag}". Some codes are also associated to other concepts, and they already have a differing tag: ${infos.join()}.\n\nApplying the tag will also change the tag of the code in the other concepts. (Alternatively, the tag needs to be applied on the code level.)\n\nDo you want to proceed?`,
+                `You are about ${s1} all codes that are associated with the selected concepts${s2}. Some codes are also associated with other concepts, and already have a different tagging:\n\n${infos.join('\n')}.\n\nApplying the tag will also change the tagging of the code in the other concepts. Do you want to proceed?`,
               )
             ) {
               return;

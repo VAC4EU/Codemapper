@@ -412,15 +412,11 @@ export class EditCustomCode extends Operation {
 
 export type CodeTags = { [key: VocabularyId]: { [key: CodeId]: Tag | null } };
 
-export type TagConflicts = {
-  [key: VocabularyId]: { [key: CodeId]: {tag: Tag|null}}
-};
-
 export function assignConceptsTags(
   selectedCuis: string[],
   {concepts, codes}: ConceptsCodes,
   tag: Tag | null,
-): { codeTags: CodeTags; conflicts: TagConflicts } {
+): { codeTags: CodeTags; conflicts: CodeTags } {
   let taggedCodes: {[key: VocabularyId]: Set<CodeId>} = {};
   for (let cui of selectedCuis) {
     for (let vocId of Object.keys(concepts[cui].codes)) {
@@ -429,7 +425,7 @@ export function assignConceptsTags(
       }
     }
   }
-  let conflicts: TagConflicts = {};
+  let conflicts: CodeTags = {};
   for (let cui of Object.keys(concepts)) {
     if (selectedCuis.includes(cui)) continue;
     for (let vocId of Object.keys(concepts[cui].codes)) {
@@ -437,7 +433,7 @@ export function assignConceptsTags(
         if (!taggedCodes[vocId]?.has(codeId)) continue;
         let currentTag: Tag | null = codes[vocId][codeId].tag;
         if (currentTag == null || currentTag == tag) continue;
-        (conflicts[vocId] ??= {})[codeId] = {tag: currentTag};
+        (conflicts[vocId] ??= {})[codeId] = currentTag;
       }
     }
   }
