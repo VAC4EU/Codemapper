@@ -50,6 +50,9 @@ import {
   Vocabularies,
   filterConcepts,
   ServerInfo,
+  ConceptId,
+  CodeId,
+  Tag,
 } from '../mapping-data';
 import { AllTopics, ReviewOperation } from '../review';
 import { ApiService, csvFilter, TypesInfo } from '../api.service';
@@ -89,7 +92,7 @@ export class ConceptsComponent implements OnInit {
   pagesInfo = '';
 
   hasSelectedConcepts = computed(
-    () => this.table().selectedFiltered().length > 0
+    () => this.table().selectedFiltered().length > 0,
   );
 
   ngAfterViewInit() {
@@ -100,7 +103,10 @@ export class ConceptsComponent implements OnInit {
     });
   }
 
-  constructor(private dialog: MatDialog, private api: ApiService) {
+  constructor(
+    private dialog: MatDialog,
+    private api: ApiService,
+  ) {
     effect(() => {
       this.conceptsFilter();
       this.setPageInfo(this.paginator());
@@ -112,7 +118,7 @@ export class ConceptsComponent implements OnInit {
   }
 
   setPageInfo(
-    page: PageEvent | { length: number; pageIndex: number; pageSize: number }
+    page: PageEvent | { length: number; pageIndex: number; pageSize: number },
   ) {
     let numPages = Math.ceil(page.length / page.pageSize);
     this.pagesInfo = `${page.pageIndex + 1} of ${numPages}`;
@@ -146,16 +152,16 @@ export class ConceptsComponent implements OnInit {
             .autocompleteCode(voc, query1)
             .pipe(
               map((cs) =>
-                cs.filter((c) => !this.state().mapping.concepts[c.id])
-              )
+                cs.filter((c) => !this.state().mapping.concepts[c.id]),
+              ),
             )
             .pipe(
               catchError((err) => {
                 console.error('Could not autocomplete code', err);
                 return [];
-              })
+              }),
             );
-        })
+        }),
       )
       .subscribe((codeConcepts) => (this.codeConcepts = codeConcepts));
   }
@@ -171,8 +177,8 @@ export class ConceptsComponent implements OnInit {
         this.confirmAddConceptsDialog(
           { [concept.id]: concept },
           codes,
-          `Concept selected from code query ${query}`
-        )
+          `Concept selected from code query ${query}`,
+        ),
       );
   }
 
@@ -196,7 +202,7 @@ export class ConceptsComponent implements OnInit {
         setTimeout(() => this.table().setSelected(selected.map((c) => c.id)));
         this.codeConcepts = [];
         this.codeSearchQueryControl.setValue('');
-      })
+      }),
     );
   }
 
@@ -225,8 +231,8 @@ export class ConceptsComponent implements OnInit {
         this.confirmAddConceptsDialog(
           concepts,
           codes,
-          `Concepts matching query "${query}"`
-        )
+          `Concepts matching query "${query}"`,
+        ),
       );
   }
   //
@@ -246,8 +252,8 @@ export class ConceptsComponent implements OnInit {
         this.confirmAddConceptsDialog(
           concepts,
           codes,
-          `Concepts broader than ${concept.name}`
-        )
+          `Concepts broader than ${concept.name}`,
+        ),
       );
   }
 
@@ -258,34 +264,29 @@ export class ConceptsComponent implements OnInit {
         this.confirmAddConceptsDialog(
           concepts,
           codes,
-          `Concepts narrower than ${concept.name}`
-        )
+          `Concepts narrower than ${concept.name}`,
+        ),
       );
   }
 
   showTagsDialog(concepts: Concept[]) {
-    let tags = new Set();
-    let codes: CodeTags = {};
-    for (let concept of concepts) {
-      for (let vocId of Object.keys(concept.codes)) {
-        codes[vocId] ??= {};
-        for (let codeId of concept.codes[vocId]) {
-          let code = this.state().mapping.codes[vocId][codeId];
-          if (!code.enabled) continue;
-          codes[vocId][codeId] = null;
-          if (code.tag != null) tags.add(code.tag);
-        }
-      }
-    }
-    let codesCount = Object.values(codes)
-      .map((o) => Object.keys(o).length)
-      .reduce((x, y) => x + y, 0);
-    let tag = tags.size == 1 ? tags.values().next().value : null;
+    let mapping = this.state().mapping;
+    let currentTags = new Set(
+      concepts.flatMap((c) =>
+        Object.entries(c.codes).flatMap(([vocId, codeIds]) =>
+          Array.from(codeIds).flatMap(
+            (codeId) => mapping.codes[vocId][codeId].tag,
+          ),
+        ),
+      ),
+    );
+    let preselectTag =
+      currentTags.size == 1 ? currentTags.values().next().value : null;
     let config = {
       data: {
-        tag: tag,
-        heading: `${codesCount} codes in ${concepts.length} concepts`,
-        allowedTags: this.state().mapping.meta.allowedTags,
+        tag: preselectTag,
+        heading: `Tag all codes in ${concepts.length} concepts`,
+        allowedTags: mapping.meta.allowedTags,
       },
       width: '40em',
     };
@@ -294,12 +295,29 @@ export class ConceptsComponent implements OnInit {
       .afterClosed()
       .subscribe((tag) => {
         if (tag !== undefined) {
-          for (let vocId of Object.keys(codes)) {
-            for (let codeId of Object.keys(codes[vocId])) {
-              codes[vocId][codeId] = tag;
+          let { codeTags, conflicts } = ops.assignConceptsTags(
+            concepts.map((c) => c.id),
+            mapping,
+            tag,
+          );
+          if (Object.keys(conflicts).length > 0) {
+            let infos: string[] = [];
+            for (let [vocId, forVoc] of Object.entries(conflicts)) {
+              for (let [codeId, tag] of Object.entries(forVoc)) {
+                let tagInfo = tag ? `tagged as "${tag}"` : 'not tagged';
+                infos.push(`- ${vocId} in ${codeId} is ${tagInfo}`);
+              }
+            }
+            let [s1, s2] = tag ? ["to tag", ` as "${tag}"`] : ["to remove the tag from", ""];
+            if (
+              !confirm(
+                `You are about ${s1} all codes that are associated with the selected concepts${s2}. Some codes are also associated with other concepts, and already have a different tagging:\n\n${infos.join('\n')}.\n\nApplying the tag will also change the tagging of the code in the other concepts. Do you want to proceed?`,
+              )
+            ) {
+              return;
             }
           }
-          this.run.emit(new ops.CodesSetTag(codes));
+          this.run.emit(new ops.CodesSetTag(codeTags));
         }
       });
   }
@@ -309,7 +327,7 @@ export class ConceptsComponent implements OnInit {
     let { concepts, codes } = await this.api.concepts(
       ids,
       this.vocIds(),
-      this.state().mapping.meta
+      this.state().mapping.meta,
     );
     this.run.emit(new ops.AddConcepts(concepts, codes));
   }
@@ -338,14 +356,14 @@ export class ConceptsComponent implements OnInit {
     try {
       let filter = applyFilter ? csvFilter(this.info) : null;
       let imported = await firstValueFrom(
-        this.api.importCsv(file, [], format, [], filter)
+        this.api.importCsv(file, [], format, [], filter),
       );
       let messages: string[] = [];
       messages.push(
-        'Please confirm the imported codes. They are structured here by the concepts to which they are associated in the mapping.'
+        'Please confirm the imported codes. They are structured here by the concepts to which they are associated in the mapping.',
       );
       messages.push(
-        'Codes that are associated with these concepts in other coding systems will be disabled.'
+        'Codes that are associated with these concepts in other coding systems will be disabled.',
       );
       if (imported.warnings.length) {
         let warnings = imported.warnings.map((s) => `${s}. `).join('');
@@ -375,8 +393,8 @@ export class ConceptsComponent implements OnInit {
       let msg =
         typeof err == 'string'
           ? err
-          : (err as any).error ??
-            'Could not import codelist: unknown error (see console)';
+          : ((err as any).error ??
+            'Could not import codelist: unknown error (see console)');
       alert(msg);
     }
   }

@@ -36,7 +36,7 @@ import {
 } from './mapping-data';
 import { Mapping } from './mapping';
 import { Messages } from './messages';
-import { Caches } from './caches';
+import { CacheConceptsByCode, Caches } from './caches';
 import { AllTopics } from './review';
 
 export class OpError extends Error {}
@@ -90,7 +90,7 @@ export abstract class Operation {
       noUndo?: boolean;
       saveRequired?: boolean;
       saveReviewRequired?: boolean;
-    } = {}
+    } = {},
   ) {
     this.noUndo = options.noUndo ?? false;
     this.saveRequired = options.saveRequired ?? false;
@@ -139,11 +139,11 @@ export class SetIncludeDescendants extends Operation {
 export class AddConcept extends Operation {
   constructor(
     readonly concept: Concept,
-    readonly codes: { [key: VocabularyId]: { [key: CodeId]: Code } }
+    readonly codes: { [key: VocabularyId]: { [key: CodeId]: Code } },
   ) {
     super();
     expect(
-      arraySetEq(Object.keys(this.codes), Object.keys(this.concept.codes))
+      arraySetEq(Object.keys(this.codes), Object.keys(this.concept.codes)),
     );
     for (const [vocId, codes] of Object.entries(this.codes)) {
       expect(setEq(new Set(Object.keys(codes)), this.concept.codes[vocId]));
@@ -202,7 +202,7 @@ export class SetStartIndexing extends Operation {
   constructor(
     readonly indexing: Indexing,
     readonly concepts: Concepts,
-    readonly codes: Codes
+    readonly codes: Codes,
   ) {
     super({ saveRequired: true });
   }
@@ -245,7 +245,10 @@ export class NoUndoInversion extends Operation {
 }
 
 export class AddConcepts extends Operation {
-  constructor(readonly concepts: Concepts, readonly codes: Codes) {
+  constructor(
+    readonly concepts: Concepts,
+    readonly codes: Codes,
+  ) {
     super();
   }
 
@@ -291,7 +294,7 @@ export class SetCodeEnabled extends Operation {
   constructor(
     readonly vocId: VocabularyId,
     readonly codeId: CodeId,
-    readonly enabled: boolean
+    readonly enabled: boolean,
   ) {
     super();
   }
@@ -318,7 +321,7 @@ export class AddCustomCode extends Operation {
   constructor(
     readonly vocId: VocabularyId,
     readonly code: Code,
-    readonly conceptId: ConceptId
+    readonly conceptId: ConceptId,
   ) {
     super();
     expect(code.custom);
@@ -334,7 +337,7 @@ export class AddCustomCode extends Operation {
     expect(
       concept !== undefined,
       'invalid CUI for custom code',
-      this.conceptId
+      this.conceptId,
     );
     concept.codes[this.vocId] ??= new Set();
     concept.codes[this.vocId].add(this.code.id);
@@ -346,7 +349,10 @@ export class AddCustomCode extends Operation {
 }
 
 export class RemoveCustomCode extends Operation {
-  constructor(readonly vocId: VocabularyId, readonly codeId: CodeId) {
+  constructor(
+    readonly vocId: VocabularyId,
+    readonly codeId: CodeId,
+  ) {
     super();
   }
 
@@ -361,7 +367,7 @@ export class RemoveCustomCode extends Operation {
     let conceptId = conceptIds.values().next().value!;
     expect(
       conceptId != undefined,
-      'custom code must be associated to one concept only'
+      'custom code must be associated to one concept only',
     );
     let concept = mapping.concepts[conceptId];
     expect(concept !== undefined);
@@ -377,14 +383,14 @@ export class EditCustomCode extends Operation {
     readonly vocId: VocabularyId,
     readonly codeId: CodeId,
     readonly code: Code,
-    readonly conceptId: ConceptId
+    readonly conceptId: ConceptId,
   ) {
     super();
     expect(
       codeId == code.id,
       'edit code id must be edited code id',
       codeId,
-      code.id
+      code.id,
     );
   }
 
@@ -406,6 +412,41 @@ export class EditCustomCode extends Operation {
 
 export type CodeTags = { [key: VocabularyId]: { [key: CodeId]: Tag | null } };
 
+export function assignConceptsTags(
+  selectedCuis: string[],
+  {concepts, codes}: ConceptsCodes,
+  tag: Tag | null,
+): { codeTags: CodeTags; conflicts: CodeTags } {
+  let taggedCodes: {[key: VocabularyId]: Set<CodeId>} = {};
+  for (let cui of selectedCuis) {
+    for (let vocId of Object.keys(concepts[cui].codes)) {
+      for (let codeId of concepts[cui].codes[vocId]) {
+        (taggedCodes[vocId] ??= new Set()).add(codeId);
+      }
+    }
+  }
+  let conflicts: CodeTags = {};
+  for (let cui of Object.keys(concepts)) {
+    if (selectedCuis.includes(cui)) continue;
+    for (let vocId of Object.keys(concepts[cui].codes)) {
+      for (let codeId of concepts[cui].codes[vocId]) {
+        if (!taggedCodes[vocId]?.has(codeId)) continue;
+        let currentTag: Tag | null = codes[vocId][codeId].tag;
+        if (currentTag == null || currentTag == tag) continue;
+        (conflicts[vocId] ??= {})[codeId] = currentTag;
+      }
+    }
+  }
+  let codeTags: CodeTags = {};
+  for (let vocId of Object.keys(taggedCodes)) {
+    codeTags[vocId] = {};
+    for (let codeId of taggedCodes[vocId]) {
+      codeTags[vocId][codeId] = tag;
+    }
+  }
+  return { codeTags, conflicts };
+}
+
 export class CodesSetTag extends Operation {
   constructor(readonly codeTags: CodeTags) {
     super();
@@ -419,8 +460,8 @@ export class CodesSetTag extends Operation {
       new Set(
         Object.values(this.codeTags)
           .map((o) => Object.values(o))
-          .reduce((x, y) => x.concat(y))
-      )
+          .reduce((x, y) => x.concat(y)),
+      ),
     );
     let tag = tags.length == 1 ? tags[0] : undefined;
     let tagStr =
@@ -434,8 +475,7 @@ export class CodesSetTag extends Operation {
       for (let codeId of Object.keys(this.codeTags[vocId])) {
         let code = mapping.codes[vocId]?.[codeId];
         expect(code !== undefined);
-        oldCodes[vocId] ??= {};
-        oldCodes[vocId][codeId] = code.tag;
+        (oldCodes[vocId] ??= {})[codeId] = code.tag;
         code.tag = this.codeTags[vocId][codeId];
       }
     }
@@ -444,7 +484,10 @@ export class CodesSetTag extends Operation {
 }
 
 export class EditVocabulary extends Operation {
-  constructor(readonly oldId: VocabularyId, readonly newVoc: Vocabulary) {
+  constructor(
+    readonly oldId: VocabularyId,
+    readonly newVoc: Vocabulary,
+  ) {
     super({ saveReviewRequired: true });
   }
 
@@ -489,7 +532,7 @@ export class AddVocabularies extends Operation {
     readonly codes: { [key: VocabularyId]: Code[] },
     readonly conceptCodes: {
       [key: ConceptId]: { [key: VocabularyId]: CodeId[] };
-    }
+    },
   ) {
     super();
   }
@@ -503,7 +546,7 @@ export class AddVocabularies extends Operation {
       expect(
         mapping.vocabularies[voc.id] === undefined,
         'A vocabulary with that name already exists',
-        voc.id
+        voc.id,
       );
     }
     for (let voc of this.vocs) {
@@ -565,7 +608,7 @@ export class Remap extends Operation {
   constructor(
     private umlsVersion: string,
     private remapConceptsCodes: ConceptsCodes,
-    private vocabularies: Vocabularies
+    private vocabularies: Vocabularies,
   ) {
     super({ saveRequired: true, noUndo: true });
   }
@@ -578,7 +621,7 @@ export class Remap extends Operation {
       this.remapConceptsCodes,
       this.vocabularies,
       caches,
-      messages
+      messages,
     );
     return new NoUndoInversion(this.describe());
   }
