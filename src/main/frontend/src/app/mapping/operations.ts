@@ -419,6 +419,7 @@ export function assignConceptsTags(
 ): { codeTags: CodeTags; conflicts: CodeTags } {
   let taggedCodes: {[key: VocabularyId]: Set<CodeId>} = {};
   for (let cui of selectedCuis) {
+    if (concepts[cui] === undefined) continue; // invalid selected CUI
     for (let vocId of Object.keys(concepts[cui].codes)) {
       for (let codeId of concepts[cui].codes[vocId]) {
         (taggedCodes[vocId] ??= new Set()).add(codeId);

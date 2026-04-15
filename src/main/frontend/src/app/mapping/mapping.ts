@@ -20,6 +20,7 @@ import {
   CodeId,
   CodeIds,
   Codes,
+  Concept,
   ConceptCodeIds,
   ConceptId,
   Concepts,
@@ -51,7 +52,7 @@ export class Mapping {
     public start: Start,
     public vocabularies: Vocabularies,
     public concepts: Concepts,
-    public codes: Codes
+    public codes: Codes,
   ) {}
 
   static fromData(data: MappingData) {
@@ -60,7 +61,7 @@ export class Mapping {
       data.start,
       data.vocabularies,
       data.concepts,
-      data.codes
+      data.codes,
     );
   }
 
@@ -90,11 +91,13 @@ export class Mapping {
       let voc1 = this.vocabularies[vocId];
       if (voc1 === undefined) {
         throw new Error(
-          `the vocabularies must already exist, but ${vocId} does not`
+          `the vocabularies must already exist, but ${vocId} does not`,
         );
       }
       if (voc1.version != voc.version) {
-        throw new Error(`the versions of vocabulary ${vocId} do not match: mapping has ${voc1.version}, added codes have ${voc.version}`);
+        throw new Error(
+          `the versions of vocabulary ${vocId} do not match: mapping has ${voc1.version}, added codes have ${voc.version}`,
+        );
       }
     }
     // check that only custom codes are added to existing concepts
@@ -107,7 +110,7 @@ export class Mapping {
         for (let codeId of concept.codes[vocId]) {
           if (!codes0.has(codeId) && !data.codes[vocId][codeId].custom) {
             throw new Error(
-              `code ${vocId}/${codeId} is new in concept ${concept.id} but not marked as custom`
+              `code ${vocId}/${codeId} is new in concept ${concept.id} but not marked as custom`,
             );
           }
         }
@@ -138,7 +141,7 @@ export class Mapping {
               'unexpected difference in code during merge',
               vocId,
               code,
-              code0
+              code0,
             );
           }
         }
@@ -166,20 +169,30 @@ export class Mapping {
     remap: ConceptsCodes,
     vocabularies: Vocabularies,
     caches: Caches,
-    messages: Messages // output
+    messages: Messages, // output
   ) {
-    // collect details from this mapping that are not in the remap object
+    let codes0 = this.allCodes();
+
+    // split out parts of this original mapping that are not in the `remap` object
+    // - custom codes
+    // - tags
+    // - which codes are disabled
+    // - codes that were non-custom in the original mapping but are not in the remap object
+    //   and should live on as custom codes ("downgraded", likely obsolete codes)
     let customCodes = Mapping.getCustomCodes(this.codes, caches);
     let customVocabularies = Mapping.getCustomVocabularies(this.vocabularies);
     let disabled = Mapping.getCodesDisabled(this.codes);
-    let tags = Mapping.getTags(this.codes);
     let customConcept = this.concepts[CUSTOM_CUI];
     let downgraded = Mapping.getDowngraded(this, remap);
+    let tags = Mapping.getTags(this.codes);
 
-    // write the details to the remap object
+    // write the details to the remap object.
+    // notabably, when the concept of a custom concept is not found, the concept is copied
+    // from the original mapping. this might happen when the concept contained only custom
+    // codes (or codes that are now obsolete)
     Object.assign(vocabularies, customVocabularies);
     if (customConcept) remap.concepts[customConcept.id] = customConcept;
-    let upgraded = Mapping.setCustomCodes(remap, customCodes);
+    let upgraded = Mapping.setCustomCodes(remap, customCodes, this.concepts);
     Mapping.setCodesDisabled(remap.codes, disabled);
     Mapping.setDowngraded(remap, downgraded);
     Mapping.setTags(remap.codes, tags);
@@ -190,8 +203,27 @@ export class Mapping {
     this.concepts = remap.concepts;
     this.codes = remap.codes;
 
+    // check that no codes are lost
+    for (let code of this.allCodes()) codes0.delete(code);
+    if (codes0.size > 0) {
+      let msg =
+        'codes lost in remap, please report this to codemapper@vac4eu.org including a link to the mapping';
+      console.error(msg, codes0);
+      throw new Error(msg);
+    }
+
     messages.addNonEmpty(new DowngradedMessage(downgraded.codes));
     messages.addNonEmpty(new UpgradedMessage(upgraded));
+  }
+
+  private allCodes(): Set<string> {
+    return new Set(
+      Object.values(this.concepts).flatMap((concept) =>
+        Object.entries(concept.codes).flatMap(([vocId, codes]) =>
+          Array.from(codes).map((code) => `${vocId}/${code}`),
+        ),
+      ),
+    );
   }
 
   public static getTags(codes: Codes): Tags {
@@ -211,7 +243,10 @@ export class Mapping {
       if (codes1 === undefined) continue;
       for (let codeId of Object.keys(tags[vocId])) {
         let code = codes1[codeId];
-        if (code === undefined) continue;
+        if (code === undefined) {
+          console.warn('tagged code not found', vocId, codeId);
+          continue;
+        }
         code.tag = tags[vocId][codeId];
       }
     }
@@ -231,9 +266,12 @@ export class Mapping {
     return res;
   }
 
+  // Assign custom codes to the current concepts
+  // Also copy original concepts in, which is necessary for concepts that contain only custom codes
   static setCustomCodes(
     conceptsCodes: ConceptsCodes,
-    custom: CustomCodes
+    custom: CustomCodes,
+    originalConcepts: Concepts,
   ): Upgraded {
     let upgraded: Upgraded = {};
     // Insert custom codes or copy properties to new existing codes
@@ -253,8 +291,12 @@ export class Mapping {
     // link remaining custom codes to new concepts, and record upgrade codes that were moved
     let conceptsCache = CacheConceptsByCode.create(conceptsCodes.concepts);
     for (let conceptId of Object.keys(custom.conceptCodeIds)) {
-      if (conceptsCodes.concepts[conceptId] === undefined) {
-        throw new Error(`Custom code with unavailable concept ${conceptId}`);
+      let concept = conceptsCodes.concepts[conceptId];
+      if (concept === undefined) {
+        // the concept is not included yet because all codes are custom codes.
+        // re-use the concept from the original mapping.
+        concept = conceptsCodes.concepts[conceptId] =
+          originalConcepts[conceptId];
       }
       for (let vocId of Object.keys(custom.conceptCodeIds[conceptId])) {
         for (let codeId of custom.conceptCodeIds[conceptId][vocId]) {
@@ -264,9 +306,7 @@ export class Mapping {
               upgraded[vocId][codeId] = [conceptId, conceptIds];
             }
           } else {
-            (conceptsCodes.concepts[conceptId].codes[vocId] ??= new Set()).add(
-              codeId
-            );
+            (concept.codes[vocId] ??= new Set()).add(codeId);
           }
         }
       }
@@ -301,9 +341,9 @@ export class Mapping {
       for (let codeId of disabled[vocId]) {
         let code = codes[vocId]?.[codeId];
         if (code === undefined) {
-          console.warn("[remap] disabled code not found", vocId, codeId);
+          console.warn('[remap] disabled code not found', vocId, codeId);
           continue;
-        };
+        }
         code.enabled = false;
       }
     }
@@ -312,7 +352,7 @@ export class Mapping {
   /** Find regular codes in that are not available in the remapped codes (and have to become custom codes)  */
   public static getDowngraded(
     current: ConceptsCodes,
-    remap: ConceptsCodes
+    remap: ConceptsCodes,
   ): ConceptsCodes {
     let downgraded: ConceptsCodes = {
       concepts: {},
@@ -341,9 +381,12 @@ export class Mapping {
     return downgraded;
   }
 
-  public static setDowngraded(conceptsCodes: ConceptsCodes, downgraded: ConceptsCodes) {
+  public static setDowngraded(
+    conceptsCodes: ConceptsCodes,
+    downgraded: ConceptsCodes,
+  ) {
     for (let vocId of Object.keys(downgraded.codes)) {
-      let codes = conceptsCodes.codes[vocId] ??= {};
+      let codes = (conceptsCodes.codes[vocId] ??= {});
       for (let codeId of Object.keys(downgraded.codes[vocId])) {
         let code = downgraded.codes[vocId][codeId];
         if (codes[codeId] !== undefined) continue;
@@ -407,7 +450,7 @@ export class Mapping {
     vocId: VocabularyId,
     codeId: CodeId,
     conceptIds: ConceptId[],
-    caches: Caches
+    caches: Caches,
   ) {
     for (const id of caches.getConceptsByCode(vocId, codeId)) {
       this.concepts[id].codes[vocId].delete(codeId);

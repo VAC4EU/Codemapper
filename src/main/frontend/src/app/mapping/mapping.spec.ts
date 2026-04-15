@@ -227,6 +227,31 @@ describe('remap mapping', () => {
     mapping.remap('2025AB', {concepts, codes}, mapping.vocabularies, caches, new Messages());
     expect(mapping.toData()).toEqual(mapping.toData());
   });
+  it('keeps concepts that only have custom codes', () => {
+    let mapping = new Mapping(
+      { ...EMPTY_DATA_META, umlsVersion: '2025AA' },
+      null,
+      { V1: mkVoc('V1', '1'), W: mkVoc('W', '1', true) },
+      {
+        C1: mkConcept('C1', { V1: new Set(['x1']) }),
+        C2: mkConcept('C2', { W: new Set(['w1']) }), // only custom codes
+      },
+      {
+        V1: { x1: mkCode('x1') },
+        W: { w1: mkCode('w1', { custom: true }) },
+      },
+    );
+    // remap contains only C1; C2 is absent because it has no regular codes
+    let remapConcepts: Concepts = {
+      C1: mkConcept('C1', { V1: new Set(['x1']) }),
+    };
+    let remapCodes: Codes = { V1: { x1: mkCode('x1') } };
+    let caches = mapping.caches();
+    mapping.remap('2025AB', { concepts: remapConcepts, codes: remapCodes }, mapping.vocabularies, caches, new Messages());
+    expect(mapping.concepts['C2']).toBeDefined();
+    expect(mapping.concepts['C2'].codes['W']).toEqual(new Set(['w1']));
+    expect(mapping.codes['W']['w1'].custom).toBeTrue();
+  });
   it('can keep removed codes as custom', () => {
     let mapping = mkMapping();
     console.log(mapping.toData());
