@@ -107,7 +107,7 @@ export class ApiService {
   searchUts(
     query: string,
     vocIds: VocabularyId[],
-    info: TypesInfo
+    info: TypesInfo,
   ): Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append('query', query);
@@ -119,7 +119,7 @@ export class ApiService {
   broaderConcepts(
     conceptId: ConceptId,
     vocIds: VocabularyId[],
-    info: TypesInfo
+    info: TypesInfo,
   ): Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append('cuis', conceptId);
@@ -127,18 +127,16 @@ export class ApiService {
       body.append('codingSystems', vocId);
     }
     return this.http
-      .post<compat.UmlsConcept[]>(
-        this.broaderConceptsUrl,
-        body,
-        urlEncodedOptions
-      )
+      .post<
+        compat.UmlsConcept[]
+      >(this.broaderConceptsUrl, body, urlEncodedOptions)
       .pipe(map((res) => compat.importConcepts(res, vocIds, info)));
   }
 
   narrowerConcepts(
     conceptId: ConceptId,
     vocIds: VocabularyId[],
-    info: TypesInfo
+    info: TypesInfo,
   ): Observable<ConceptsCodes> {
     let body = new URLSearchParams();
     body.append('cuis', conceptId);
@@ -146,11 +144,9 @@ export class ApiService {
       body.append('codingSystems', vocId);
     }
     return this.http
-      .post<compat.UmlsConcept[]>(
-        this.narrowerConceptsUrl,
-        body,
-        urlEncodedOptions
-      )
+      .post<
+        compat.UmlsConcept[]
+      >(this.narrowerConceptsUrl, body, urlEncodedOptions)
       .pipe(map((res) => compat.importConcepts(res, vocIds, info)));
   }
 
@@ -163,7 +159,7 @@ export class ApiService {
   async concepts(
     cuis: ConceptId[],
     vocIds: VocabularyId[],
-    info: TypesInfo
+    info: TypesInfo,
   ): Promise<ConceptsCodes> {
     let body = new URLSearchParams();
     for (let cui of cuis) {
@@ -179,8 +175,8 @@ export class ApiService {
       this.http.post<compat.UmlsConcept[]>(
         this.conceptsUrl,
         body,
-        urlEncodedOptions
-      )
+        urlEncodedOptions,
+      ),
     );
     return compat.importConcepts(concepts, vocIds, info);
   }
@@ -188,7 +184,7 @@ export class ApiService {
   async remapData(
     mapping: MappingData,
     vocabularies: Vocabularies,
-    info: TypesInfo
+    info: TypesInfo,
   ): Promise<{
     conceptsCodes: ConceptsCodes;
     vocabularies: Vocabularies;
@@ -212,11 +208,11 @@ export class ApiService {
       messages.push(
         "The following vocabularies aren't supported anymore and were removed: " +
           lostVocs.join(', ') +
-          '.'
+          '.',
       );
       if (lostVocs.includes('ICD10/CM')) {
         messages.push(
-          'Instead of ICD10/CM please select vocabularies ICD10 and ICD10-CM.'
+          'Instead of ICD10/CM please select vocabularies ICD10 and ICD10-CM.',
         );
       }
     }
@@ -226,11 +222,11 @@ export class ApiService {
 
   concept(
     cui: ConceptId,
-    vocIds: VocabularyId[]
+    vocIds: VocabularyId[],
   ): Observable<
     [
       Concept,
-      { [key: string /*VocabularyId*/]: { [key: string /*CodeId*/]: Code } }
+      { [key: string /*VocabularyId*/]: { [key: string /*CodeId*/]: Code } },
     ]
   > {
     let body = new URLSearchParams();
@@ -250,7 +246,7 @@ export class ApiService {
 
   saveAllTopics(
     mappingShortkey: string,
-    allTopics: AllTopics0
+    allTopics: AllTopics0,
   ): Observable<any> {
     let body = new URLSearchParams();
     body.append('allTopics', JSON.stringify(allTopics));
@@ -263,7 +259,7 @@ export class ApiService {
     cui: ConceptId | null,
     voc: VocabularyId | null,
     code: CodeId | null,
-    heading: string
+    heading: string,
   ): Observable<number> {
     let url = new URL(`${this.reviewUrl}/topic/${mappingShortkey}`);
     if (cui) {
@@ -283,7 +279,7 @@ export class ApiService {
   newMessage(
     mappingShortkey: string,
     topicId: number,
-    content: string
+    content: string,
   ): Observable<Object> {
     let url = `${this.reviewUrl}/message/${mappingShortkey}/${topicId}`;
     let body = new URLSearchParams();
@@ -295,7 +291,7 @@ export class ApiService {
     mappingShortkey: string,
     topicId: number,
     messageId: number,
-    content: string
+    content: string,
   ) {
     let url = `${this.reviewUrl}/message/${mappingShortkey}/${topicId}`;
     let body = new URLSearchParams();
@@ -323,7 +319,7 @@ export class ApiService {
     commentColumns: string[],
     format: string,
     ignoreTermTypes: string[],
-    filter: CsvFilter | null
+    filter: CsvFilter | null,
   ): Observable<ImportResult> {
     let url = `${this.baseUrl}/import-csv`;
     let body = new URLSearchParams();
@@ -348,7 +344,7 @@ export class ApiService {
     commentColumns: string[],
     format: string,
     ignoreTermTypes: string[],
-    filter: CsvFilter | null
+    filter: CsvFilter | null,
   ): Observable<ImportedMapping> {
     let api = this;
     return new Observable((subscriber) => {
@@ -362,22 +358,32 @@ export class ApiService {
               commentColumns,
               format,
               ignoreTermTypes,
-              filter
+              filter,
             )
-            .subscribe((res) => {
-              if (res.success && res.imported) {
-                let imported = res.imported!;
-                imported.csvContent = csvContent as string;
-                for (let concept of Object.values(imported.mapping.concepts)) {
-                  for (let vocId of Object.keys(concept.codes)) {
-                    concept.codes[vocId] = new Set(concept.codes[vocId]);
+            .subscribe({
+              next: (res) => {
+                if (res.success && res.imported) {
+                  let imported = res.imported!;
+                  imported.csvContent = csvContent as string;
+                  for (let concept of Object.values(
+                    imported.mapping.concepts,
+                  )) {
+                    for (let vocId of Object.keys(concept.codes)) {
+                      concept.codes[vocId] = new Set(concept.codes[vocId]);
+                    }
                   }
+                  subscriber.next(imported);
+                } else {
+                  console.error('IMPORT ERROR RESULT', res);
+                  let msg = (res as any).error || JSON.stringify(res);
+                  subscriber.error('Could not import CSV: ' + msg);
                 }
-                return subscriber.next(imported);
-              } else {
-                console.log('IMPORT RESULT', res);
-                throw subscriber.error('Could not import CSV: ' + res.error!);
-              }
+              },
+              error: (err) => {
+                  console.error('IMPORT ERROR', err);
+                  let msg = (err as any).error || (err as any).message || JSON.stringify(err);
+                  subscriber.error('Could not import CSV: ' + msg);
+              },
             });
         }
       };
@@ -389,7 +395,7 @@ export class ApiService {
     projectName: string,
     mappingConfigs: string[],
     content: string,
-    filename: string
+    filename: string,
   ): Observable<string> {
     let params = new URLSearchParams();
     params.set('content', content);
@@ -425,8 +431,8 @@ export class ApiService {
       this.http.post<PeregrineResult>(
         this.peregrineIndexUrl,
         body,
-        urlEncodedOptions
-      )
+        urlEncodedOptions,
+      ),
     );
     if (res.status != 0) {
       console.log('error searching concepts with peregrine', res);
