@@ -1140,7 +1140,7 @@ public class UmlsApi implements AutoCloseable {
                 for (String codeId1 : concept.codes.get(vocId1)) {
                   mapping
                       .codes
-                      .get(vocId1)
+                      .computeIfAbsent(vocId1, key -> new HashMap<>())
                       .computeIfAbsent(
                           codeId1, key -> conceptsMapping.codes.get(vocId1).get(codeId1));
                 }

@@ -12,12 +12,16 @@ public class InternalErrorExceptionMapper implements ExceptionMapper<InternalSer
   @Override
   public Response toResponse(InternalServerErrorException e) {
     String id = randomID(11);
-    String message = String.format("%s (%s)", e.getMessage(), id);
+    String message = String.format("%s (ID: %s)", e.getMessage(), id);
     System.err.println("ERROR " + message);
     e.printStackTrace();
     return Response.status(e.getResponse().getStatus())
         .entity(
-            "Sorry, something went wrong. To help us, please report what you did and the following error message and ID: "
+            "Sorry, something went wrong."
+                + "\n\n"
+                + "To help us, please report what you did and the following "
+                + "error message and ID to codemapper@vac4eu.org or to https://github.com/VAC4EU/Codemapper/discussions:"
+                + "\n\n"
                 + message
                 + ".")
         .type(MediaType.TEXT_PLAIN)
