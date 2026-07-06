@@ -48,6 +48,14 @@
         <logging.level>info</logging.level>
       </properties>
     </profile>
+    <profile>
+      <id>codemapper</id>
+      <properties>
+        <code-mapper.properties>code-mapper-codemapper.properties</code-mapper.properties>
+        <final.name>codemapper</final.name>
+        <logging.level>info</logging.level>
+      </properties>
+    </profile>
   </profiles>
 
   <build>
@@ -90,8 +98,13 @@
               <goal>copy</goal>
             </goals>
             <configuration>
-              <sourceFile>${code-mapper.properties}</sourceFile>
-              <destinationFile>src/main/resources/code-mapper.properties</destinationFile>
+                <overWrite>true</overWrite>
+                <fileSets>
+                    <fileSet>
+                      <sourceFile>${code-mapper.properties}</sourceFile>
+                      <destinationFile>src/main/resources/code-mapper.properties</destinationFile>
+                    </fileSet>
+                </fileSets>
             </configuration>
           </execution>
         </executions>

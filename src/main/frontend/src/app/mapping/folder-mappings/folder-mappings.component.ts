@@ -17,6 +17,7 @@ import {
   userCanEdit,
   userCanRename,
 } from '../persistency.service';
+import { EditDescriptionComponent } from '../edit-description/edit-description.component';
 import {
   DownloadDialogComponent,
   IncludeDescendants,
@@ -96,7 +97,7 @@ export class FolderMappingsComponent {
     private title: Title,
     private dialog: MatDialog,
     private snackbar: MatSnackBar
-  ) {}
+  ) { }
 
   async ngAfterViewInit() {
     this.serverInfo = await firstValueFrom(this.api.serverInfo());
@@ -387,26 +388,29 @@ export class FolderMappingsComponent {
     if (res === undefined) return;
     this.selection.clear();
     let importedShortkeys = new Set<string>();
-    for (let mappingInfo of res.mappingInfos) {
-      let description = `mapping ${
-        mappingInfo.meta.definition ?? mappingInfo.mappingName
-      } from folder ${res.folderName}`;
+    for (let mappingInfo0 of res.mappingInfos) {
+      let mappingInfo = await firstValueFrom(
+        this.persistency.mappingInfo(mappingInfo0.mappingShortkey!),
+      );
+      if (!mappingInfo.mappingShortkey) throw Error("unreachable");
+      let definitionOrName = mappingInfo.meta.definition ?? mappingInfo.mappingName;
+      let description = `mapping ${definitionOrName} from folder ${res.folderName}`;
       try {
         let { mapping } = await firstValueFrom(
           this.persistency
             .loadLatestRevisionMapping(
-              mappingInfo.mappingShortkey!,
+              mappingInfo.mappingShortkey,
               this.serverInfo
             )
             .pipe(
               catchError((error) =>
                 error.status == 404
                   ? throwError(
-                      () =>
-                        new Error(
-                          'The mapping is in legacy format, please save it before importing it'
-                        )
-                    )
+                    () =>
+                      new Error(
+                        'The mapping is in legacy format, please save it before importing it'
+                      )
+                  )
                   : throwError(() => error)
               )
             )
@@ -420,6 +424,14 @@ export class FolderMappingsComponent {
         await firstValueFrom(
           this.persistency.saveRevision(shortkey, mapping, summary)
         );
+        if (mappingInfo.description) {
+          await EditDescriptionComponent.save(this.persistency, shortkey, mappingInfo.description);
+        }
+        if (res.copyComments) {
+          const rawTopics = await firstValueFrom(this.api.allTopics(mappingInfo.mappingShortkey));
+          await firstValueFrom(this.api.saveAllTopics(shortkey, rawTopics));
+        }
+
         importedShortkeys.add(shortkey);
         console.log(`Copied ${description}`, mappingInfo);
       } catch (error) {
@@ -435,9 +447,8 @@ export class FolderMappingsComponent {
         importedShortkeys.has(info.mappingShortkey)
     );
     this.selection.setSelection(...mappingInfos);
-    let message = `Imported ${importedShortkeys.size} mapping${
-      importedShortkeys.size == 1 ? '' : 's'
-    }`;
+    let message = `Imported ${importedShortkeys.size} mapping${importedShortkeys.size == 1 ? '' : 's'
+      }`;
     this.snackbar.open(message, "Ok");
   }
 

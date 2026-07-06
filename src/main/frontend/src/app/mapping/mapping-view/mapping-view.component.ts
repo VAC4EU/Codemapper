@@ -100,6 +100,10 @@ export class MappingViewComponent implements HasPendingChanges {
   vocabularies: Vocabularies = {};
   serverInfo: ServerInfo = EMPTY_SERVER_INFO;
   selectedIndex: number = 1;
+  codesVocabId: string | null = null;
+  codesCodeId: string | null = null;
+  conceptsConceptId: string | null = null;
+  private currentFragment: string | null = null;
   saveReviewRequired: boolean = false;
   saveRequired: boolean = false;
   error: string | null = null;
@@ -132,7 +136,40 @@ export class MappingViewComponent implements HasPendingChanges {
     return userCanDownload(this.projectRole);
   }
 
+  private tabIndexToName(index: number): string {
+    return ['mapping', 'concepts', 'codes', 'vocabularies'][index] ?? 'concepts';
+  }
+
+  private tabNameToIndex(name: string): number {
+    return ({ mapping: 0, concepts: 1, codes: 2, vocabularies: 3 } as Record<string, number>)[name] ?? 1;
+  }
+
+  private parseFragment(fragment: string | null): { tab: string; vocab: string | null; codeId: string | null; conceptId: string | null } {
+    const parts = (fragment ?? '').split('/');
+    const tab = parts[0] ?? '';
+    if (tab === 'concepts') {
+      return { tab, vocab: null, codeId: null, conceptId: parts[1] ?? null };
+    }
+    return { tab, vocab: parts[1] ?? null, codeId: parts[2] ?? null, conceptId: null };
+  }
+
+  onTabChange(index: number) {
+    const name = this.tabIndexToName(index);
+    if (this.parseFragment(this.currentFragment).tab !== name) {
+      this.router.navigate([], { fragment: name });
+    }
+  }
+
   async ngOnInit() {
+    this.route.fragment.subscribe(fragment => {
+      this.currentFragment = fragment;
+      const { tab, vocab, codeId, conceptId } = this.parseFragment(fragment);
+      this.selectedIndex = this.tabNameToIndex(tab);
+      this.codesVocabId = vocab;
+      this.codesCodeId = codeId;
+      this.conceptsConceptId = conceptId;
+    });
+
     let vocabularies = await firstValueFrom(this.apiService.vocabularies());
     this.vocabularies = Object.fromEntries(vocabularies.map((v) => [v.id, v]));
     this.serverInfo = await firstValueFrom(this.apiService.serverInfo());

@@ -1,4 +1,3 @@
-
 [//]: # (pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html)
    
 <menu-banner>
@@ -8,6 +7,19 @@
 </menu-banner>
 
 <section class="center-content">
+
+June 24, 2026
+---
+
+- migration of CodeMapper to a new server
+
+June 16, 2026
+---
+
+- links to navigate from concepts to codes and from codes to concepts (<mat-icon style="font-size:1em;width:1em;height:1em;">open_in_new</mat-icon>)
+- various improvements of the user interface
+- include EDF and review in copy
+
 
 April 1, 2026
 ---

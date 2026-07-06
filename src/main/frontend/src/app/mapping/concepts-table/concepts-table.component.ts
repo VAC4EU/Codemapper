@@ -21,6 +21,7 @@ import {
   Component,
   Output,
   EventEmitter,
+  ElementRef,
   effect,
   input,
   viewChild,
@@ -75,6 +76,7 @@ export class ConceptsTableComponent {
   @Input() showCodeTagIndication: boolean = false;
   @Input() userCanEdit: boolean = false;
   @Input() showSelectors: boolean = true;
+  @Input() codesShowNavigate: boolean = false;
 
   @Output() reviewRun: EventEmitter<ReviewOperation> = new EventEmitter();
 
@@ -93,13 +95,14 @@ export class ConceptsTableComponent {
   dataSource: MatTableDataSource<Concept> = new MatTableDataSource<Concept>();
   selection = new SelectionModel<Concept>(true, []);
   columns: string[] = [];
+  highlightedId: string | null = null;
 
   // indirection to reviews to get updates in the review dialog
   allTopicsObj: { allTopics: AllTopics } = { allTopics: new AllTopics() };
 
   lastVocabularies = [];
 
-  constructor(private dialog: MatDialog, private auth: AuthService) {
+  constructor(private dialog: MatDialog, private auth: AuthService, private el: ElementRef) {
     this.selection.changed.subscribe(() => {
       this.updateSelectedFiltered();
     });
@@ -194,6 +197,32 @@ export class ConceptsTableComponent {
 
   selectAll() {
     this.selection.select(...this.dataSource.filteredData);
+  }
+
+  highlightById(id: string) {
+    this.scrollToId(id);
+    this.highlightedId = id;
+    setTimeout(() => { this.highlightedId = null; }, 1000);
+  }
+
+  scrollToId(id: string) {
+    const index = this.dataSource.filteredData.findIndex(c => c.id === id);
+    if (index < 0) return;
+    const paginator = this.dataSource.paginator;
+    if (paginator) {
+      const pageSize = paginator.pageSize;
+      const targetPage = Math.floor(index / pageSize);
+      if (paginator.pageIndex !== targetPage) {
+        paginator.pageIndex = targetPage;
+        paginator.page.emit({ pageIndex: targetPage, pageSize, length: paginator.length });
+      }
+    }
+    setTimeout(() => {
+      const pageSize = this.dataSource.paginator?.pageSize ?? this.dataSource.filteredData.length;
+      const pageOffset = (this.dataSource.paginator?.pageIndex ?? 0) * pageSize;
+      const rows = this.el.nativeElement.querySelectorAll('tr[mat-row]');
+      rows[index - pageOffset]?.scrollIntoView({ block: 'center' });
+    });
   }
 
   setSelected(cuis: string[]) {

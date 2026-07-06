@@ -16,8 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input } from '@angular/core';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Code } from '../mapping-data';
 
 @Component({
@@ -27,17 +26,10 @@ import { Code } from '../mapping-data';
     standalone: false
 })
 export class CodeComponent {
-  @Input({required: true}) code! : Code;
-  @Input() showTagIndication : boolean = false;
-  @Input() showTerm : boolean = true;
-  tooltipContent() : string {
-    let l = [this.code.term]
-    if (this.code.tag != null) {
-      l.push(`tag: ${this.code.tag}`);
-    }
-    if (this.code.custom) {
-      l.push("custom code");
-    }
-    return l.join(", ");
-  }
+  @Input({required: true}) code!: Code;
+  @Input() showTagIndication: boolean = false;
+  @Input() showTerm: boolean = true;
+  @Input() showNavigate: boolean = false;
+  @Input() vocId: string | null = null;
+  hovered = false;
 }

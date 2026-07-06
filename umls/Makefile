@@ -1,4 +1,3 @@
-
 UMLS_FULL=$(UMLS_VERSION)-full
 UMLS_FULL_ZIP=umls-$(UMLS_FULL).zip
 

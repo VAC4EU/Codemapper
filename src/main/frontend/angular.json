@@ -74,6 +74,19 @@
                                 }
                             ]
                         },
+                        "codemapper": {
+                          "outputHashing": "all",
+                          "optimization": true,
+                            "extractLicenses": false,
+                            "sourceMap": false,
+                            "namedChunks": true,
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/environments/environment.ts",
+                                    "with": "src/environments/environment.codemapper.ts"
+                                }
+                            ]
+                        },
                         "testing": {
                           "optimization": true,
                             "extractLicenses": false,

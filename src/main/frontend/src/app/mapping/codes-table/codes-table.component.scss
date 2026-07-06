@@ -7,3 +7,12 @@
   table {
     width: 100%;
   }
+
+::ng-deep tr[mat-row] {
+  transition: background-color 2s ease-out;
+}
+
+::ng-deep tr.highlighted {
+  background-color: #e3f2fd !important;
+  transition: none;
+}

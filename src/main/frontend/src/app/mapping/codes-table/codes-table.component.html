@@ -25,14 +25,9 @@
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Concepts</th>
       <td mat-cell *matCellDef="let code">
         @for (conceptId of codeConcepts(code.id); track conceptId) {
-          <div>
-            @if (state.mapping.concepts[conceptId]; as concept) {
-              <div>
-                <span class="conceptName">{{concept.name}}</span>
-                ({{concept.id}})
-              </div>
-            }
-          </div>
+          @if (state.mapping.concepts[conceptId]; as concept) {
+            <mapping-concept [concept]="concept" [tag]="null" [showName]="true" [showNavigate]="conceptsShowNavigate"></mapping-concept>
+          }
         }
       </td>
     </ng-container>
@@ -74,6 +69,6 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
-    <tr mat-row *matRowDef="let code; columns: columns;"></tr>
+    <tr mat-row *matRowDef="let code; columns: columns;" [attr.data-code-id]="code.id" [class.highlighted]="code.id === highlightedId"></tr>
   </table>
 </div>

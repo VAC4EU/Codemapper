@@ -30,7 +30,7 @@
         @for (id of concept.codes[voc] ?? [] | sortCodes; track id) {
         <div class="conceptCode">
           @if (codes1[voc][id]; as code) {
-          <mapping-code [code]="code" [showTerm]=false [showTagIndication]="showCodeTagIndication"></mapping-code>
+          <mapping-code [code]="code" [showTerm]=false [showTagIndication]="showCodeTagIndication" [showNavigate]="codesShowNavigate" [vocId]="voc"></mapping-code>
           }
         </div>
         }
@@ -58,6 +58,6 @@
     }
 
     <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
-    <tr mat-row *matRowDef="let concept; columns: columns;"></tr>
+    <tr mat-row *matRowDef="let concept; columns: columns;" [class.highlighted]="concept.id === highlightedId"></tr>
   </table>
 </div>

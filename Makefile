@@ -12,6 +12,23 @@ deploy-production:
 	  sudo -u tomcat8 \
 	  cp /tmp/codemapper.war /var/lib/tomcat8/webapps
 
+.PHONY: deploy-codemapper
+deploy-codemapper:
+	@printf "Deploy what? > "; read resp; [ "$$resp" = "codemapper" ]
+	mvn -P codemapper clean package
+	scp target/codemapper.war codemapper:/tmp/
+	ssh -t codemapper \
+	  sudo cp /tmp/codemapper.war /opt/tomcat-8/webapps
+
+.PHONY: deploy-codemapper-all
+deploy-codemapper-all:
+	@printf "Deploy what? > "; read resp; [ "$$resp" = "codemapper" ]
+	mvn -P codemapper clean package
+	make -C $(FRONTEND) dist-codemapper
+	rsync -zrv --delete target/codemapper.war $(FRONTEND)/dist-codemapper codemapper:/tmp/
+	ssh -t codemapper sudo sh -c \
+	  "'cp /opt/tomcat-8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat cp /tmp/codemapper.war /opt/tomcat-8/webapps/ && sudo -u caddy rsync --delete -avz /tmp/dist-codemapper/browser/ /var/www/codemapper'"
+
 
 .PHONY: deploy-production-all
 deploy-production-all:
