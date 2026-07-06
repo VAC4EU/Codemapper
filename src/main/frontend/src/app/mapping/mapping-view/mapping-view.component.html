@@ -52,7 +52,7 @@
   }
 
   @if (state) {
-    <mat-tab-group [selectedIndex]="selectedIndex">
+    <mat-tab-group [selectedIndex]="selectedIndex" (selectedIndexChange)="onTabChange($event)">
       <mat-tab label="Mapping">
         @if (state.mapping.start != null && info.meta != null) {
           <div>
@@ -67,12 +67,12 @@
         @if (!state.mapping.isEmpty()) {
           <concepts [state]="state" [serverInfo]="serverInfo" [info]="info"
             [allTopics]="allTopics" [vocabularies]="vocabularies" [userCanEdit]="userCanEdit" (run)="run($event)"
-          (reviewRun)="reviewRun($event)"></concepts>
+            (reviewRun)="reviewRun($event)" [highlightId]="conceptsConceptId"></concepts>
         }
       </mat-tab>
       <mat-tab label="Codes" [disabled]="state.mapping.start == null">
         @if (!state.mapping.isEmpty() && state.mapping.numVocabularies() > 0) {
-          <codes [state]="state"
+          <codes [state]="state" [activeVocabularyId]="codesVocabId" [highlightId]="codesCodeId"
           [allTopics]="allTopics" [userCanEdit]="userCanEdit" (run)="run($event)" (reviewRun)="reviewRun($event)"></codes>
         }
       </mat-tab>

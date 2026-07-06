@@ -23,6 +23,8 @@ import {
   Output,
   EventEmitter,
   OnInit,
+  OnChanges,
+  SimpleChanges,
   viewChild,
   signal,
   effect,
@@ -69,7 +71,7 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
   styleUrls: ['./concepts.component.scss'],
   standalone: false,
 })
-export class ConceptsComponent implements OnInit {
+export class ConceptsComponent implements OnInit, OnChanges {
   state = input.required<MappingState>();
   @Input({ required: true }) info!: MappingInfo;
   @Input({ required: true }) vocabularies!: Vocabularies;
@@ -77,6 +79,7 @@ export class ConceptsComponent implements OnInit {
   @Input() allTopics: AllTopics = new AllTopics();
   @Input() userCanEdit: boolean = false;
 
+  @Input() highlightId: ConceptId | null = null;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun = new EventEmitter<ReviewOperation>();
 
@@ -95,6 +98,14 @@ export class ConceptsComponent implements OnInit {
     () => this.table().selectedFiltered().length > 0,
   );
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['highlightId'] && this.highlightId) {
+      setTimeout(() => {
+        this.table().highlightById(this.highlightId!);
+      });
+    }
+  }
+
   ngAfterViewInit() {
     this.setPageInfo({
       length: Object.keys(this.state().mapping.concepts).length,
@@ -112,6 +123,7 @@ export class ConceptsComponent implements OnInit {
       this.setPageInfo(this.paginator());
     });
   }
+
 
   get numConcepts(): number {
     return Object.keys(this.state().mapping.concepts).length;

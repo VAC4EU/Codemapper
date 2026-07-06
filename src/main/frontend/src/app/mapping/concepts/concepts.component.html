@@ -10,7 +10,7 @@
     <mat-card-content matTooltip="Enter a string to filter the concepts displayed in the table by concept name or tag.">
       <p>
         <mat-form-field class="dense concepts-filter">
-          <input matInput [(ngModel)]="conceptsFilter" placeholder="Filter">
+          <input matInput [(ngModel)]="conceptsFilter" placeholder="Filter by name or tag...">
           <button mat-icon-button matSuffix (click)="conceptsFilter.set('')">
             <mat-icon>backspace</mat-icon>
           </button>
@@ -63,13 +63,10 @@
   </mat-card>
 
   <mat-card appearance="outlined">
-    <mat-card-header
-      matTooltip="Search and add concepts by CUI, code or term. Concepts that match a CUI or code are shown in dropdown, optionally with vocabulary as prefix (e.g., ICD9:780). Use the search button to retrieve all concepts that mention the query text.">
-      Search concepts
-    </mat-card-header>
+    <mat-card-header>Search concepts</mat-card-header>
     <mat-card-actions class="dense">
-      <mat-form-field>
-        <input #query matInput type="text" placeholder="Code or concept query" [readonly]="!userCanEdit"
+      <mat-form-field matTooltip='Enter a CUI or code (optionally prefixed with the vocabulary, e.g. ICD9CM:780) to see matching concepts in a dropdown — select one to add it to the mapping. Use the Search button to find all concepts that mention the query text.'>
+        <input #query matInput type="text" placeholder="CUI, code or term..." [readonly]="!userCanEdit"
           [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
         <mat-autocomplete #auto="matAutocomplete">
           @for (option of codeConcepts; track option) {
@@ -79,8 +76,10 @@
           }
         </mat-autocomplete>
       </mat-form-field>
-      <button (click)="searchAddConcepts(query.value, state().mapping.meta)" [disabled]="!userCanEdit"
-        mat-stroked-button matTooltip="Search concepts by query">Search</button>
+      <span matTooltip="Find all concepts whose name mentions the query text and add selected ones to the mapping.">
+        <button (click)="searchAddConcepts(query.value, state().mapping.meta)" [disabled]="!userCanEdit || !query.value"
+        mat-stroked-button>Search</button>
+      </span>
     </mat-card-actions>
   </mat-card>
 
@@ -100,10 +99,11 @@
     </mat-card-actions>
   </mat-card>
 </div>
+
 <concepts-table #conceptsTable [showCodeTagIndication]="true" [conceptTags]="state().caches.conceptTags"
   [concepts]="state().mapping.concepts" [filter]="conceptsFilter()" [codes]="state().mapping.codes"
   [vocabularies]="vocIds()" [allTopics]="allTopics" [userCanEdit]="userCanEdit" (reviewRun)="reviewRun.emit($event)"
-  [paginator]="paginator">
+  [paginator]="paginator" [codesShowNavigate]="true">
 </concepts-table>
 
 <ng-template #indexer>
@@ -125,8 +125,8 @@
     <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
   </div>
   <mat-dialog-content>
-    <p>The code list must be a CSV file with the following columns: <code>coding_system</code>,
-      <code>code</code>, <code>concept</code>, <code>concept_name</code>, and  <code>tags</code>.
+    <p>The code list must be a CSV file at least with the following columns:
+      <code>coding_system</code>, <code>code</code>, <code>concept</code>, <code>concept_name</code>, and  <code>tags</code>.
     </p>
     <p>
       <input class="mapping-file" #csvFileInput type="file" style="height:0;width:0;overflow:hidden;visibility:hidden;"

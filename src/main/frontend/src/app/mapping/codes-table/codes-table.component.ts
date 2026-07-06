@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Input, Output, Component, SimpleChanges, EventEmitter, ViewChild } from '@angular/core';
+import { Input, Output, Component, SimpleChanges, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
@@ -43,6 +43,7 @@ export class CodesTableComponent {
   @Input() allTopics : AllTopics | null = null;
   @Input() reviewData : ReviewData | null = null;
   @Input() userCanEdit : boolean = false;
+  @Input() conceptsShowNavigate : boolean = false;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Code[]> = new EventEmitter();
   @ViewChild(MatSort) sort! : MatSort;
@@ -50,10 +51,12 @@ export class CodesTableComponent {
   dataSource = new MatTableDataSource<Code>();
   columns : string[] = [];
   selection = new SelectionModel<Code>(true, []);
+  highlightedId: string | null = null;
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
 
   constructor(
     public dialog : MatDialog,
+    private el: ElementRef,
   ) {
     this.selection.changed.subscribe(s => this.selected.emit(this.getSelectedFilteredCodes()));
   }
@@ -78,7 +81,7 @@ export class CodesTableComponent {
       this.selected.emit(this.getSelectedFilteredCodes());
     }
     if (changes['vocabularyId']) {
-      setTimeout(() => this.selection.clear());
+      this.selection.clear();
     }
     if (changes['codes']) {
       const newCodes = changes['codes'].currentValue as Code[];
@@ -119,6 +122,23 @@ export class CodesTableComponent {
     } else {
       this.dataSource.filteredData.forEach(row => this.selection.select(row));
     }
+  }
+
+  selectByIds(ids: string[]) {
+    this.selection.clear();
+    const toSelect = this.dataSource.data.filter(c => ids.includes(c.id));
+    if (toSelect.length > 0) {
+      this.selection.select(...toSelect);
+    }
+  }
+
+  highlightById(id: string) {
+    this.highlightedId = id;
+    setTimeout(() => {
+      const row = this.el.nativeElement.querySelector(`tr[data-code-id="${id}"]`);
+      row?.scrollIntoView({ block: 'center' });
+    });
+    setTimeout(() => { this.highlightedId = null; }, 1000);
   }
 
   unselect(code : Code) {

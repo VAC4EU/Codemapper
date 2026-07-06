@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges, input, effect, signal } from '@angular/core';
+import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges, AfterViewInit, input, effect, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../mapping-data';
 import * as ops from '../operations';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
@@ -36,11 +37,13 @@ import { MappingState } from '../mapping-state';
     styleUrls: ['./codes.component.scss'],
     standalone: false
 })
-export class CodesComponent {
+export class CodesComponent implements AfterViewInit {
   state = input.required<MappingState>();
   @Input() allTopics : AllTopics = new AllTopics();
   @Input() reviewData : ReviewData = new ReviewData();
   @Input() userCanEdit : boolean = false;
+  @Input() activeVocabularyId : VocabularyId | null = null;
+  @Input() highlightId : string | null = null;
   @Output() run = new EventEmitter<ops.Operation>();
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
 
@@ -56,6 +59,7 @@ export class CodesComponent {
   constructor(
     public dialog : MatDialog,
     private api : ApiService,
+    private router : Router,
   ) { }
 
   setSelected(selected : Code[]) {
@@ -63,13 +67,27 @@ export class CodesComponent {
   }
 
   ngOnInit() {
-    let vocIds = Object.keys(this.state().mapping.vocabularies);
-    vocIds.sort((id1, id2) => id1.localeCompare(id2));
-    this.vocabularyId = vocIds[0];
+    if (!this.vocabularyId) {
+      let vocIds = Object.keys(this.state().mapping.vocabularies);
+      vocIds.sort((id1, id2) => id1.localeCompare(id2));
+      this.vocabularyId = vocIds[0];
+    }
+  }
+
+  ngAfterViewInit() {
+    if (this.highlightId) {
+      setTimeout(() => this.table?.highlightById(this.highlightId!));
+    }
   }
 
   ngOnChanges(changes : SimpleChanges) {
+    if (this.activeVocabularyId) {
+      this.vocabularyId = this.activeVocabularyId;
+    }
     this.update();
+    if (changes['highlightId'] && this.highlightId) {
+      setTimeout(() => this.table?.highlightById(this.highlightId!));
+    }
   }
 
   update() {
@@ -86,9 +104,11 @@ export class CodesComponent {
     this.vocabularyIds = Object.keys(mapping.vocabularies).sort();
   }
 
+
   selectVocabulary(id : VocabularyId) {
     this.vocabularyId = id;
     this.update();
+    this.router.navigate([], { fragment: `codes/${id}`, replaceUrl: true });
   }
 
   isCustom(id : VocabularyId) {

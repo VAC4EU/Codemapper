@@ -4,35 +4,38 @@
 
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Configuration</mat-panel-title>
-        <mat-panel-description>Configurations that influence the codelist</mat-panel-description>
+        <mat-panel-title>Descendant codes</mat-panel-title>
+        <mat-panel-description>Inclusion of descendant codes in downloaded code lists</mat-panel-description>
       </mat-expansion-panel-header>
-
       <section>
+        <p>When enabled, the downloaded code list includes not only the mapped codes but also all their more specific (descendant) codes in the coding system hierarchy. When disabled, only the mapped codes themselves are included.</p>
         <mat-checkbox [checked]="state.mapping.meta.includeDescendants" (click)="toggleIncludeDescendants()">
           Include descendant codes
         </mat-checkbox>
-        <p>The mapping needs to be saved after changes.</p>
+        <p>The mapping needs to be saved after change to take effect.</p>
       </section>
+    </mat-expansion-panel>
 
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Remap</mat-panel-title>
+        <mat-panel-description>Remap the mapping to a new version of the UMLS</mat-panel-description>
+      </mat-expansion-panel-header>
       <section>
+        <p>
+          Each mapping is anchored to a specific UMLS version, which determines what codes are available for each concept across all vocabularies. When the server has been updated to a newer UMLS version, use Remap to re-derive the codes for all concepts from the current UMLS release.
+        </p>
         <h4>UMLS version</h4>
         <ul>
           <li>Mapping based on UMLS version: <span class="version">{{state.mapping.meta.umlsVersion}}</span></li>
           <li>CodeMapper current UMLS version: <span class="version">{{serverInfo.umlsVersion}}</span></li>
         </ul>
-        <p>
-          When the UMLS version of the mapping does not correspond the current version used in CodeMapper,
-          remap the mapping to update the concept codes using the latest version of the UMLS.
-        </p>
         <button
           [disabled]="!userCanEdit || state.mapping.meta.umlsVersion == serverInfo.umlsVersion || state.stacks.hasUndo()"
           (click)="remap()" mat-raised-button color="primary">
           Remap
         </button>
-        @if (state.stacks.hasUndo()) {
-          <p>The mapping must be saved.</p>
-        }
+        <p>The mapping must be saved before and after this operation.</p>
       </section>
     </mat-expansion-panel>
 

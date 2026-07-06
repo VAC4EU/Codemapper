@@ -1,3 +1,32 @@
 .conceptName {
   font-style: italic;
 }
+
+.conceptId {
+  margin-left: 0.3em;
+}
+
+.concept {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+
+  .concept-navigate {
+    color: inherit;
+    text-decoration: none;
+    opacity: 0;
+    pointer-events: none;
+
+    &.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+  mat-icon {
+    font-size: 1em;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    cursor: pointer;
+  }
+}
