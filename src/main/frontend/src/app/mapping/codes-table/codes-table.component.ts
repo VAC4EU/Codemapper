@@ -25,6 +25,7 @@ import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.compone
 import { Code, CodeId, ConceptId, VocabularyId } from '../mapping-data';
 import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
 import { MappingState } from '../mapping-state';
+import { EMPTY_FILTER, TextTagFilter, filterKey, matchesFilter } from '../text-tag-filter';
 
 @Component({
     selector: 'codes-table',
@@ -35,7 +36,7 @@ import { MappingState } from '../mapping-state';
 export class CodesTableComponent {
   @Input() vocabularyId! : VocabularyId;
   @Input() state! : MappingState;
-  @Input() filter : string = "";
+  @Input() filter : TextTagFilter = EMPTY_FILTER;
   @Input() codes : Code[] = [];
   @Input() codeParents : null | { [key : CodeId] : Set<CodeId> } = null;
   @Input() showConcepts : boolean = true;
@@ -59,6 +60,12 @@ export class CodesTableComponent {
     private el: ElementRef,
   ) {
     this.selection.changed.subscribe(s => this.selected.emit(this.getSelectedFilteredCodes()));
+    this.dataSource.filterPredicate = (code, _filter) =>
+      matchesFilter(this.filter, code.id + ' ' + code.term, code.tag);
+  }
+
+  get filteredCodes() : Code[] {
+    return this.dataSource.filteredData;
   }
 
   ngAfterViewInit() {
@@ -77,7 +84,7 @@ export class CodesTableComponent {
       this.allTopicsObj.allTopics = changes['allTopics'].currentValue;
     }
     if (changes['filter'] !== undefined) {
-      this.dataSource.filter = changes['filter'].currentValue.trim().toLowerCase();
+      this.dataSource.filter = filterKey(this.filter);
       this.selected.emit(this.getSelectedFilteredCodes());
     }
     if (changes['vocabularyId']) {

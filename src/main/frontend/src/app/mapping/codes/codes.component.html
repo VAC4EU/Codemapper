@@ -1,15 +1,32 @@
 <div class="toolbox">
 
   <mat-card appearance="outlined">
-    <mat-card-content matTooltip="Enter a string to filter the codes displayed in the table by code name or tag.">
-      <mat-form-field>
-        <mat-label>Filter {{numCodes(vocabularyId)}} codes</mat-label>
-        <input matInput [(ngModel)]="codesFilter" placeholder="">
-        <button mat-icon-button matSuffix (click)="codesFilter = ''">
+    <mat-card-header>
+      Filter {{numCodes(vocabularyId)}} codes
+      @if (isFilterActive(codesFilter)) {
+      ({{numFilteredCodes}} filtered)
+      }
+    </mat-card-header>
+    <mat-card-actions class="filters">
+      <mat-form-field class="dense codes-filter"
+        matTooltip="Enter a string to filter the codes displayed in the table by code or term.">
+        <input matInput [ngModel]="codesFilter.text" (ngModelChange)="setFilterText($event)"
+          placeholder="🔍 By term or code" size="10" class="input-element">
+      </mat-form-field>
+      <button mat-stroked-button (click)="showTagsFilterDialog()"
+        matTooltip="Filter the codes displayed in the table by tag." class="input-element">
+        By tag
+        @if (codesFilter.tags.length) {
+        ({{codesFilter.tags.length}})
+        }
+      </button>
+      <span matTooltip="Clear the filter.">
+        <button mat-icon-button matSuffix class="clear-button" (click)="clearFilter()"
+          [disabled]="!isFilterActive(codesFilter)">
           <mat-icon>backspace</mat-icon>
         </button>
-      </mat-form-field>
-    </mat-card-content>
+      </span>
+    </mat-card-actions>
   </mat-card>
 
   <mat-card appearance="outlined">

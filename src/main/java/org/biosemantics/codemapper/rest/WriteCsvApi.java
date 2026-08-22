@@ -75,7 +75,9 @@ public class WriteCsvApi {
       OutputStream output,
       String project,
       Collection<Mapping> mappings,
-      boolean compatibilityFormat)
+      boolean compatibilityFormat,
+      Collection<String> tags,
+      Collection<String> codingSystems)
       throws IOException, CodeMapperException {
     Collection<PreparedMapping> prepareds = new LinkedList<>();
     for (Mapping mapping : mappings) {
@@ -83,7 +85,7 @@ public class WriteCsvApi {
     }
     writeHeaders(output);
     for (PreparedMapping prepared : prepareds) {
-      writePrepared(output, prepared);
+      writePrepared(output, prepared, tags, codingSystems);
     }
   }
 
@@ -208,8 +210,14 @@ public class WriteCsvApi {
     return prepared;
   }
 
-  void writePrepared(OutputStream output, PreparedMapping prepared) throws IOException {
+  void writePrepared(
+      OutputStream output,
+      PreparedMapping prepared,
+      Collection<String> tagFilter,
+      Collection<String> codingSystemFilter)
+      throws IOException {
     for (String voc : prepared.data.keySet()) {
+      if (!codingSystemFilter.isEmpty() && !codingSystemFilter.contains(voc)) continue;
       Set<String> disabled = prepared.disabled.getOrDefault(voc, new HashSet<>());
       Set<String> writtenCodes = new HashSet<>(); // write each code only once
       Set<String> conceptCodes =
@@ -226,6 +234,7 @@ public class WriteCsvApi {
                   .tags
                   .getOrDefault(voc, new HashMap<>())
                   .getOrDefault(code.code.getId(), new HashSet<>());
+          if (!tagFilter.isEmpty() && !tagIncluded(tags, tagFilter)) continue;
           String tag = String.join(",", tags);
           writeCodeRow(
               output,
@@ -265,6 +274,12 @@ public class WriteCsvApi {
         */
       }
     }
+  }
+
+  // an empty code tag set matches the empty string in the filter
+  static boolean tagIncluded(Set<String> codeTags, Collection<String> filter) {
+    if (codeTags.isEmpty()) return filter.contains("");
+    return codeTags.stream().anyMatch(filter::contains);
   }
 
   void writeCodeRow(

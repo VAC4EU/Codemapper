@@ -17,11 +17,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 export const environment = {
-  isProduction: false,
-  name: "environment.development.ts",
-  production: false,
-  umlsVersion: '2025AA',
-  apiUrl: "http://localhost:3000/v0",
-  // apiUrl: "https://localhost:8080/codemapper-dev/rest",
-  peregrineUrl: "https://app.vac4eu.org/peregrine-codemapper/rest"
+  isProduction: true,
+  apiUrl: 'https://codemapper.vac4eu.org/api/v0',
+  peregrineUrl: 'https://codemapper.vac4eu.org/api/peregrine',
 };

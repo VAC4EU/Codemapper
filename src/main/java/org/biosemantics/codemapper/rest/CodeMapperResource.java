@@ -302,9 +302,12 @@ public class CodeMapperResource {
       @QueryParam("filename") final String filename0,
       @QueryParam("project") final String projectName,
       @QueryParam("mappings") final List<String> rawMappingConfigs,
-      @QueryParam("content") final String content) {
+      @QueryParam("content") final String content,
+      @QueryParam("tags") final List<String> tags,
+      @QueryParam("codingSystems") final List<String> codingSystems) {
     String result =
-        postCodeListsCSV(request, user, filename0, projectName, rawMappingConfigs, content);
+        postCodeListsCSV(
+            request, user, filename0, projectName, rawMappingConfigs, content, tags, codingSystems);
     String suffix = "";
     switch (content) {
       case "codelist":
@@ -334,7 +337,9 @@ public class CodeMapperResource {
       @FormParam("filename") final String filename0,
       @FormParam("project") final String projectName,
       @FormParam("mappings") final List<String> rawMappingConfigs,
-      @FormParam("content") final String content) {
+      @FormParam("content") final String content,
+      @FormParam("tags") final List<String> tags,
+      @FormParam("codingSystems") final List<String> codingSystems) {
     try (PersistencyApi persistencyApi = CodeMapperApplication.createPersistencyApi()) {
       AuthentificationApi.assertProjectRolesImplies(
           user, projectName, ProjectPermission.Reviewer, persistencyApi);
@@ -369,7 +374,8 @@ public class CodeMapperResource {
           case "codelist":
             {
               addDescendants(mappings, descendantsApi, descendantsCacheApi, umlsApi);
-              new WriteCsvApi().writeProjectCSV(output, projectName, mappings, true);
+              new WriteCsvApi()
+                  .writeProjectCSV(output, projectName, mappings, true, tags, codingSystems);
               break;
             }
           case "metadata":

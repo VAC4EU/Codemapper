@@ -2,21 +2,31 @@
 
   <mat-card appearance="outlined">
     <mat-card-header>
-      {{this.numConcepts}} concepts
-      @if (conceptsFilter()) {
+      Filter {{this.numConcepts}} concepts
+      @if (isFilterActive(conceptsFilter())) {
       ({{table().filteredConcepts.length}} filtered)
       }
     </mat-card-header>
-    <mat-card-content matTooltip="Enter a string to filter the concepts displayed in the table by concept name or tag.">
-      <p>
-        <mat-form-field class="dense concepts-filter">
-          <input matInput [(ngModel)]="conceptsFilter" placeholder="Filter by name or tag...">
-          <button mat-icon-button matSuffix (click)="conceptsFilter.set('')">
-            <mat-icon>backspace</mat-icon>
-          </button>
-        </mat-form-field>
-      </p>
-    </mat-card-content>
+    <mat-card-actions class="filters">
+      <mat-form-field class="dense concepts-filter"
+        matTooltip="Enter a string to filter the concepts displayed in the table by concept name or code.">
+        <input matInput [ngModel]="conceptsFilter().text" (ngModelChange)="setFilterText($event)"
+          placeholder="🔍 By name or code" size="10" class="input-element">
+      </mat-form-field>
+      <button mat-stroked-button (click)="showTagsFilterDialog()"
+        matTooltip="Filter the concepts displayed in the table by tag." class="input-element">
+        By tag
+        @if (conceptsFilter().tags.length) {
+        ({{conceptsFilter().tags.length}})
+        }
+      </button>
+      <span matTooltip="Clear the filter.">
+        <button mat-icon-button matSuffix class="clear-button" (click)="clearFilter()"
+          [disabled]="!isFilterActive(conceptsFilter())">
+          <mat-icon>backspace</mat-icon>
+        </button>
+      </span>
+    </mat-card-actions>
   </mat-card>
 
   <mat-card appearance="outlined">
@@ -66,7 +76,7 @@
     <mat-card-header>Search concepts</mat-card-header>
     <mat-card-actions class="dense">
       <mat-form-field matTooltip='Enter a CUI or code (optionally prefixed with the vocabulary, e.g. ICD9CM:780) to see matching concepts in a dropdown — select one to add it to the mapping. Use the Search button to find all concepts that mention the query text.'>
-        <input #query matInput type="text" placeholder="CUI, code or term..." [readonly]="!userCanEdit"
+        <input #query matInput type="text" placeholder="🔍 By CUI, code or term..." [readonly]="!userCanEdit"
           [formControl]="codeSearchQueryControl" [matAutocomplete]="auto">
         <mat-autocomplete #auto="matAutocomplete">
           @for (option of codeConcepts; track option) {
@@ -76,7 +86,7 @@
           }
         </mat-autocomplete>
       </mat-form-field>
-      <span matTooltip="Find all concepts whose name mentions the query text and add selected ones to the mapping.">
+      <span matTooltip="Click to search all concepts whose name mentions the query text.ny">
         <button (click)="searchAddConcepts(query.value, state().mapping.meta)" [disabled]="!userCanEdit || !query.value"
         mat-stroked-button>Search</button>
       </span>

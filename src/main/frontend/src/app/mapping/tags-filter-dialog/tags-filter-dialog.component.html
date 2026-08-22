@@ -1,0 +1,20 @@
+<h1 mat-dialog-title>Filter {{data.heading}} by tag</h1>
+<div mat-dialog-content>
+  @if (data.tags.length == 0) {
+    <p>No tags are used here.</p>
+  }
+  <mat-chip-listbox multiple [ngModel]="selectedTags" (ngModelChange)="onChange($event)">
+    <mat-chip-option [value]="NO_TAG">
+      <span class="no-tag">no tag</span>
+    </mat-chip-option>
+    @for (tag of data.tags; track tag) {
+      <mat-chip-option [value]="tag" class="tag-{{tag}}">
+        <mapping-tag [tag]="tag"></mapping-tag>
+      </mat-chip-option>
+    }
+  </mat-chip-listbox>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="clear()" [disabled]="selectedTags.length == 0">Clear tags</button>
+  <button mat-button mat-dialog-close color="primary" cdkFocusInitial>Close</button>
+</div>

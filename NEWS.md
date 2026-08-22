@@ -8,6 +8,12 @@
 
 <section class="center-content">
 
+July 20, 2026
+---
+
+- filter code lists by coding systems and tags
+- filter concepts and codes by tags
+
 June 24, 2026
 ---
 
@@ -16,7 +22,8 @@ June 24, 2026
 June 16, 2026
 ---
 
-- links to navigate from concepts to codes and from codes to concepts (<mat-icon style="font-size:1em;width:1em;height:1em;">open_in_new</mat-icon>)
+- links to navigate from concepts to codes and from codes to concepts (<mat-icon
+  style="font-size:1em;width:1em;height:1em;">open_in_new</mat-icon>)
 - various improvements of the user interface
 - include EDF and review in copy
 
