@@ -30,6 +30,8 @@ import { TagsDialogComponent } from '../tags-dialog/tags-dialog.component';
 import { CodesDialogComponent } from '../codes-dialog/codes-dialog.component';
 import { CodesTableComponent } from '../codes-table/codes-table.component';
 import { MappingState } from '../mapping-state';
+import { EMPTY_FILTER, TextTagFilter, canonicalTags, isFilterActive } from '../text-tag-filter';
+import { TagsFilterDialogComponent } from '../tags-filter-dialog/tags-filter-dialog.component';
 
 @Component({
     selector: 'codes',
@@ -54,7 +56,8 @@ export class CodesComponent implements AfterViewInit {
   codes : Code[] = [];
   vocabularyIds : VocabularyId[] = [];
   selected : Code[] = [];
-  codesFilter : string = "";
+  codesFilter : TextTagFilter = EMPTY_FILTER;
+  isFilterActive = isFilterActive;
 
   constructor(
     public dialog : MatDialog,
@@ -109,6 +112,30 @@ export class CodesComponent implements AfterViewInit {
     this.vocabularyId = id;
     this.update();
     this.router.navigate([], { fragment: `codes/${id}`, replaceUrl: true });
+  }
+
+  get numFilteredCodes() : number {
+    return this.table?.filteredCodes.length ?? 0;
+  }
+
+  setFilterText(text : string) {
+    this.codesFilter = { ...this.codesFilter, text };
+  }
+
+  clearFilter() {
+    this.codesFilter = EMPTY_FILTER;
+  }
+
+  showTagsFilterDialog() {
+    let tags = canonicalTags(this.codes.map(c => c.tag));
+    let selected = [...this.codesFilter.tags];
+    this.dialog.open(TagsFilterDialogComponent, {
+      data: { heading: 'codes', tags, selected },
+      width: '30em',
+    })
+      .afterClosed().subscribe(() => {
+        this.codesFilter = { ...this.codesFilter, tags: selected };
+      });
   }
 
   isCustom(id : VocabularyId) {

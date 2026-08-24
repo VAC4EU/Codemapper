@@ -9,7 +9,7 @@
     <mat-card-actions class="filters">
       <mat-form-field appearance="fill" class="filterOnName" style="display: inline"
         matTooltip="Filter mappings by name or definition">
-        <input matInput placeholder="Search..." [(ngModel)]="filterOnName" (keyup)="applyFilter()" size="10"
+        <input matInput placeholder="🔍 By name or definition" [(ngModel)]="filterOnName" (keyup)="applyFilter()" size="10"
           class="input-element">
       </mat-form-field>
       <button mat-raised-button matTooltip="Filter mappings by their metadata" [matMenuTriggerFor]="menu"

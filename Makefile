@@ -1,16 +1,8 @@
-.PHONY: deploy-dev deploy-testing deploy-production
+FRONTEND=src/main/frontend
 
-SERVER=advance
-USER?=tomcat
-LOCAL_TOMCAT?=/var/lib/tomcat9/
-
-deploy-production:
-	@printf "Deploy what? > "; read resp; [ "$$resp" = "production" ]
-	mvn -P production clean package
-	scp target/codemapper.war $(SERVER):/tmp/
-	ssh -t $(SERVER) \
-	  sudo -u tomcat8 \
-	  cp /tmp/codemapper.war /var/lib/tomcat8/webapps
+.PHONY: news
+news:
+	pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html
 
 .PHONY: deploy-codemapper
 deploy-codemapper:
@@ -29,47 +21,7 @@ deploy-codemapper-all:
 	ssh -t codemapper sudo sh -c \
 	  "'cp /opt/tomcat-8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat cp /tmp/codemapper.war /opt/tomcat-8/webapps/ && sudo -u caddy rsync --delete -avz /tmp/dist-codemapper/browser/ /var/www/codemapper'"
 
-
-.PHONY: deploy-production-all
-deploy-production-all:
-	@printf "Deploy what? > "; read resp; [ "$$resp" = "production" ]
-	mvn -P production clean package
-	make -C $(FRONTEND) dist-production
-	rsync -zrv --delete \
-	  target/codemapper.war \
-	  $(FRONTEND)/dist-production \
-	  $(SERVER):/tmp/
-	ssh -t $(SERVER) sudo sh -c \
-	  "'cp /var/lib/tomcat8/webapps/codemapper.war /home/bb/codemapper-$(shell date +%FT%T).war && sudo -u tomcat8 cp /tmp/codemapper.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-production/browser/ /var/www/codemapper-frontend'"
-
-deploy-testing:
-	mvn -P testing clean package
-	scp target/codemapper-testing.war $(SERVER):/tmp/
-	ssh -t $(SERVER) \
-	  sudo -u tomcat8 \
-	  cp /tmp/codemapper-testing.war /var/lib/tomcat8/webapps
-# sh -c 'cp /tmp/codemapper-testing.war /var/lib/tomcat8/webapps && tail -fn 0 /var/lib/tomcat8/logs/catalina.out' 
-
-deploy-dev:
-	mvn -P dev package
-	sudo -u $(USER) cp target/codemapper-dev.war $(LOCAL_TOMCAT)/webapps
-
 test:
 	mvn test -DskipTests=false
 	cd src/main/frontend; ng test --watch=false
 	#cd src/main/resources; hurl --variables-file hurl-variables.txt tests.hurl
-
-FRONTEND=src/main/frontend
-
-deploy-testing-all:
-	mvn -P testing clean package
-	make -C $(FRONTEND) dist-testing
-	rsync -zrv --delete \
-	  target/codemapper-testing.war \
-	  $(FRONTEND)/dist-testing \
-	  $(SERVER):/tmp/
-	ssh -t $(SERVER) sudo sh -c "'sudo -u tomcat8 cp /tmp/codemapper-testing.war /var/lib/tomcat8/webapps && sudo -u www-data rsync --delete -avz /tmp/dist-testing/ /var/www/codemapper-frontend-testing'"
-
-.PHONY: news
-news:
-	pandoc -i NEWS.md -o src/main/frontend/src/app/mapping/news-view/news-view.component.html

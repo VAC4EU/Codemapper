@@ -83,6 +83,7 @@ import { CodesTableComponent } from './codes-table/codes-table.component';
 import { LegacyMappingRedirectComponent } from './legacy-mapping-redirect/legacy-mapping-redirect.component';
 import { MappingTabComponent } from './mapping-tab/mapping-tab.component';
 import { TagsDialogComponent } from './tags-dialog/tags-dialog.component';
+import { TagsFilterDialogComponent } from './tags-filter-dialog/tags-filter-dialog.component';
 import { UserViewComponent } from './user-view/user-view.component';
 import { UsersViewComponent } from './users-view/users-view.component';
 import { UsersTableComponent } from './users-table/users-table.component';
@@ -121,6 +122,7 @@ const matSnackbarDefaultConfig: MatSnackBarConfig = {
     MappingViewComponent,
     TagsComponent,
     TagsDialogComponent,
+    TagsFilterDialogComponent,
     VocabulariesComponent,
     VocabulariesDialogComponent,
     VocabulariesTableComponent,

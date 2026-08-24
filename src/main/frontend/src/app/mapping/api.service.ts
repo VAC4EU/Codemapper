@@ -396,6 +396,8 @@ export class ApiService {
     mappingConfigs: string[],
     content: string,
     filename: string,
+    tags?: string[],
+    codingSystems?: string[],
   ): Observable<string> {
     let params = new URLSearchParams();
     params.set('content', content);
@@ -403,6 +405,12 @@ export class ApiService {
     params.set('project', projectName);
     for (let mappingConfig of mappingConfigs) {
       params.append('mappings', mappingConfig);
+    }
+    for (let tag of tags ?? []) {
+      params.append('tags', tag);
+    }
+    for (let codingSystem of codingSystems ?? []) {
+      params.append('codingSystems', codingSystem);
     }
     return this.http.post(this.codeListsUrl, params, {
       responseType: 'text',

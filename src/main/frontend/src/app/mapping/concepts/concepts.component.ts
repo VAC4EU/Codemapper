@@ -64,6 +64,14 @@ import { firstValueFrom, of } from 'rxjs';
 import { MappingInfo } from '../persistency.service';
 import { MappingState } from '../mapping-state';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import {
+  EMPTY_FILTER,
+  TextTagFilter,
+  canonicalTags,
+  conceptCodeTags,
+  isFilterActive,
+} from '../text-tag-filter';
+import { TagsFilterDialogComponent } from '../tags-filter-dialog/tags-filter-dialog.component';
 
 @Component({
   selector: 'concepts',
@@ -89,7 +97,8 @@ export class ConceptsComponent implements OnInit, OnChanges {
   codeSearchQueryControl = new FormControl('');
   codeConcepts: Concept[] = [];
   dialogRef: MatDialogRef<any, any> | null = null;
-  conceptsFilter = signal('');
+  conceptsFilter = signal<TextTagFilter>(EMPTY_FILTER);
+  isFilterActive = isFilterActive;
 
   PAGE_SIZE = 50;
   pagesInfo = '';
@@ -127,6 +136,33 @@ export class ConceptsComponent implements OnInit, OnChanges {
 
   get numConcepts(): number {
     return Object.keys(this.state().mapping.concepts).length;
+  }
+
+  setFilterText(text: string) {
+    this.conceptsFilter.update((filter) => ({ ...filter, text }));
+  }
+
+  clearFilter() {
+    this.conceptsFilter.set(EMPTY_FILTER);
+  }
+
+  showTagsFilterDialog() {
+    let codes = this.state().mapping.codes;
+    let tags = canonicalTags(
+      Object.values(this.state().mapping.concepts).flatMap((concept) =>
+        conceptCodeTags(concept.codes, codes),
+      ),
+    );
+    let selected = [...this.conceptsFilter().tags];
+    this.dialog
+      .open(TagsFilterDialogComponent, {
+        data: { heading: 'concepts', tags, selected },
+        width: '30em',
+      })
+      .afterClosed()
+      .subscribe(() =>
+        this.conceptsFilter.update((filter) => ({ ...filter, tags: selected })),
+      );
   }
 
   setPageInfo(

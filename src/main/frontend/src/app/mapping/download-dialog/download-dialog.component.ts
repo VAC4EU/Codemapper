@@ -27,6 +27,10 @@ export class DownloadDialogComponent {
   IncludeDescendants = IncludeDescendants;
   numMappings: number = 0;
   done = {codelist: signal(false), metadata: signal(false)};
+  filterCodingSystems = false;
+  filterTags = false;
+  codingSystemsText = '';
+  tagsText = '';
   constructor(
     private api: ApiService,
     private snackbar: MatSnackBar,
@@ -41,6 +45,18 @@ export class DownloadDialogComponent {
     }
   ) {
     this.numMappings = data.mappingConfigs.length;
+    let saved = localStorage.getItem(this.codingSystemsKey());
+    if (saved != null) {
+      this.codingSystemsText = saved;
+    }
+  }
+
+  private codingSystemsKey(): string {
+    return `download.codingSystems.${this.data.projectName}`;
+  }
+
+  saveCodingSystems() {
+    localStorage.setItem(this.codingSystemsKey(), this.codingSystemsText);
   }
 
   defaultFilename(): string {
@@ -59,7 +75,17 @@ export class DownloadDialogComponent {
     return `${this.data.projectName}`;
   }
 
+  // undefined means no filter; an empty element selects codes with no tag
+  tagFilter(): string[] | undefined {
+    return this.filterTags ? parseList(this.tagsText) : undefined;
+  }
+
+  codingSystemFilter(): string[] | undefined {
+    return this.filterCodingSystems ? parseList(this.codingSystemsText) : undefined;
+  }
+
   async download(content: 'codelist' | 'metadata', filename: string) {
+    this.saveCodingSystems();
     this.done[content].set(false);
     let csvContent: string;
     let suffix = '';
@@ -83,7 +109,9 @@ export class DownloadDialogComponent {
                 this.data.projectName,
                 [mappingConfig],
                 content,
-                filename
+                filename,
+                this.tagFilter(),
+                this.codingSystemFilter()
               )
               .pipe(takeUntil(cancelDownload));
             try {
@@ -143,6 +171,10 @@ export class DownloadDialogComponent {
   close() {
     this.dialogRef.close();
   }
+}
+
+function parseList(text: string): string[] {
+  return text.split(',').map((s) => s.trim());
 }
 
 function concatCsvContents(csvContents: string[]): string {

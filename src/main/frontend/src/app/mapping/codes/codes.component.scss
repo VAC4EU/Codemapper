@@ -1,6 +1,48 @@
+@use '@angular/material' as mat;
+
 .outer {
   display: flex;
   flex-direction: row;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  button {
+    white-space: nowrap;
+    flex: none;
+  }
+}
+
+.codes-filter {
+  width: 8em;
+}
+
+.clear-button {
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
+  & > *[role=img] {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .mat-mdc-button-touch-target {
+    width: 30px !important;
+    height: 30px !important;
+  }
 }
 
 .left, .right {

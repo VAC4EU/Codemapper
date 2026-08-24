@@ -38,12 +38,12 @@ import {
   ConceptId,
   CodeId,
   Code,
-  Tag,
 } from '../mapping-data';
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { CacheConceptTags } from '../caches';
+import { EMPTY_FILTER, TextTagFilter, conceptCodeTags, filterKey, matchesFilter } from '../text-tag-filter';
 
 const BASE_COLUMNS = ['concept', 'comments'];
 
@@ -67,7 +67,7 @@ export class ConceptsTableComponent {
   allTopics = input<AllTopics | null>(null);
   vocabularies = input<VocabularyId[]>([]);
   paginator = input<MatPaginator | null>(null);
-  filter = input('');
+  filter = input<TextTagFilter>(EMPTY_FILTER);
 
   @Input() conceptTags: CacheConceptTags = new CacheConceptTags({});
   @Input() reviewData: ReviewData = new ReviewData();
@@ -107,7 +107,7 @@ export class ConceptsTableComponent {
       this.updateSelectedFiltered();
     });
     effect(() => {
-      this.dataSource.filter = this.filter().trim().toLowerCase();
+      this.dataSource.filter = filterKey(this.filter());
       this.updateSelectedFiltered();
     });
     effect(() => {
@@ -133,12 +133,16 @@ export class ConceptsTableComponent {
     });
   }
 
-  filterPredicate(concept: Concept, filter: string) {
+  filterPredicate(concept: Concept, _filter: string) {
     let codes = Object.values(concept.codes)
       .map((ids) => Array.from(ids).join(' '))
       .join(' ');
     let haystack = concept.id + ' ' + concept.name + ' ' + codes;
-    return haystack.toLowerCase().includes(filter);
+    return matchesFilter(
+      this.filter(),
+      haystack,
+      conceptCodeTags(concept.codes, this.codes()),
+    );
   }
 
   setColumns(vocabularies: VocabularyId[]) {

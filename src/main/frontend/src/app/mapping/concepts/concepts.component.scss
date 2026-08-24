@@ -1,3 +1,5 @@
+@use '@angular/material' as mat;
+
 ::ng-deep .codeSearchVocId {
     .mat-mdc-select-value {
         max-width: max-content !important;
@@ -13,11 +15,26 @@
   align-items: center;
 }
 
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  button {
+    white-space: nowrap;
+    flex: none;
+  }
+}
+
+.concepts-filter {
+  width: 8em;
+}
+
 ::ng-deep .mat-mdc-paginator-range-label {
     display: none;
 }
 
-::ng-deep .mat-mdc-paginator-range-actions button, .concepts-filter button {
+::ng-deep .mat-mdc-paginator-range-actions button, .concepts-filter button, .clear-button {
    width: 30px !important;
    height: 30px !important;
    padding: 0px !important;
