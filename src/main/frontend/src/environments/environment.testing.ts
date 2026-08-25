@@ -18,6 +18,6 @@
 
 export const environment = {
   isProduction: false,
-  apiUrl: 'https://app.vac4eu.org/codemapper-testing/rest',
+  apiUrl: 'https://app.vac4eu.org/codemapper-testing/api/v0',
   peregrineUrl: "https://app.vac4eu.org/peregrine-codemapper/rest"
 };

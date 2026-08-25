@@ -42,7 +42,7 @@
 
   <mat-card appearance="outlined">
     <mat-card-header matTooltip="Modify the selected concepts.">
-      Modify {{table().selectedFiltered().length}} concept{{table().selectedFiltered().length == 1 ? '' : 's'}}
+      {{table().selectedFiltered().length}} selected concept{{table().selectedFiltered().length == 1 ? '' : 's'}}
     </mat-card-header>
     <mat-card-actions>
       <span matTooltip="Set the tag of all codes associated to the selected concepts.">
@@ -51,6 +51,8 @@
       </span>
       <button mat-stroked-button (click)="delete(table().selectedFiltered())"
         [disabled]="!hasSelectedConcepts() || !userCanEdit" color="warn">Delete</button>
+      <button mat-stroked-button (click)="table().highlightNextSelected()" [disabled]="!hasSelectedConcepts()"
+        matTooltip="Scroll to the next selected concept.">Show next</button>
     </mat-card-actions>
   </mat-card>
 

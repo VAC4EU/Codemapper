@@ -109,6 +109,7 @@ export class ConceptsComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['highlightId'] && this.highlightId) {
+      this.clearFilter();
       setTimeout(() => {
         this.table().highlightById(this.highlightId!);
       });
@@ -235,9 +236,8 @@ export class ConceptsComponent implements OnInit, OnChanges {
   }
 
   delete(concepts: Concept[]) {
-    for (const concept of concepts) {
-      this.run.emit(new ops.RemoveConcept(concept.id));
-    }
+    if (concepts.length == 0) return;
+    this.run.emit(new ops.RemoveConcepts(concepts.map((c) => c.id)));
   }
 
   addConcepts(selected: Concept[], codes: Codes) {
@@ -245,13 +245,27 @@ export class ConceptsComponent implements OnInit, OnChanges {
     for (let concept of selected) {
       concepts[concept.id] = concept;
     }
+    let ids = selected.map((c) => c.id);
     this.run.emit(
       new ops.AddConcepts(concepts, codes).withAfterRunCallback(() => {
-        setTimeout(() => this.table().setSelected(selected.map((c) => c.id)));
+        setTimeout(() => {
+          this.table().setSelected(ids);
+          if (ids.length > 0) this.showConcept(ids[0]);
+        });
         this.codeConcepts = [];
         this.codeSearchQueryControl.setValue('');
       }),
     );
+  }
+
+  private showConcept(id: ConceptId) {
+    if (this.table().filteredConcepts.some((c) => c.id == id)) {
+      this.table().highlightById(id);
+    } else {
+      // the new concept does not match the filter
+      this.clearFilter();
+      setTimeout(() => this.table().highlightById(id));
+    }
   }
 
   confirmAddConceptsDialog(concepts: Concepts, codes: Codes, title: string) {

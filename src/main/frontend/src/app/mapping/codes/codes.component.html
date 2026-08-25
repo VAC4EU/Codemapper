@@ -30,6 +30,17 @@
   </mat-card>
 
   <mat-card appearance="outlined">
+    <mat-card-header
+      matTooltip="A maximum of {{PAGE_SIZE}} codes is displayed in one page. Use the buttons to navigate to other pages when there are more.">
+      Page {{pagesInfo}}
+    </mat-card-header>
+    <mat-card-content>
+      <mat-paginator #paginator (page)="setPageInfo($event)" [hidePageSize]="true" [pageSizeOptions]="[PAGE_SIZE]"
+        showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
     <mat-card-header>
       Coding system
     </mat-card-header>
@@ -64,6 +75,8 @@
     [disabled]="selected.length == 0 || !userCanEdit">Disable</button>
     <button mat-stroked-button (click)="showDescendants(selected)"
     [disabled]="selected.length == 0">Descendants</button>
+    <button mat-stroked-button (click)="table.highlightNextSelected()" [disabled]="selected.length == 0"
+    matTooltip="Scroll to the next selected code.">Show next</button>
   </mat-card-actions>
 </mat-card>
 
@@ -96,5 +109,6 @@
   [reviewData]="reviewData"
   (selected)="setSelected($event)"
   (reviewRun)="reviewRun.emit($event)"
-  [conceptsShowNavigate]="true">
+  [conceptsShowNavigate]="true"
+  [paginator]="paginator">
 </codes-table>

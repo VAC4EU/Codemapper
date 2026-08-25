@@ -20,7 +20,11 @@
   width: 8em;
 }
 
-.clear-button {
+::ng-deep .mat-mdc-paginator-range-label {
+  display: none;
+}
+
+::ng-deep .mat-mdc-paginator-range-actions button, .clear-button {
   width: 30px !important;
   height: 30px !important;
   padding: 0px !important;

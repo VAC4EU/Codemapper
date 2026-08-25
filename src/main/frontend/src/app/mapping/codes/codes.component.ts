@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges, AfterViewInit, input, effect, signal } from '@angular/core';
+import { ViewChild, Component, Input, Output, EventEmitter, SimpleChanges, AfterViewInit, input, effect, signal, viewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { Code, CodeId, Vocabulary, VocabularyId, ConceptId, Tag } from '../mapping-data';
 import * as ops from '../operations';
@@ -31,6 +32,7 @@ import { CodesDialogComponent } from '../codes-dialog/codes-dialog.component';
 import { CodesTableComponent } from '../codes-table/codes-table.component';
 import { MappingState } from '../mapping-state';
 import { EMPTY_FILTER, TextTagFilter, canonicalTags, isFilterActive } from '../text-tag-filter';
+import { joinFragment } from '../navigate';
 import { TagsFilterDialogComponent } from '../tags-filter-dialog/tags-filter-dialog.component';
 
 @Component({
@@ -50,6 +52,7 @@ export class CodesComponent implements AfterViewInit {
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
 
   @ViewChild(CodesTableComponent) table! : CodesTableComponent;
+  paginator = viewChild(MatPaginator);
 
   vocabularyId! : VocabularyId;
   vocabulary! : Vocabulary;
@@ -58,6 +61,9 @@ export class CodesComponent implements AfterViewInit {
   selected : Code[] = [];
   codesFilter : TextTagFilter = EMPTY_FILTER;
   isFilterActive = isFilterActive;
+
+  PAGE_SIZE = 50;
+  pagesInfo = '';
 
   constructor(
     public dialog : MatDialog,
@@ -78,9 +84,28 @@ export class CodesComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.updatePageInfo();
     if (this.highlightId) {
       setTimeout(() => this.table?.highlightById(this.highlightId!));
     }
+  }
+
+  setPageInfo(page : PageEvent) {
+    let numPages = Math.max(1, Math.ceil(page.length / page.pageSize));
+    this.pagesInfo = `${page.pageIndex + 1} of ${numPages}`;
+  }
+
+  private updatePageInfo() {
+    setTimeout(() => {
+      let paginator = this.paginator();
+      if (paginator) {
+        this.setPageInfo({
+          length: paginator.length,
+          pageIndex: paginator.pageIndex,
+          pageSize: paginator.pageSize,
+        });
+      }
+    });
   }
 
   ngOnChanges(changes : SimpleChanges) {
@@ -89,6 +114,7 @@ export class CodesComponent implements AfterViewInit {
     }
     this.update();
     if (changes['highlightId'] && this.highlightId) {
+      this.clearFilter();
       setTimeout(() => this.table?.highlightById(this.highlightId!));
     }
   }
@@ -105,13 +131,15 @@ export class CodesComponent implements AfterViewInit {
     this.codes = Object.values(codes);
     this.codes.sort((c1, c2) => compareCodes(c1.id, c2.id));
     this.vocabularyIds = Object.keys(mapping.vocabularies).sort();
+    this.updatePageInfo();
   }
 
 
   selectVocabulary(id : VocabularyId) {
     this.vocabularyId = id;
+    this.paginator()?.firstPage();
     this.update();
-    this.router.navigate([], { fragment: `codes/${id}`, replaceUrl: true });
+    this.router.navigate([], { fragment: joinFragment('codes', id), replaceUrl: true });
   }
 
   get numFilteredCodes() : number {
@@ -120,10 +148,12 @@ export class CodesComponent implements AfterViewInit {
 
   setFilterText(text : string) {
     this.codesFilter = { ...this.codesFilter, text };
+    this.updatePageInfo();
   }
 
   clearFilter() {
     this.codesFilter = EMPTY_FILTER;
+    this.updatePageInfo();
   }
 
   showTagsFilterDialog() {
@@ -135,6 +165,7 @@ export class CodesComponent implements AfterViewInit {
     })
       .afterClosed().subscribe(() => {
         this.codesFilter = { ...this.codesFilter, tags: selected };
+        this.updatePageInfo();
       });
   }
 
@@ -151,15 +182,17 @@ export class CodesComponent implements AfterViewInit {
   }
 
   enableCodes(codes : Code[]) {
-    for (let code of codes) {
-      this.run.emit(new ops.SetCodeEnabled(this.vocabularyId, code.id, true));
-    }
+    this.setCodesEnabled(codes, true);
   }
 
   disableCodes(codes : Code[]) {
-    for (let code of codes) {
-      this.run.emit(new ops.SetCodeEnabled(this.vocabularyId, code.id, false));
-    }
+    this.setCodesEnabled(codes, false);
+  }
+
+  private setCodesEnabled(codes : Code[], enabled : boolean) {
+    if (codes.length == 0) return;
+    let codeEnabled = Object.fromEntries(codes.map(c => [c.id, enabled]));
+    this.run.emit(new ops.SetCodesEnabled(this.vocabularyId, codeEnabled));
   }
 
   editTags(codes : Code[]) {

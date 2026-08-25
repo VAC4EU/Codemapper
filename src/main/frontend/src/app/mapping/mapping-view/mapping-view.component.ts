@@ -58,6 +58,7 @@ import {
 import { StartData } from '../start-mapping/start-mapping.component';
 import { Mapping } from '../mapping';
 import { Messages } from '../messages';
+import { splitFragment } from '../navigate';
 
 export enum Tabs {
   Start = 0,
@@ -145,7 +146,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   private parseFragment(fragment: string | null): { tab: string; vocab: string | null; codeId: string | null; conceptId: string | null } {
-    const parts = (fragment ?? '').split('/');
+    const parts = splitFragment(fragment);
     const tab = parts[0] ?? '';
     if (tab === 'concepts') {
       return { tab, vocab: null, codeId: null, conceptId: parts[1] ?? null };
@@ -378,7 +379,7 @@ export class MappingViewComponent implements HasPendingChanges {
     this.state.run(op, this.allTopics, messages);
     this.setSaveWarning(messages);
     op.afterRunCallback();
-    this.state = this.state.deepCloneMapping();
+    this.state = this.state.reidentify();
     this.updateTopics();
     if (op.saveRequired) {
       this.saveRequired = true;
@@ -404,14 +405,14 @@ export class MappingViewComponent implements HasPendingChanges {
     let messages = new Messages();
     this.state.redo(this.allTopics, messages);
     this.setSaveWarning(messages);
-    this.state = this.state.deepCloneMapping();
+    this.state = this.state.reidentify();
     this.updateTopics();
   }
 
   undo() {
     if (!this.state) return;
     this.state.undo(this.allTopics, new Messages());
-    this.state = this.state.deepCloneMapping();
+    this.state = this.state.reidentify();
     this.updateTopics();
   }
 

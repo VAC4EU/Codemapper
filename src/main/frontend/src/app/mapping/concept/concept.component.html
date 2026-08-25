@@ -1,5 +1,4 @@
-<span class="concept" [matTooltip]="concept.name" [matTooltipDisabled]="showName" matTooltipPosition="right"
-    (mouseenter)="hovered = true" (mouseleave)="hovered = false">
+<span class="concept" [attr.title]="showName ? null : concept.name">
   @if (showName) {
     <span class="conceptName">{{concept.name}}</span>
     <span class="conceptId">({{concept.id}})</span>
@@ -7,9 +6,10 @@
     {{concept.id}}
   }
   @if (tag) {
-    <mapping-tag [tag]="tag" matTooltip="All associated, enabled codes share the same tag"></mapping-tag>
+    <mapping-tag [tag]="tag" title="All associated, enabled codes share the same tag"></mapping-tag>
   }
-  @if (showNavigate) {
-    <a [routerLink]="[]" [fragment]="'concepts/' + concept.id" class="concept-navigate" [class.visible]="hovered" matTooltip="Click to view concept"><mat-icon>open_in_new</mat-icon></a>
+  @if (navFragment) {
+    <a [attr.href]="navHref" [attr.data-nav-fragment]="navFragment" class="concept-navigate"
+      title="Click to view concept"><mat-icon>open_in_new</mat-icon></a>
   }
 </span>

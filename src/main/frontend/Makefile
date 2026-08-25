@@ -11,3 +11,9 @@ deploy-codemapper: dist-codemapper
 	@# Get rid of the angular browser/ subdirectory
 	ssh -t codemapper \
 	  sudo -u caddy rsync -avz --delete /tmp/dist-codemapper/browser/ /var/www/codemapper
+
+CODEMAPPER_TESTING_BASE_HREF = https://app.vac4eu.org/codemapper-testing/
+
+.PHONY: dist-testing
+dist-testing:
+	ng build --configuration testing --base-href https://app.vac4eu.org/codemapper-testing/ --output-path $@

@@ -1,12 +1,12 @@
 <span class="code" [class.disabled]="!code.enabled" [class.custom]="code.custom"
-    [matTooltip]="code.term" [matTooltipDisabled]="showTerm" matTooltipPosition="right"
-    (mouseenter)="hovered = true" (mouseleave)="hovered = false">
+    [attr.title]="title">
   <span class="wording">
     <span class="code-id">{{code.id}}@if (code.custom) {<span class="custom-marker">*</span>}</span>
     @if (showTagIndication && code.tag != null) {<mat-icon class="tag-indicator tag-{{code.tag}}" fontIcon="label"></mat-icon>}
     @if (showTerm) {<span class="term"> {{code.term}}</span>}
   </span>
-  @if (showNavigate && vocId) {
-    <a [routerLink]="[]" [fragment]="'codes/' + vocId + '/' + code.id" class="code-navigate" [class.visible]="hovered" matTooltip="Click to view code"><mat-icon>open_in_new</mat-icon></a>
+  @if (navFragment) {
+    <a [attr.href]="navHref" [attr.data-nav-fragment]="navFragment" class="code-navigate"
+      title="Click to view code"><mat-icon>open_in_new</mat-icon></a>
   }
 </span>

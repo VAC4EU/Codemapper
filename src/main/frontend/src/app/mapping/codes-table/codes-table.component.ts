@@ -20,11 +20,14 @@ import { Input, Output, Component, SimpleChanges, EventEmitter, ViewChild, Eleme
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
 import { SelectionModel } from '@angular/cdk/collections';
 import { ReviewsDialogComponent } from '../reviews-dialog/reviews-dialog.component';
 import { Code, CodeId, ConceptId, VocabularyId } from '../mapping-data';
 import { AllTopics, TopicsInfo, ReviewOperation, ReviewData } from '../review';
+import { Router } from '@angular/router';
 import { MappingState } from '../mapping-state';
+import { navigateFragmentFromClick, nextSelectedRow, scrollToRow } from '../navigate';
 import { EMPTY_FILTER, TextTagFilter, filterKey, matchesFilter } from '../text-tag-filter';
 
 @Component({
@@ -45,6 +48,7 @@ export class CodesTableComponent {
   @Input() reviewData : ReviewData | null = null;
   @Input() userCanEdit : boolean = false;
   @Input() conceptsShowNavigate : boolean = false;
+  @Input() paginator : MatPaginator | null = null;
   @Output() reviewRun : EventEmitter<ReviewOperation> = new EventEmitter();
   @Output() selected : EventEmitter<Code[]> = new EventEmitter();
   @ViewChild(MatSort) sort! : MatSort;
@@ -53,16 +57,20 @@ export class CodesTableComponent {
   columns : string[] = [];
   selection = new SelectionModel<Code>(true, []);
   highlightedId: string | null = null;
+  private lastHighlightedId: string | null = null;
   allTopicsObj : { allTopics : AllTopics } = { allTopics: new AllTopics() };
 
   constructor(
     public dialog : MatDialog,
     private el: ElementRef,
+    private router : Router,
   ) {
     this.selection.changed.subscribe(s => this.selected.emit(this.getSelectedFilteredCodes()));
     this.dataSource.filterPredicate = (code, _filter) =>
       matchesFilter(this.filter, code.id + ' ' + code.term, code.tag);
   }
+
+  trackById = (_index : number, code : Code) => code.id;
 
   get filteredCodes() : Code[] {
     return this.dataSource.filteredData;
@@ -70,6 +78,7 @@ export class CodesTableComponent {
 
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator;
     this.dataSource.sortingDataAccessor = (item : any, property : string) => {
       switch (property) {
         case 'code': return item.id;
@@ -114,6 +123,10 @@ export class CodesTableComponent {
       .filter(c => this.dataSource.filteredData.some(c2 => c2.id == c.id));
   }
 
+  onNavigateClick(event : MouseEvent) {
+    navigateFragmentFromClick(this.router, event);
+  }
+
   topics(codeId : CodeId) {
     return this.allTopics?.byCode[this.vocabularyId]?.[codeId] ?? new TopicsInfo();
   }
@@ -140,12 +153,15 @@ export class CodesTableComponent {
   }
 
   highlightById(id: string) {
+    this.lastHighlightedId = id;
+    scrollToRow(this.el, this.dataSource, 'data-code-id', id);
     this.highlightedId = id;
-    setTimeout(() => {
-      const row = this.el.nativeElement.querySelector(`tr[data-code-id="${id}"]`);
-      row?.scrollIntoView({ block: 'center' });
-    });
     setTimeout(() => { this.highlightedId = null; }, 1000);
+  }
+
+  highlightNextSelected() {
+    let code = nextSelectedRow(this.dataSource, this.selection.selected, this.lastHighlightedId);
+    if (code) this.highlightById(code.id);
   }
 
   unselect(code : Code) {
