@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { Code } from '../mapping-data';
+import { joinFragment, navigateHref } from '../navigate';
+import { canonicalTag } from '../text-tag-filter';
 
 @Component({
     selector: 'mapping-code',
@@ -25,11 +27,32 @@ import { Code } from '../mapping-data';
     styleUrls: ['./code.component.scss'],
     standalone: false
 })
-export class CodeComponent {
+export class CodeComponent implements OnChanges {
   @Input({required: true}) code!: Code;
   @Input() showTagIndication: boolean = false;
   @Input() showTerm: boolean = true;
   @Input() showNavigate: boolean = false;
   @Input() vocId: string | null = null;
-  hovered = false;
+
+  navFragment: string | null = null;
+  navHref: string | null = null;
+  title: string | null = null;
+
+  ngOnChanges() {
+    this.title = codeTitle(this.code, this.showTerm);
+    if (this.showNavigate && this.vocId) {
+      this.navFragment = joinFragment('codes', this.vocId, this.code.id);
+      this.navHref = navigateHref(this.navFragment);
+    } else {
+      this.navFragment = null;
+      this.navHref = null;
+    }
+  }
+}
+
+function codeTitle(code: Code, showTerm: boolean): string | null {
+  let term = showTerm ? null : code.term;
+  let tag = canonicalTag(code.tag);
+  if (term && tag) return `${term} (tag: ${tag})`;
+  return term ?? (tag == null ? null : `tag: ${tag}`);
 }

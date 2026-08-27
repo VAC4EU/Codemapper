@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { Concept, Tag } from '../mapping-data';
+import { joinFragment, navigateHref } from '../navigate';
 
 @Component({
     selector: 'mapping-concept',
@@ -25,10 +26,22 @@ import { Concept, Tag } from '../mapping-data';
     styleUrls: ['./concept.component.scss'],
     standalone: false
 })
-export class ConceptComponent {
+export class ConceptComponent implements OnChanges {
   @Input({required: true}) concept!: Concept;
   @Input({required: true}) tag!: Tag | null;
   @Input() showName: boolean = true;
   @Input() showNavigate: boolean = false;
-  hovered = false;
+
+  navFragment: string | null = null;
+  navHref: string | null = null;
+
+  ngOnChanges() {
+    if (this.showNavigate) {
+      this.navFragment = joinFragment('concepts', this.concept.id);
+      this.navHref = navigateHref(this.navFragment);
+    } else {
+      this.navFragment = null;
+      this.navHref = null;
+    }
+  }
 }

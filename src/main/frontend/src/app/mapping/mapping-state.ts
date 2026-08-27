@@ -9,8 +9,12 @@ export class MappingState {
   caches: Caches = new Caches();
   stacks: Stacks = new Stacks();
 
-  constructor(public mapping: Mapping) {
-    this.recache();
+  constructor(public mapping: Mapping, caches?: Caches) {
+    if (caches === undefined) {
+      this.recache();
+    } else {
+      this.caches = caches;
+    }
   }
 
   recache() {
@@ -18,8 +22,11 @@ export class MappingState {
     this.mapping.cleanupCheck(this.caches);
   }
 
-  deepCloneMapping(): MappingState {
-    let state = new MappingState(this.mapping.deepClone());
+  /// A fresh identity for change detection, sharing the mapping and caches.
+  /// The mapping is already cloned once per operation in `runIntern`, so
+  /// cloning again here would only duplicate work.
+  reidentify(): MappingState {
+    let state = new MappingState(this.mapping, this.caches);
     state.stacks = this.stacks;
     return state;
   }
@@ -42,6 +49,8 @@ export class MappingState {
 
   runIntern(op: Operation, allTopics: AllTopics, messages: Messages) {
     let inv = op.run({mapping: this.mapping, caches: this.caches, allTopics, messages});
+    // detaches the objects captured by the inverse operation from the live mapping
+    this.mapping = this.mapping.deepClone();
     this.recache();
     return inv;
   }
@@ -55,7 +64,6 @@ export class MappingState {
     let inv;
     try {
       inv = this.runIntern(op, allTopics, messages);
-      this.mapping = this.mapping.deepClone(); // ensure that all changes are picked up
     } catch (err) {
       let msg = `could not run operation: ${(err as Error).message}`;
       console.trace(err);

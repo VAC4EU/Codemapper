@@ -42,6 +42,8 @@ import {
 import { AllTopics, ReviewData, ReviewOperation } from '../review';
 import { AuthService } from '../auth.service';
 import { MatPaginator } from '@angular/material/paginator';
+import { Router } from '@angular/router';
+import { navigateFragmentFromClick, nextSelectedRow, scrollToRow } from '../navigate';
 import { CacheConceptTags } from '../caches';
 import { EMPTY_FILTER, TextTagFilter, conceptCodeTags, filterKey, matchesFilter } from '../text-tag-filter';
 
@@ -96,13 +98,14 @@ export class ConceptsTableComponent {
   selection = new SelectionModel<Concept>(true, []);
   columns: string[] = [];
   highlightedId: string | null = null;
+  private lastHighlightedId: string | null = null;
 
   // indirection to reviews to get updates in the review dialog
   allTopicsObj: { allTopics: AllTopics } = { allTopics: new AllTopics() };
 
   lastVocabularies = [];
 
-  constructor(private dialog: MatDialog, private auth: AuthService, private el: ElementRef) {
+  constructor(private dialog: MatDialog, private auth: AuthService, private el: ElementRef, private router: Router) {
     this.selection.changed.subscribe(() => {
       this.updateSelectedFiltered();
     });
@@ -132,6 +135,8 @@ export class ConceptsTableComponent {
       }
     });
   }
+
+  trackById = (_index: number, concept: Concept) => concept.id;
 
   filterPredicate(concept: Concept, _filter: string) {
     let codes = Object.values(concept.codes)
@@ -204,29 +209,15 @@ export class ConceptsTableComponent {
   }
 
   highlightById(id: string) {
-    this.scrollToId(id);
+    this.lastHighlightedId = id;
+    scrollToRow(this.el, this.dataSource, 'data-concept-id', id);
     this.highlightedId = id;
     setTimeout(() => { this.highlightedId = null; }, 1000);
   }
 
-  scrollToId(id: string) {
-    const index = this.dataSource.filteredData.findIndex(c => c.id === id);
-    if (index < 0) return;
-    const paginator = this.dataSource.paginator;
-    if (paginator) {
-      const pageSize = paginator.pageSize;
-      const targetPage = Math.floor(index / pageSize);
-      if (paginator.pageIndex !== targetPage) {
-        paginator.pageIndex = targetPage;
-        paginator.page.emit({ pageIndex: targetPage, pageSize, length: paginator.length });
-      }
-    }
-    setTimeout(() => {
-      const pageSize = this.dataSource.paginator?.pageSize ?? this.dataSource.filteredData.length;
-      const pageOffset = (this.dataSource.paginator?.pageIndex ?? 0) * pageSize;
-      const rows = this.el.nativeElement.querySelectorAll('tr[mat-row]');
-      rows[index - pageOffset]?.scrollIntoView({ block: 'center' });
-    });
+  highlightNextSelected() {
+    let concept = nextSelectedRow(this.dataSource, this.selection.selected, this.lastHighlightedId);
+    if (concept) this.highlightById(concept.id);
   }
 
   setSelected(cuis: string[]) {
@@ -250,6 +241,10 @@ export class ConceptsTableComponent {
       },
     });
     dialogRef.afterClosed().subscribe((res) => {});
+  }
+
+  onNavigateClick(event: MouseEvent) {
+    navigateFragmentFromClick(this.router, event);
   }
 
   navigateToComments(id: ConceptId) {}

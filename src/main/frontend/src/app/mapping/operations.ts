@@ -41,6 +41,14 @@ import { AllTopics } from './review';
 
 export class OpError extends Error {}
 
+const MAX_DESCRIBED_IDS = 10;
+
+function summarizeIds(ids: string[]): string {
+  if (ids.length <= MAX_DESCRIBED_IDS) return ids.join(', ');
+  let rest = ids.length - MAX_DESCRIBED_IDS;
+  return `${ids.slice(0, MAX_DESCRIBED_IDS).join(', ')} and ${rest} more`;
+}
+
 function expect(ok: boolean, message: string = '', ...rest: any) {
   if (!ok) {
     console.error('UNEXPECTED', message, ...rest);
@@ -254,7 +262,7 @@ export class AddConcepts extends Operation {
 
   override describe(): string {
     let ids = Object.keys(this.concepts);
-    return `Add concepts ${ids.join(', ')}`;
+    return `Add ${ids.length} concepts: ${summarizeIds(ids)}`;
   }
   override run({ mapping }: Operand): Operation {
     console.log('ADD CONCEPTS', this.concepts, this.codes);
@@ -269,7 +277,7 @@ export class RemoveConcepts extends Operation {
     super();
   }
   override describe(): string {
-    return `Remove concepts ${this.ids.join(', ')}`;
+    return `Remove ${this.ids.length} concepts: ${summarizeIds(this.ids)}`;
   }
   override run({ mapping }: Operand): Operation {
     let concepts: Concepts = {};
@@ -290,30 +298,38 @@ export class RemoveConcepts extends Operation {
   }
 }
 
-export class SetCodeEnabled extends Operation {
+export type CodeEnabled = { [key: CodeId]: boolean };
+
+export class SetCodesEnabled extends Operation {
   constructor(
     readonly vocId: VocabularyId,
-    readonly codeId: CodeId,
-    readonly enabled: boolean,
+    readonly codeEnabled: CodeEnabled,
   ) {
     super();
   }
 
   override describe(): string {
-    return `Set code ${this.enabled ? 'enabled' : 'disabled'} ${this.vocId} ${
-      this.codeId
-    }`;
+    let ids = Object.keys(this.codeEnabled);
+    let values = new Set(Object.values(this.codeEnabled));
+    let what =
+      values.size == 1
+        ? values.has(true)
+          ? 'enabled'
+          : 'disabled'
+        : 'enabled/disabled';
+    let s = ids.length == 1 ? '' : 's';
+    return `Set ${ids.length} code${s} ${what} in ${this.vocId}`;
   }
 
   override run({ mapping }: Operand): Operation {
-    let code = mapping.codes[this.vocId]?.[this.codeId];
-    expect(code !== undefined, 'unknown code', {
-      vocId: this.vocId,
-      codeId: this.codeId,
-    });
-    let originalEnabled = code.enabled;
-    code.enabled = this.enabled;
-    return new SetCodeEnabled(this.vocId, this.codeId, originalEnabled);
+    let originalEnabled: CodeEnabled = {};
+    for (let [codeId, enabled] of Object.entries(this.codeEnabled)) {
+      let code = mapping.codes[this.vocId]?.[codeId];
+      expect(code !== undefined, 'unknown code', { vocId: this.vocId, codeId });
+      originalEnabled[codeId] = code.enabled;
+      code.enabled = enabled;
+    }
+    return new SetCodesEnabled(this.vocId, originalEnabled);
   }
 }
 

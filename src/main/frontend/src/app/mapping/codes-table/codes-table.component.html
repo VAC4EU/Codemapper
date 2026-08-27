@@ -1,5 +1,5 @@
-<div class="table-container">
-  <table mat-table [dataSource]="dataSource" matSort matSortActive="code" matSortDirection="asc">
+<div class="table-container" (click)="onNavigateClick($event)">
+  <table mat-table [dataSource]="dataSource" [trackBy]="trackById" matSort matSortActive="code" matSortDirection="asc">
     <ng-container matColumnDef="select">
       <th mat-header-cell *matHeaderCellDef>
         <mat-checkbox (change)="$event ? toggleSelectAll() : null"

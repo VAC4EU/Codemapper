@@ -16,11 +16,12 @@
     text-decoration: none;
     opacity: 0;
     pointer-events: none;
+  }
 
-    &.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
+  &:hover .concept-navigate,
+  &:focus-within .concept-navigate {
+    opacity: 1;
+    pointer-events: auto;
   }
   mat-icon {
     font-size: 1em;
