@@ -1,11 +1,17 @@
 <div class="title">
-  <h2 mat-dialog-title>{{mappingName}}: Edit event definition form</h2>
+  <h2 mat-dialog-title>{{title}}</h2>
   <button mat-icon-button (click)="onCancel()"><mat-icon>close</mat-icon></button>
 </div>
 <mat-dialog-content>
   <p>Edit the EDF here and use the button below to save it. Use the button <mat-icon>add</mat-icon> to insert text content.</p>
+  <button mat-stroked-button [matMenuTriggerFor]="templatesMenu">Start from template</button>
+  <mat-menu #templatesMenu="matMenu">
+    @for (template of templates; track template.name) {
+      <button mat-menu-item (click)="useTemplate(template.content)">{{template.name}}</button>
+    }
+  </mat-menu>
   <app-crepe #editor [(markdown)]="description"></app-crepe>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button matButton="filled" color="primary" (click)="onSavePlainText()" cdkFocusInitial>Save</button>
+  <button matButton="filled" color="primary" (click)="onSavePlainText()" cdkFocusInitial>{{data.submit ?? "Save"}}</button>
 </mat-dialog-actions>

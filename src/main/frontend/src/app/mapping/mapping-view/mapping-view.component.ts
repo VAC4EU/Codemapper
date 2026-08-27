@@ -41,6 +41,7 @@ import {
   emptyMappingInfo,
   MappingInfo,
   mappingInfoLink,
+  mappingNameFromInfo,
   PersistencyService,
   ProjectRole,
   RevisionInfo,
@@ -57,6 +58,7 @@ import {
 } from '../download-dialog/download-dialog.component';
 import { StartData } from '../start-mapping/start-mapping.component';
 import { Mapping } from '../mapping';
+import { EditDescriptionComponent } from '../edit-description/edit-description.component';
 import { Messages } from '../messages';
 import { splitFragment } from '../navigate';
 
@@ -79,6 +81,7 @@ export interface Initial {
   mappingName: string;
   folderName: string;
   meta: MappingMeta;
+  description?: string;
 }
 
 @Component({
@@ -292,7 +295,7 @@ export class MappingViewComponent implements HasPendingChanges {
       mappingName: initial.mappingName,
       status: null,
       meta: initial.meta,
-      description: '',
+      description: initial.description ?? '',
     };
   }
 
@@ -321,7 +324,7 @@ export class MappingViewComponent implements HasPendingChanges {
       projectName: this.initial.folderName,
       meta: this.initial.meta as MappingMeta,
       status: null,
-      description: '',
+      description: this.initial.description ?? '',
     };
     this.initial = null;
     this.state = new MappingState(
@@ -455,6 +458,8 @@ export class MappingViewComponent implements HasPendingChanges {
           meta: this.info.meta,
         },
       },
+      vocabularies: this.state?.mapping.vocabularies,
+      tags: this.state?.mapping.availableTags(),
     };
     this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
@@ -463,6 +468,7 @@ export class MappingViewComponent implements HasPendingChanges {
     if (!this.state) return;
     if (this.saveWarning != null) summary += '\n\n' + this.saveWarning;
     try {
+      let isNewMapping = !this.shortkey;
       let shortkey =
         this.shortkey ??
         (await this.persistency.createMapping(
@@ -470,6 +476,13 @@ export class MappingViewComponent implements HasPendingChanges {
           this.info.mappingName,
           this.info.meta,
         ));
+      if (isNewMapping && this.info.description) {
+        await EditDescriptionComponent.save(
+          this.persistency,
+          shortkey,
+          this.info.description,
+        );
+      }
       this.latest = await firstValueFrom(
         this.persistency.saveRevision(shortkey, this.state.mapping, summary),
       );
@@ -529,14 +542,7 @@ export class MappingViewComponent implements HasPendingChanges {
   }
 
   shortMeta(): string {
-    let snippets: string[] = [];
-    if (this.info.meta?.system) {
-      snippets.push(this.info.meta.system);
-    }
-    if (this.info.meta?.type) {
-      snippets.push(this.info.meta.type);
-    }
-    return snippets.join('/');
+    return mappingNameFromInfo(this.info);
   }
 
   setEmptyStart() {

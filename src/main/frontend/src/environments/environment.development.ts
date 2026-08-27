@@ -23,5 +23,5 @@ export const environment = {
   umlsVersion: '2025AA',
   apiUrl: "http://localhost:3000/v0",
   // apiUrl: "https://localhost:8080/codemapper-dev/rest",
-  peregrineUrl: "https://app.vac4eu.org/peregrine-codemapper/rest"
+  peregrineUrl: "https://codemapper.vac4eu.org/api/peregrine"
 };

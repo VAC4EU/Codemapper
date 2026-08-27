@@ -58,6 +58,7 @@ export class IndexerComponent implements OnChanges, OnInit {
   @Input({ required: true }) vocIds!: VocabularyId[];
   @Input() typesInfo: TypesInfo = EMPTY_TYPES_INFO;
   @Input() initialIndexing: Indexing | null = null;
+  @Input() initialText: string = '';
   @Input() locked: boolean = false;
   @Input() confirmLabel: string = '';
   @Output() confirmedIndexing = new EventEmitter<Indexing>();
@@ -93,7 +94,11 @@ export class IndexerComponent implements OnChanges, OnInit {
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.initialIndexing == null && this.initialText) {
+      this.text = this.initialText;
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.initialIndexing != null) {

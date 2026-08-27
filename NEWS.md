@@ -8,6 +8,19 @@
 
 <section class="center-content">
 
+August 31, 2026
+---
+
+- download metadata one-by-one
+- EDF templates
+- enter EDF in mapping creation
+- drop-down menu for download filters
+
+August 27, 2026
+---
+
+- improve performance for large mappings
+
 July 20, 2026
 ---
 

@@ -18,16 +18,26 @@
         @if (filterCodingSystems) {
           <mat-form-field>
             <mat-label>Coding systems</mat-label>
-            <input matInput [(ngModel)]="codingSystemsText">
-            <mat-hint>Comma-separated list of coding systems.</mat-hint>
+            <mat-select [(ngModel)]="selectedCodingSystems" multiple>
+              <mat-select-trigger>{{selectedCodingSystems.join(', ')}}</mat-select-trigger>
+              @for (id of codingSystemOptions; track id) {
+                <mat-option [value]="id">{{id}} <small>{{codingSystemNames[id]}}</small></mat-option>
+              }
+            </mat-select>
+            <mat-hint>Select the coding systems to include.</mat-hint>
           </mat-form-field>
         }
         <mat-checkbox [(ngModel)]="filterTags">Filter codes by tags</mat-checkbox>
         @if (filterTags) {
           <mat-form-field>
             <mat-label>Tags</mat-label>
-            <input matInput [(ngModel)]="tagsText">
-            <mat-hint>Comma-separated list of tags; empty for untagged codes.</mat-hint>
+            <mat-select [(ngModel)]="selectedTags" multiple>
+              <mat-option [value]="NO_TAG"><em>(untagged)</em></mat-option>
+              @for (tag of tagOptions; track tag) {
+                <mat-option [value]="tag">{{tag}}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Select the tags to include.</mat-hint>
           </mat-form-field>
         }
         <p>

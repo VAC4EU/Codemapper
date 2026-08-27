@@ -277,6 +277,7 @@ export class FolderMappingsComponent {
         ])
       ),
       includeDescendants: IncludeDescendants.PerMapping,
+      tags: this.serverInfo.defaultAllowedTags,
     };
     this.dialog.open(DownloadDialogComponent, { data, disableClose: true });
   }
@@ -353,22 +354,38 @@ export class FolderMappingsComponent {
   }
 
   async openCreateMappingDialog() {
-    let result = await firstValueFrom(
+    let meta: EditMetaResult | undefined = await firstValueFrom(
       this.dialog
         .open(EditMetaComponent, {
           data: {
-            title: 'Create new mapping',
+            title: 'Create mapping: metadata',
             name: '',
             meta: emptyMappingMeta(),
+            submit: 'Next',
           },
         })
         .afterClosed()
     );
-    if (!result) return;
+    if (meta === undefined) return;
+    let description: string | undefined = await firstValueFrom(
+      this.dialog
+        .open(EditDescriptionComponent, {
+          data: {
+            description: '',
+            mappingName: meta.name,
+            title: 'Create mapping: event definition form',
+            submit: 'Next',
+          },
+          width: '1000px',
+        })
+        .afterClosed()
+    );
+    if (description === undefined) return;
     let initial = {
-      mappingName: result.name,
+      mappingName: meta.name,
       folderName: this.folderName,
-      meta: result.meta,
+      meta: meta.meta,
+      description,
     };
     this.router.navigate(['/mapping'], { state: { initial } });
   }
