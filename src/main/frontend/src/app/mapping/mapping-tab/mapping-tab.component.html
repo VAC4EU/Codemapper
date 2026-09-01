@@ -93,7 +93,18 @@
         <mat-panel-description>Textual description of the event</mat-panel-description>
       </mat-expansion-panel-header>
       <app-crepe #description [hidden]="!info.description" [markdown]="info.description" [readonly]="true"></app-crepe>
-      <button mat-raised-button (click)="editDescription()">Edit</button>
+      @if (info.description) {
+        <button mat-raised-button (click)="editDescription()">Edit</button>
+        <button mat-raised-button (click)="copyDescription()">Copy (Markdown)</button>
+      } @else {
+        <button mat-raised-button [matMenuTriggerFor]="edfTemplatesMenu">Create</button>
+        <mat-menu #edfTemplatesMenu="matMenu">
+          <button mat-menu-item disabled>Start from template</button>
+          @for (template of edfTemplates; track template.name) {
+            <button mat-menu-item (click)="createDescription(template.content)">{{template.name}}</button>
+          }
+        </mat-menu>
+      }
     </mat-expansion-panel>
 
     <mat-expansion-panel>

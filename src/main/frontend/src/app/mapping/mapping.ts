@@ -30,6 +30,7 @@ import {
   MappingData,
   normalizeTag,
   Start,
+  Tag,
   Tags,
   Vocabularies,
   VocabularyId,
@@ -407,8 +408,12 @@ export class Mapping {
     }
   }
 
-  allTags() {
-    let tags = new Set();
+  availableTags(): Tag[] {
+    return Array.from(new Set([...this.meta.allowedTags, ...this.allTags()]));
+  }
+
+  allTags(): Tag[] {
+    let tags = new Set<Tag>();
     for (let codes of Object.values(this.codes)) {
       for (let code of Object.values(codes)) {
         if (code.tag != null) {

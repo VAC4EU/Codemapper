@@ -60,6 +60,8 @@ export class HistoryComponent {
       mappingConfigs: [config],
       includeDescendants: IncludeDescendants.PerMapping,
       mappings: { [config]: {name: this.info.mappingName, meta: this.meta}},
+      vocabularies: this.state.mapping.vocabularies,
+      tags: this.state.mapping.availableTags(),
     };
     this.dialog.open(DownloadDialogComponent, { data, disableClose: true })
   }

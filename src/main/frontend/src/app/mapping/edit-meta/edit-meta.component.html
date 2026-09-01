@@ -1,6 +1,6 @@
 <div class="dialog-title">
   <h2 matDialogTitle>{{this.data.title ?? "Edit metadata"}}</h2>
-  <button mat-icon-button matDialogClose><mat-icon>close</mat-icon></button>
+  <button mat-icon-button [matDialogClose]="undefined"><mat-icon>close</mat-icon></button>
 </div>
 <mat-dialog-content>
   <mat-form-field style="width:100%;">
@@ -27,6 +27,6 @@
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button class="mapping-save" mat-raised-button (click)="submit()" [disabled]="!name" matDialogClose
-    color="primary">Ok</button>
+  <button class="mapping-save" mat-raised-button (click)="submit()" [disabled]="!name"
+    color="primary">{{data.submit ?? "Ok"}}</button>
 </mat-dialog-actions>

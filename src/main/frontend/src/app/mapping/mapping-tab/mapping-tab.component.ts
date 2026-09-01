@@ -29,6 +29,7 @@ import { EditMetaComponent } from '../edit-meta/edit-meta.component';
 import { MappingState } from '../mapping-state';
 import { EditDescriptionComponent } from '../edit-description/edit-description.component';
 import { CrepeComponent } from '../crepe/crepe.component';
+import { EDF_TEMPLATES } from './edf-templates';
 
 @Component({
   selector: 'mapping-tab',
@@ -50,6 +51,7 @@ export class MappingTabComponent {
   @Input() userCanEdit: boolean = false;
   @Output() run = new EventEmitter<ops.Operation>();
   description = viewChild.required<CrepeComponent>('description');
+  edfTemplates = EDF_TEMPLATES;
 
   constructor(
     private api: ApiService,
@@ -96,10 +98,25 @@ export class MappingTabComponent {
   }
 
   editDescription() {
-    let mappingName = mappingNameFromInfo(this.info);
+    this.openEditDescription(this.info.description);
+  }
+
+  async copyDescription() {
+    await navigator.clipboard.writeText(this.info.description);
+    this.snackBar.open('Copied event definition form to clipboard', 'Ok', {
+      duration: 3000,
+    });
+  }
+
+  createDescription(template: string) {
+    this.openEditDescription(template);
+  }
+
+  private openEditDescription(description: string) {
+    let mappingName = `${this.info.meta.definition} (${mappingNameFromInfo(this.info)})`;
     this.dialog
       .open(EditDescriptionComponent, {
-        data: { description: this.info.description, mappingName },
+        data: { description, mappingName },
         width: '1000px',
       })
       .afterClosed()

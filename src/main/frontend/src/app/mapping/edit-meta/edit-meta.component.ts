@@ -23,9 +23,10 @@ export class EditMetaComponent {
     public dialogRef: MatDialogRef<EditMetaComponent, EditMetaResult>,
     @Inject(MAT_DIALOG_DATA)
     public data: {
-      title?: string,
+      title?: string;
       name: string;
       meta: MappingMeta;
+      submit?: string;
     }
   ) {}
   ngOnInit() {
